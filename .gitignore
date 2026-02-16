@@ -1,0 +1,5 @@
+target
+.fstar-cache
+proofs
+.DS_Store
+.idea

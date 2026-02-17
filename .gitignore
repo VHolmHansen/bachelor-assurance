@@ -1,5 +1,7 @@
 target
 .fstar-cache
-proofs
 .DS_Store
 .idea
+proofs/fstar/extraction/.depend
+proofs/fstar/extraction/Bachelor_Assurance.fst
+proofs/fstar/extraction/hax.fst.config.json

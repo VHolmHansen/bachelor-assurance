@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
+libcrux = {version = "0.0.2-pre.2"}
 
 [target."cfg(hax)".dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }

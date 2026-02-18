@@ -38,9 +38,19 @@ fn main() {
     let general_prime_p = 257;
     // creating five parties who each have a part of the secret
     let parties = request_mpc_parties(secret, general_prime_p);
-    println!("{:?}", parties);
+    // println!("{:?}", parties);
     // performing mpc with set parties, should return a view for each party
-    perform_mpc(parties);
+    let res_parties = perform_mpc(parties);
+
+    let party1 = res_parties[0].clone();
+    let party2 = res_parties[1].clone();
+
+    let check = check_consistent_view(party1.view, party2.view, 6, party1.general_prime);
+    println!("Check: {:?}", check);
+
+    let second_check = parties_get_right_secret(res_parties, secret);
+    println!("Second check: {:?}", second_check);
+
 }
 
 // 5 parties with respective start states
@@ -63,10 +73,21 @@ fn split_secret(secret: i64) -> [i64; 6] {
 }
 // creation of party
 fn create_party(secret_share: i64, general_prime_p: i64, partyID: i64) -> Party {
-    let random_value = general_prime_p;
+    let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
+        Ok(drbg) => drbg,
+        Err(e) => panic!("{}", e)
+    };
+    let mut rand_bytes = [0u8; 1];
+    match rand_gen.generate(&mut rand_bytes) {
+        Ok(_) => (),
+        Err(e) => panic!("{}", e)
+    };
+
+    let random_num = u8::from_le_bytes(rand_bytes);
+
     let party: Party = Party {secret: secret_share,
         computed_secret: 0,
-        randomness: random_value,
+        randomness: random_num as i64,
         general_prime: general_prime_p,
         party_id: partyID,
         received: 0,
@@ -79,12 +100,35 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
     // sending messages to other parties
     // let resulting_parties = parties.iter().fold(parties.clone(), |acc, party| {println!("{:?}", acc); update_secret(party, acc)});
     // resulting_parties
-    let mut numberIter = 0..6;
+    let number_iter = 0..6;
 
-    let messages = parties.iter().map(|party| generate_first_message(party, 1)).collect::<Vec<_>>();
-    println!("{:#?}", messages);
+    let first_messages = number_iter
+            .map(|i| parties.iter()
+                .map(|party| generate_first_message(party, (i+1)))
+                .collect::<Vec<_>>())
+            .collect::<Vec<_>>();
 
-    parties
+    let number_iter_copy = 0..6;
+
+
+
+    // new parties have calculated R_partyID
+    let parties_containg_first_messages = number_iter_copy
+        .map(|i| sum_of_polynomials(parties[i].clone(), first_messages[i].clone()))
+        .collect::<Vec<_>>();
+
+    // need messages (partyID, R_partyID)
+    let second_messages = parties_containg_first_messages.iter()
+        .map(|party| generate_second_message(party.clone()))
+        .collect::<Vec<_>>();
+
+    // new parties with MPC been finished
+
+    let final_parties = parties_containg_first_messages.iter()
+        .map(|party|  lagrange_interpolation(second_messages.clone(), party.clone()))
+        .collect::<Vec<_>>();
+
+    final_parties
 }
 
 
@@ -94,6 +138,7 @@ fn generate_first_message(x: &Party, message_receiver: i64) -> Message {
         value: i64::rem_euclid((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime),
         sender: x.party_id,
     };
+
     message
 }
 
@@ -102,6 +147,8 @@ fn generate_second_message(x: Party) -> Message {
         value: x.computed_secret,
         sender: x.party_id,
     };
+
+
     message
 }
 

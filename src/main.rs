@@ -1,3 +1,4 @@
+use libcrux::drbg::Drbg;
 
 // a simulated party
 
@@ -61,8 +62,9 @@ fn request_mpc_parties(secret: i64, prime: i64) -> Vec<Party> {
     let general_prime_p = prime;
     let mut numberIter = 0..7;
     // creating each parti
-    let parties = secrets.into_iter().map(|x| create_party(x, general_prime_p,
-                                                           helper_for_number_sequence(numberIter.next()))).collect::<Vec<_>>();
+    let parties = secrets.into_iter()
+        .map(|x| create_party(x, general_prime_p, helper_for_number_sequence(numberIter.next())))
+        .collect::<Vec<_>>();
     parties
 }
 // splitting secret

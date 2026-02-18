@@ -55,8 +55,10 @@ fn main() {
 }
 
 // 5 parties with respective start states
-#[hax_lib::requires(secret < prime)]
+#[hax_lib::requires(secret < prime && secret > 0 && prime < i64::max_value())]
+#[hax_lib::ensures(|result| result.len() > 0)]
 fn request_mpc_parties(secret: i64, prime: i64) -> Vec<Party> {
+    hax_lib::assert!(secret % 6 == 0);
     let secrets = split_secret(secret);
     // has to be larger than secret
     let general_prime_p = prime;
@@ -68,12 +70,14 @@ fn request_mpc_parties(secret: i64, prime: i64) -> Vec<Party> {
     parties
 }
 // splitting secret
-// #[hax_lib::requires(secret % 5 == 0)]
+#[hax_lib::requires(secret % 6 == 0)]
 fn split_secret(secret: i64) -> [i64; 6] {
 
     [secret/6, secret/6,secret/6,secret/6,secret/6, secret/6]
 }
 // creation of party
+#[hax_lib::requires(secret_share < general_prime_p && general_prime_p < i64::max_value())]
+#[hax_lib::ensures(|result| result.randomness < general_prime_p)]
 fn create_party(secret_share: i64, general_prime_p: i64, party_id: i64) -> Party {
     let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
         Ok(drbg) => drbg,
@@ -97,6 +101,8 @@ fn create_party(secret_share: i64, general_prime_p: i64, party_id: i64) -> Party
     party
 }
 
+#[hax_lib::requires(parties.len() > 0)]
+#[hax_lib::ensures(|result| result.len() == parties.len())]
 fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
     // sending messages to other parties
     // let resulting_parties = parties.iter().fold(parties.clone(), |acc, party| {println!("{:?}", acc); update_secret(party, acc)});
@@ -133,7 +139,8 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
 }
 
 
-
+#[hax_lib::requires(message_receiver > 0)]
+#[hax_lib::ensures(|result| result.value == i64::rem_euclid((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime))]
 fn generate_first_message(x: &Party, message_receiver: i64) -> Message {
     let message = Message {
         value: i64::rem_euclid((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime),

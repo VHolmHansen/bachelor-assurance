@@ -22,7 +22,7 @@ struct Party {
     randomness: i64,
     general_prime: i64,
     party_id: i64,
-    received: i64,
+
     view: View
 }
 #[derive(Clone, Debug)]
@@ -60,10 +60,10 @@ fn request_mpc_parties(secret: i64, prime: i64) -> Vec<Party> {
     let secrets = split_secret(secret);
     // has to be larger than secret
     let general_prime_p = prime;
-    let mut numberIter = 0..7;
+    let mut number_iter = 0..7;
     // creating each parti
     let parties = secrets.into_iter()
-        .map(|x| create_party(x, general_prime_p, helper_for_number_sequence(numberIter.next())))
+        .map(|x| create_party(x, general_prime_p, helper_for_number_sequence(number_iter.next())))
         .collect::<Vec<_>>();
     parties
 }
@@ -74,7 +74,7 @@ fn split_secret(secret: i64) -> [i64; 6] {
     [secret/6, secret/6,secret/6,secret/6,secret/6, secret/6]
 }
 // creation of party
-fn create_party(secret_share: i64, general_prime_p: i64, partyID: i64) -> Party {
+fn create_party(secret_share: i64, general_prime_p: i64, party_id: i64) -> Party {
     let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
         Ok(drbg) => drbg,
         Err(e) => panic!("{}", e)
@@ -91,9 +91,8 @@ fn create_party(secret_share: i64, general_prime_p: i64, partyID: i64) -> Party 
         computed_secret: 0,
         randomness: random_num as i64,
         general_prime: general_prime_p,
-        party_id: partyID,
-        received: 0,
-        view: View {secret: secret_share, randomness: random_num as i64, messages: vec![], party_id: partyID}
+        party_id,
+        view: View {secret: secret_share, randomness: random_num as i64, messages: vec![], party_id }
     };
     party
 }

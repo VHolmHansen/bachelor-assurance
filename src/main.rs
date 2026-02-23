@@ -1,13 +1,12 @@
 use libcrux::drbg::Drbg;
-use num::{BigInt, BigUint, Integer};
+use num_bigint::{BigInt, Sign};
 use glass_pumpkin::prime;
-use num::traits::Euclid;
-// a simulated party
+use hax_lib::int::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct View {
-    secret: BigInt,
-    randomness: BigInt,
+    secret: Int,
+    randomness: Int,
     party_id: i64,
     messages: Vec<Message>,
 }
@@ -17,32 +16,32 @@ Messages to be send to parties
 - Value P(partyID) = secret + randomness * partyID, partyID of receiver
 - Sender, partyID of sender
  */
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct Party {
-    secret: BigInt,
-    computed_secret: BigInt,
-    randomness: BigInt,
-    general_prime: BigInt,
+    secret: Int,
+    computed_secret: Int,
+    randomness: Int,
+    general_prime: Int,
     party_id: i64,
 
     view: View
 }
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct Message {
-    value: BigInt,
+    value: Int,
     sender: i64
 }
 
 // main method for running simulation
 #[hax_lib::requires(true)]
 fn main() {
-    let secret = BigInt::from(30);
+    let secret = Int::new(30);
     // assert_eq!(secret % 5, 0);
     let prime = prime::new(512).unwrap();
     println!("ze prime {}", prime);
-    let signed_prime: BigInt = prime.into();
+    let signed_prime: Int = Int::_unsafe_from_str(prime.to_string().as_str());
     println!("ze signed prime {}", signed_prime);
-    println!("ze signed prime size {}", signed_prime.bits());
+    println!("ze signed prime size {}", signed_prime);
     //let general_prime_p = &BigUint::new([].to_vec());
     let general_prime_p = signed_prime;
     // creating five parties who each have a part of the secret
@@ -63,10 +62,10 @@ fn main() {
 }
 
 // 5 parties with respective start states
-#[hax_lib::requires(secret < prime && secret > 0 && prime < i64::max_value())]
+#[hax_lib::requires(secret < prime && secret > BigInt::from(0))]
 #[hax_lib::ensures(|result| result.len() > 0)]
 fn request_mpc_parties(secret: BigInt, prime: BigInt) -> Vec<Party> {
-    hax_lib::assert!(secret.rem_euclid(&BigInt::from(6)) == BigInt::from(0));
+    hax_lib::assert!(secret.clone().mod_floor(&BigInt::from(6)) == BigInt::from(0));
     let secrets = split_secret(secret);
     // has to be larger than secret
     let general_prime_p = prime;
@@ -78,26 +77,27 @@ fn request_mpc_parties(secret: BigInt, prime: BigInt) -> Vec<Party> {
     parties
 }
 // splitting secret
-#[hax_lib::requires(secret % 6 == 0)]
+#[hax_lib::requires(secret.mod_floor(&BigInt::from(6)) == BigInt::from(0))]
 fn split_secret(secret: BigInt) -> [BigInt; 6] {
     let secret_part: BigInt = secret / 6;
     [secret_part.clone(), secret_part.clone(), secret_part.clone(), secret_part.clone(), secret_part.clone(), secret_part.clone()]
 }
 // creation of party
-#[hax_lib::requires(secret_share < general_prime_p && general_prime_p < i64::max_value())]
+#[hax_lib::requires(secret_share < general_prime_p)]
 #[hax_lib::ensures(|result| result.randomness < general_prime_p)]
 fn create_party(secret_share: BigInt, general_prime_p: BigInt, party_id: i64) -> Party {
     let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
         Ok(drbg) => drbg,
         Err(e) => panic!("{}", e)
     };
-    let mut rand_bytes = [0u8; 1];
+    let mut rand_bytes = [0u8; 60];
     match rand_gen.generate(&mut rand_bytes) {
         Ok(_) => (),
         Err(e) => panic!("{}", e)
     };
+    let dummy: BigInt = BigInt::from(0);
 
-    let random_num = u8::from_le_bytes(rand_bytes);
+    let random_num = BigInt::from_bytes_le(Sign::Plus, &rand_bytes);
     let random_bint = BigInt::from(random_num);
 
     let party: Party = Party {secret: secret_share.clone(),
@@ -149,10 +149,10 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
 
 
 #[hax_lib::requires(message_receiver > 0)]
-#[hax_lib::ensures(|result| result.value == i64::rem_euclid((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime))]
+#[hax_lib::ensures(|result| result.value == (&x.secret + &x.randomness * message_receiver + &x.randomness * message_receiver * message_receiver).mod_floor(&x.general_prime))]
 fn generate_first_message(x: &Party, message_receiver: i64) -> Message {
     let message = Message {
-        value: (&x.secret + &x.randomness * message_receiver + &x.randomness * message_receiver * message_receiver).rem_euclid(&x.general_prime),
+        value: (&x.secret + &x.randomness * message_receiver + &x.randomness * message_receiver * message_receiver).mod_floor(&x.general_prime),
         sender: x.party_id,
     };
 
@@ -179,7 +179,7 @@ fn helper_for_number_sequence(number: Option<i32>) -> i64 {
 
 fn sum_of_polynomials(party: Party, messages: Vec<Message>) -> Party {
     let sum_of_messages: BigInt = messages.iter()
-        .fold(BigInt::from(0), |acc, message| {BigInt::rem_euclid(&(acc + message.value.clone()), &party.general_prime)});
+        .fold(BigInt::from(0), |acc, message| {BigInt::mod_floor(&(acc + message.value.clone()), &party.general_prime)});
     Party { computed_secret: sum_of_messages,
         view: View {messages: messages, ..party.view},
         ..party
@@ -207,7 +207,7 @@ fn lagrange_interpolation(messages: Vec<Message>, party: Party) -> Party {
     let message2 = messages[1].clone();
     let message3 = messages[2].clone();
 
-    let secret = BigInt::from(lambda1 * (message1.value) + lambda2 * (message2.value) + lambda3 * (message3.value)).rem_euclid(&party.general_prime);
+    let secret = BigInt::from(lambda1 * (message1.value) + lambda2 * (message2.value) + lambda3 * (message3.value)).mod_floor(&party.general_prime);
     //let secret = f64::rem_euclid(lambda1 * (message1.value as f64) + lambda2 * (message2.value as f64) + lambda3 * (message3.value as f64), party.general_prime as f64);
 
     let mut new_messags = party.view.messages.clone();
@@ -228,11 +228,11 @@ fn lambda_i_of(message1: Message, message2: Message, message3: Message, prime: &
 
     let numer = &x3 * &x2;
 
-    let denom = ((&x1 - &x3) * (&x1 - &x2)).rem_euclid(prime);
+    let denom = ((&x1 - &x3) * (&x1 - &x2)).mod_floor(prime);
     let gcd = &denom.extended_gcd(prime);
-    let denom_inv = gcd.x.rem_euclid(prime);
+    let denom_inv = gcd.x.mod_floor(prime);
 
-    (numer * denom_inv).rem_euclid(prime)
+    (numer * denom_inv).mod_floor(prime)
 }
 
 
@@ -243,8 +243,8 @@ fn check_consistent_view(view1: View, view2: View, n: usize, general_prime: BigI
             view1.messages[number].value == view2.messages[number].value && acc
     });
 
-    let party1_value = (view1.secret + view1.randomness.clone() * view2.party_id + view1.randomness * view2.party_id * view2.party_id).rem_euclid(&general_prime);
-    let party2_value = (view2.secret + view2.randomness.clone() * view1.party_id + view2.randomness * view1.party_id * view1.party_id).rem_euclid(&general_prime);
+    let party1_value = (view1.secret + view1.randomness.clone() * view2.party_id + view1.randomness * view2.party_id * view2.party_id).mod_floor(&general_prime);
+    let party2_value = (view2.secret + view2.randomness.clone() * view1.party_id + view2.randomness * view1.party_id * view1.party_id).mod_floor(&general_prime);
 
     let has_seen_message_from_party_1 = view2.messages.iter().fold(false, |acc, message| {
         acc || (message.sender == view1.party_id && message.value == party1_value)

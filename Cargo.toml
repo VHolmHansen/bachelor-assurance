@@ -5,8 +5,9 @@ edition = "2024"
 
 [dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6"}
-num = "0.4.3"
 libcrux = { version = "0.0.2-pre.2", features = ["rand"] }
+num-bigint = "0.4.6"
+num-integer = "0.1.46"
 glass_pumpkin = "1.10.0"
 
 [target."cfg(hax)".dependencies]

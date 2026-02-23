@@ -1,4 +1,3 @@
-use std::ops::{Div, Rem};
 use libcrux::drbg::Drbg;
 use num::{BigInt, BigUint, Integer};
 use glass_pumpkin::prime;
@@ -81,7 +80,7 @@ fn request_mpc_parties(secret: BigInt, prime: BigInt) -> Vec<Party> {
 // splitting secret
 #[hax_lib::requires(secret % 6 == 0)]
 fn split_secret(secret: BigInt) -> [BigInt; 6] {
-    let secret_part: BigInt = secret.div(6);
+    let secret_part: BigInt = secret / 6;
     [secret_part.clone(), secret_part.clone(), secret_part.clone(), secret_part.clone(), secret_part.clone(), secret_part.clone()]
 }
 // creation of party

@@ -27,11 +27,9 @@ impl Field {
 
     #[hax_lib::requires(x < self.p
                         && x >= 0
-                        && self.p > 0
-                        && self.p <= i128::MAX as i128)]
+                        && self.p > 0)]
     #[hax_lib::ensures(|result| math::modulo(x + result, self.p) == 0
                         && result < self.p
-                        && result <= i128::MAX as i128
                         && result >= 0)]
     fn additive_inverse(self, x: i128) -> i128 {
         math::modulo(self.p - x, self.p)
@@ -41,8 +39,7 @@ impl Field {
                         && x > 0
                         && y < self.p
                         && y > 0
-                        && self.p > 0
-                        && self.p <= i128::MAX as i128)]
+                        && self.p > 0)]
     #[hax_lib::ensures(|result| result == math::modulo(x * y, self.p)
                         && result < self.p
                         && result >= 0)]
@@ -52,8 +49,7 @@ impl Field {
 
     #[hax_lib::requires(x < self.p
                         && x > 0
-                        && self.p > 0
-                        && self.p <= i128::MAX as i128)]
+                        && self.p > 0)]
     #[hax_lib::ensures(|result| result * x = 1
                         && result < self.p
                         && result > 0)]

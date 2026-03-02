@@ -1,4 +1,4 @@
-use rand::{random, Rng, RngExt};
+use rand::{RngExt};
 use crate::utils::*;
 
 
@@ -23,7 +23,12 @@ pub fn main() {
     new_verifier.check_relation();
 }
 
-#[hax_lib::ensures(|result| result[2] - result[1] * result[0] == 0)]
+#[hax_lib::ensures(|result| {
+    let x = result.a[0];
+    let y = result.a[1];
+    let z = result.a[2];
+    z == x * y
+})]
 fn generate_prover() -> Prover {
 
     let (x, y, z, b1, b2, b3, b4) = generate_prover_rands();
@@ -45,6 +50,10 @@ fn generate_prover() -> Prover {
     }
 }
 #[hax_lib::exclude]
+#[hax_lib::ensures(|result| {
+    let (x, y, z, _, _, _, _) = result;
+    z == x * y
+})]
 fn generate_prover_rands() -> (i128, i128, i128, i128, i128, i128, i128) {
     let mut rng = rand::rng();
 
@@ -101,8 +110,8 @@ impl Verifier {
 }
 
 fn vole(prover: Prover, verifier: Verifier) -> Verifier {
-    let leftvec = FIELD.vector_scalar(prover.a, verifier.alpha);
-    let vec = FIELD.vector_add(leftvec, prover.b);
+    let leftvec = FIELD.vector_scalar(prover.a.to_vec(), verifier.alpha);
+    let vec = FIELD.vector_add(leftvec, prover.b.to_vec());
 
     Verifier {
         v: vec,

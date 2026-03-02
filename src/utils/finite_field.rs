@@ -4,6 +4,7 @@ pub struct Field {
     pub p: i128
 }
 
+pub type FieldElement = i128;
 #[hax_lib::attributes]
 impl Field {
     #[hax_lib::requires(x < self.p

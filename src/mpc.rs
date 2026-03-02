@@ -66,10 +66,16 @@ fn request_mpc_parties(secret: i128, prime: i128) -> Vec<Party> {
     let secrets = split_secret(secret);
     // has to be larger than secret
     let general_prime_p = prime;
-    let mut number_iter = 0..7;
     // creating each parti
+    let parties = create_parties(secrets, prime);
+    parties
+}
+
+#[hax_lib::exclude]
+fn create_parties(secrets: [i128; 6], prime: i128) -> Vec<Party> {
+    let mut number_iter = 0..7;
     let parties = secrets.into_iter()
-        .map(|x| create_party(x, general_prime_p, helper_for_number_sequence(number_iter.next())))
+        .map(|x| create_party(x, prime, helper_for_number_sequence(number_iter.next())))
         .collect::<Vec<_>>();
     parties
 }
@@ -115,7 +121,7 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
 
     let first_messages = number_iter
         .map(|i| parties.iter()
-            .map(|party| generate_first_message(party, (i+1)))
+            .map(|party| generate_first_message(party, i+1))
             .collect::<Vec<_>>())
         .collect::<Vec<_>>();
 
@@ -147,7 +153,7 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
 #[hax_lib::ensures(|result| result.value == math::modulo((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime))]
 fn generate_first_message(x: &Party, message_receiver: i128) -> Message {
     let message = Message {
-        value: math::modulo((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime),
+        value: math::modulo(x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver, x.general_prime),
         sender: x.party_id,
     };
 

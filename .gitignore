@@ -5,3 +5,7 @@ target
 proofs/fstar/extraction/.depend
 proofs/fstar/extraction/Bachelor_Assurance.fst
 proofs/fstar/extraction/hax.fst.config.json
+proofs/fstar/extraction/Bachelor_Assurance.Lpzk.fst
+proofs/fstar/extraction/Bachelor_Assurance.Mpc.fst
+proofs/fstar/extraction/Bachelor_Assurance.Utils.Finite_field.fst
+proofs/fstar/extraction/Bachelor_Assurance.Utils.Math.fst

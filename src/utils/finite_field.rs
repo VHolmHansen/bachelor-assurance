@@ -4,21 +4,19 @@ pub struct Field {
     pub p: i128
 }
 
+#[hax_lib::attributes]
 impl Field {
     #[hax_lib::requires(x < self.p
                         && x >= 0
+                        && x < self.p
                         && y < self.p
                         && y >= 0
-                        && self.p > 0
-                        && self.p <= i128::MAX)]
+                        && self.p > 0)]
     #[hax_lib::ensures(|result| result == math::modulo(x + y, self.p))]
     pub fn addition(&self, x: i128, y: i128) -> i128 {
         let x_plus_y = x + y;
-        hax_lib::assert!(x_plus_y <= i128::MAX);
-        hax_lib::assert!(y >= i128::MIN);
-        hax_lib::assert!(self.p <= i128::MAX);
-        hax_lib::assert!(self.p > 0);
 
+        hax_lib::assert!(self.p > 0);
         math::modulo(x_plus_y, self.p)
     }
 
@@ -49,7 +47,7 @@ impl Field {
     #[hax_lib::requires(x < self.p
                         && x > 0
                         && self.p > 0)]
-    #[hax_lib::ensures(|result| result * x = 1
+    #[hax_lib::ensures(|result| result * x == 1
                         && result < self.p
                         && result > 0)]
     pub fn multiplicative_inverse(&self, x: i128) -> i128 {

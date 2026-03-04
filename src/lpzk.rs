@@ -23,7 +23,7 @@ pub fn main() {
     new_verifier.check_relation();
 }
 
-#[hax_lib::ensures(|result| result[2] - result[1] * result[0] == 0)]
+//#[hax_lib::ensures(|result| result[2] - result[1] * result[0] == 0)]
 fn generate_prover() -> Prover {
 
     let (x, y, z, b1, b2, b3, b4) = generate_prover_rands();

@@ -1,17 +1,20 @@
 use crate::utils::math;
 
+#[hax_lib::include]
 pub struct Field {
     pub p: i128
 }
 
 #[hax_lib::attributes]
 impl Field {
+
     #[hax_lib::requires(x < self.p
                         && x >= 0
                         && x < self.p
                         && y < self.p
                         && y >= 0
-                        && self.p > 0)]
+                        && self.p > 0
+                        && self.p < i128::MAX / 2)]
     #[hax_lib::ensures(|result| result == math::modulo(x + y, self.p))]
     pub fn addition(&self, x: i128, y: i128) -> i128 {
         let x_plus_y = x + y;
@@ -20,12 +23,14 @@ impl Field {
         math::modulo(x_plus_y, self.p)
     }
 
+    #[hax_lib::include]
     #[hax_lib::requires(x < self.p
                         && x >= 0
-                        && self.p > 0)]
-    #[hax_lib::ensures(|result| math::modulo(x + result, self.p) == 0
+                        && self.p > 0
+                        && self.p < i128::MAX / 2)]
+    #[hax_lib::ensures(|result| result >= 0
                         && result < self.p
-                        && result >= 0)]
+                        && math::modulo(x + result, self.p) == 0)]
     pub fn additive_inverse(&self, x: i128) -> i128 {
         hax_lib::assert!(self.p > 0);
         math::modulo(self.p - x, self.p)

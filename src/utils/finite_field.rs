@@ -17,8 +17,7 @@ impl Field {
                         && self.p < i128::MAX / 2)]
     #[hax_lib::ensures(|result| result == math::modulo(x + y, self.p))]
     pub fn addition(&self, x: i128, y: i128) -> i128 {
-        let x_plus_y = x + y;
-        math::modulo(x_plus_y, self.p)
+        math::modulo(x + y, self.p)
     }
 
     #[hax_lib::include]
@@ -30,7 +29,6 @@ impl Field {
                         && result < self.p
                         && math::modulo(x + result, self.p) == 0)]
     pub fn additive_inverse(&self, x: i128) -> i128 {
-        hax_lib::assert!(self.p > 0);
         math::modulo(self.p - x, self.p)
     }
 
@@ -43,7 +41,6 @@ impl Field {
                         && result < self.p
                         && result >= 0)]
     pub fn multiplication(&self, x: i128, y: i128) -> i128 {
-        hax_lib::assert!(self.p > 0);
         math::modulo(x * y, self.p)
     }
 

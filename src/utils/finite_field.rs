@@ -18,8 +18,6 @@ impl Field {
     #[hax_lib::ensures(|result| result == math::modulo(x + y, self.p))]
     pub fn addition(&self, x: i128, y: i128) -> i128 {
         let x_plus_y = x + y;
-
-        hax_lib::assert!(self.p > 0);
         math::modulo(x_plus_y, self.p)
     }
 

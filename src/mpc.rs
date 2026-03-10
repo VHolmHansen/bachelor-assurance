@@ -2,6 +2,7 @@ use crate::utils::*;
 use libcrux::drbg::Drbg;
 // a simulated party
 
+/*
 #[derive(Clone, Debug)]
 struct View {
     secret: i128,
@@ -257,7 +258,6 @@ fn parties_get_right_secret(parties: Vec<Party>, secret: i128) -> bool{
     result
 }
 
-/*
 fn update_secret(x: &Party, parties: Vec<Party>) -> Vec<Party> {
     let new_secret = parties.into_iter().map(|y| Party{secret: y.secret,
         computed_secret: y.computed_secret + x.secret,

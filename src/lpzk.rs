@@ -1,7 +1,7 @@
 use rand::{random, Rng, RngExt};
 use crate::utils::*;
 
-
+/*
 struct Prover {
     a: Vec<i128>,
     b: Vec<i128>,
@@ -109,3 +109,5 @@ fn vole(prover: Prover, verifier: Verifier) -> Verifier {
         alpha: verifier.alpha
     }
 }
+
+ */

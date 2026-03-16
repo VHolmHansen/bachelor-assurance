@@ -12,12 +12,8 @@ pub struct Field {
 impl Field {
 
     #[hax_lib::requires(x < self.p
-                        && x >= 0.to_int()
-                        && x < self.p
                         && y < self.p
-                        && y >= 0.to_int()
-                        && self.p > 0.to_int()
-                        && self.p < (i128::MAX / 2).to_int())]
+                        && self.p > 0.to_int())]
     #[hax_lib::ensures(|result| result == (x + y).rem_euclid(self.p))]
     pub fn addition(&self, x: Int, y: Int) -> Int {
         (x + y).rem_euclid(self.p)
@@ -25,8 +21,7 @@ impl Field {
 
     #[hax_lib::requires(x < self.p
                         && x >= 0.to_int()
-                        && self.p > 0.to_int()
-                        && self.p < (i128::MAX / 2).to_int())]
+                        && self.p > 0.to_int())]
     #[hax_lib::ensures(|result| result >= 0.to_int()
                         && result < self.p
                         && (x + result).rem_euclid(self.p) == 0.to_int())]
@@ -35,17 +30,12 @@ impl Field {
     }
 
     #[hax_lib::requires(x < self.p
-                        && x > 0.to_int()
                         && y < self.p
-                        && y < (i128::MAX.to_int() / x)
-                        && y > 0.to_int()
-                        && self.p > 0.to_int()
-                        && self.p < (i128::MAX / 2).to_int())]
+                        && self.p > 0.to_int())]
     #[hax_lib::ensures(|result| result == (x * y).rem_euclid(self.p))]
     pub fn multiplication(&self, x: Int, y: Int) -> Int {
         (x * y).rem_euclid(self.p)
     }
-
 
     #[hax_lib::requires(x < self.p
                         && x > 0.to_int()
@@ -65,44 +55,99 @@ impl Field {
             if b == 0.to_int() {
                 (a, 1.to_int(), 0.to_int())
             } else {
-                hax_lib::assert!(a.rem_euclid(b) < b);
+                assert!(a.rem_euclid(b) < b);
                 let (gcd, x, y) = egcd(b, a.rem_euclid(b));
+                //hax_lib::assume!(gcd == 1.to_int());
                 (gcd, y, x - ( a / b) * y)
             }
         }
 
         let (gcd, x, _) = egcd(x.rem_euclid(self.p), self.p);
-
-        //hax_lib::assert!(gcd == 1.to_int());
+        //assert_eq!(gcd, 1.to_int());
 
         x.rem_euclid(self.p)
     }
 
-    /*
+    #[hax_lib::requires(x.len() > 0
+                        && self.p > 0.to_int()
+                        && x.len() == y.len()
+                        //&& hax_lib::forall(|i: usize| hax_lib::implies(i < y.len(), y[i] > 0.to_int() && y[i] < self.p))
+                        && check_less_than_vec(x, self.p)
+                        && check_less_than_vec(y, self.p))]
+    #[hax_lib::ensures(|result| result.len() == x.len())]
+    pub fn vector_multiply(&self, x: Vec<Int>, y: Vec<Int>) -> Vec<Int> {
+        let mut combined = Vec::with_capacity(x.len());
 
-    pub fn vector_multiply(&self, x: Vec<i128>, y: Vec<i128>) -> Vec<i128> {
-        let combined: Vec<i128> = x.iter()
-            .zip(y.iter())
-            .map(|(a, b)| self.multiplication(*a, *b))
-            .collect();
+        for i in 0..x.len() {
+            hax_lib::loop_invariant!(|i: usize| {
+                combined.len() == i
+                && i <= x.len()
+
+            });
+            hax_lib::assume!(x[i] < self.p);
+            hax_lib::assume!(y[i] < self.p);
+            combined.push(self.multiplication(x[i], y[i]));
+        }
+
         combined
     }
 
-    pub fn vector_add(&self, x: Vec<i128>, y: Vec<i128>) -> Vec<i128> {
-        let combined: Vec<i128> = x.iter()
-            .zip(y.iter())
-            .map(|(a, b)| self.addition(*a, *b))
-            .collect();
+    #[hax_lib::requires(x.len() > 0
+                        && self.p > 0.to_int()
+                        && x.len() == y.len()
+                        //&& hax_lib::forall(|i: usize| hax_lib::implies(i < y.len(), y[i] > 0.to_int() && y[i] < self.p))
+                        && check_less_than_vec(x, self.p)
+                        && check_less_than_vec(y, self.p))]
+    #[hax_lib::ensures(|result| result.len() == x.len())]
+    pub fn vector_add(&self, x: Vec<Int>, y: Vec<Int>) -> Vec<Int> {
+        let mut combined = Vec::with_capacity(x.len());
+
+        for i in 0..x.len() {
+            hax_lib::loop_invariant!(|i: usize| {
+                combined.len() == i
+                && i <= x.len()
+
+            });
+            hax_lib::assume!(x[i] < self.p);
+            hax_lib::assume!(y[i] < self.p);
+            combined.push(self.addition(x[i], y[i]));
+        }
         combined
     }
 
-    pub fn vector_scalar(&self, x: Vec<i128>, alpha: i128) -> Vec<i128> {
-        x.iter().map(|x| self.multiplication(*x, alpha)).collect()
+    #[hax_lib::requires(x.len() > 0
+                        && self.p > 0.to_int()
+                        //&& hax_lib::forall(|i: usize| hax_lib::implies(i < y.len(), y[i] > 0.to_int() && y[i] < self.p))
+                        && check_less_than_vec(x, self.p)
+                        && alpha < self.p)]
+    #[hax_lib::ensures(|result| result.len() == x.len())]
+    pub fn vector_scalar(&self, x: Vec<Int>, alpha: Int) -> Vec<Int> {
+        let mut combined = Vec::with_capacity(x.len());
+
+        for i in 0..x.len() {
+            hax_lib::loop_invariant!(|i: usize| {
+                combined.len() == i
+                && i <= x.len()
+
+            });
+            hax_lib::assume!(x[i] < self.p);
+            combined.push(self.multiplication(x[i], alpha));
+        }
+
+        combined
     }
 
-     */
 }
 
-
-
+#[hax_lib::include]
+#[hax_lib::requires(v.len() > 0)]
+fn check_less_than_vec(v: Vec<Int>, x: Int) -> bool {
+    for i in 0..v.len() {
+        if v[i] >= x {
+            return false;
+        }
+    }
+    //hax_lib::assert_prop!(hax_lib::forall(|i: usize| hax_lib::implies(i < v.len(), v[i] > 0.to_int() && v[i] < x)));
+    true
+}
 

@@ -1,13 +1,14 @@
 use crate::utils::*;
 use libcrux::drbg::Drbg;
+use hax_lib::{Int, ToInt};
 // a simulated party
 
-/*
+
 #[derive(Clone, Debug)]
 struct View {
-    secret: i128,
-    randomness: i128,
-    party_id: i128,
+    secret: Int,
+    randomness: Int,
+    party_id: Int,
     messages: Vec<Message>,
 }
 
@@ -18,32 +19,32 @@ Messages to be send to parties
  */
 #[derive(Clone, Debug)]
 struct Party {
-    secret: i128,
-    computed_secret: i128,
-    randomness: i128,
-    general_prime: i128,
-    party_id: i128,
+    secret: Int,
+    computed_secret: Int,
+    randomness: Int,
+    general_prime: Int,
+    party_id: Int,
 
     view: View
 }
 #[derive(Clone, Debug)]
 struct Message {
-    value: i128,
-    sender: i128
+    value: Int,
+    sender: Int
 }
 
-const FIELD: finite_field::Field = finite_field::Field {
-    p: 257
-};
+fn field() -> finite_field::Field {
+    finite_field::Field { p: 257.to_int()}
+}
 
 // main method for running simulation
 pub fn main() {
 
-    let secret = 30;
+    let secret = 30.to_int();
     // assert_eq!(secret % 5, 0);
 
     // creating five parties who each have a part of the secret
-    let parties = request_mpc_parties(secret, FIELD.p);
+    let parties = request_mpc_parties(secret, field().p);
     // println!("{:?}", parties);
     // performing mpc with set parties, should return a view for each party
     let res_parties = perform_mpc(parties);
@@ -60,10 +61,10 @@ pub fn main() {
 }
 
 // 5 parties with respective start states
-#[hax_lib::requires(secret < prime && secret > 0 && prime < i128::max_value())]
+#[hax_lib::requires(secret < prime && secret > 0.to_int())]
 #[hax_lib::ensures(|result| result.len() > 0)]
-fn request_mpc_parties(secret: i128, prime: i128) -> Vec<Party> {
-    hax_lib::assert!(math::modulo(secret,6) == 0);
+fn request_mpc_parties(secret: Int, prime: Int) -> Vec<Party> {
+    assert_eq!(secret.rem_euclid(6.to_int()), 0.to_int());
     let secrets = split_secret(secret);
     // has to be larger than secret
     let general_prime_p = prime;
@@ -75,15 +76,14 @@ fn request_mpc_parties(secret: i128, prime: i128) -> Vec<Party> {
     parties
 }
 // splitting secret
-#[hax_lib::requires(secret % 6 == 0)]
-fn split_secret(secret: i128) -> [i128; 6] {
+#[hax_lib::requires(secret.rem_euclid(6.to_int()) == 0.to_int())]
+fn split_secret(secret: Int) -> [Int; 6] {
 
-    [secret/6, secret/6,secret/6,secret/6,secret/6, secret/6]
+    [secret/6.to_int(), secret/6.to_int(),secret/6.to_int(),secret/6.to_int(),secret/6.to_int(), secret/6.to_int()]
 }
-// creation of party
-#[hax_lib::requires(secret_share < general_prime_p && general_prime_p < i128::max_value())]
-#[hax_lib::ensures(|result| result.randomness < general_prime_p)]
-fn create_party(secret_share: i128, general_prime_p: i128, party_id: i128) -> Party {
+
+#[hax_lib::exclude]
+fn generate_random_number() -> u8 {
     let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
         Ok(drbg) => drbg,
         Err(e) => panic!("{}", e)
@@ -94,14 +94,22 @@ fn create_party(secret_share: i128, general_prime_p: i128, party_id: i128) -> Pa
         Err(e) => panic!("{}", e)
     };
 
-    let random_num = u8::from_le_bytes(rand_bytes);
+    u8::from_le_bytes(rand_bytes)
+
+}
+// creation of party
+#[hax_lib::requires(secret_share < general_prime_p)]
+#[hax_lib::ensures(|result| result.randomness < general_prime_p)]
+fn create_party(secret_share: Int, general_prime_p: Int, party_id: Int) -> Party {
+
+    let random_num = generate_random_number();
 
     let party: Party = Party {secret: secret_share,
-        computed_secret: 0,
-        randomness: random_num as i128,
+        computed_secret: 0.to_int(),
+        randomness: random_num.to_int(),
         general_prime: general_prime_p,
         party_id,
-        view: View {secret: secret_share, randomness: random_num as i128, messages: vec![], party_id }
+        view: View {secret: secret_share, randomness: random_num.to_int(), messages: vec![], party_id }
     };
     party
 }
@@ -116,7 +124,7 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
 
     let first_messages = number_iter
         .map(|i| parties.iter()
-            .map(|party| generate_first_message(party, (i+1)))
+            .map(|party| generate_first_message(party, (i+1).to_int()))
             .collect::<Vec<_>>())
         .collect::<Vec<_>>();
 
@@ -144,11 +152,11 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
 }
 
 
-#[hax_lib::requires(message_receiver > 0)]
-#[hax_lib::ensures(|result| result.value == math::modulo((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime))]
-fn generate_first_message(x: &Party, message_receiver: i128) -> Message {
+#[hax_lib::requires(message_receiver > 0.to_int())]
+#[hax_lib::ensures(|result| result.value == ((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver)).rem_euclid(x.general_prime))]
+fn generate_first_message(x: &Party, message_receiver: Int) -> Message {
     let message = Message {
-        value: math::modulo((x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver), x.general_prime),
+        value: (x.secret + x.randomness * message_receiver + x.randomness * message_receiver * message_receiver).rem_euclid(x.general_prime),
         sender: x.party_id,
     };
 
@@ -165,17 +173,17 @@ fn generate_second_message(x: Party) -> Message {
     message
 }
 
-fn helper_for_number_sequence(number: Option<i32>) -> i128 {
+fn helper_for_number_sequence(number: Option<i32>) -> Int {
     let number_to_return = match number {
-        Some(id) => id as i128 + 1,
-        None =>  -1
+        Some(id) => (id + 1).to_int(),
+        None =>  -1.to_int()
     };
     number_to_return
 }
 
 fn sum_of_polynomials(party: Party, messages: Vec<Message>) -> Party {
     let sum_of_messages = messages.iter()
-        .fold(0, |acc, message| {math::modulo(acc + message.value, party.general_prime)});
+        .fold(0.to_int(), |acc: Int, message| {(acc + message.value).rem_euclid(party.general_prime)});
     Party { computed_secret: sum_of_messages,
         view: View {messages: messages, ..party.view},
         ..party
@@ -203,7 +211,7 @@ fn lagrange_interpolation(messages: Vec<Message>, party: Party) -> Party {
     let message2 = messages[1].clone();
     let message3 = messages[2].clone();
 
-    let secret = math::modulo(lambda1 * (message1.value) + lambda2 * (message2.value) + lambda3 * (message3.value), party.general_prime);
+    let secret = (lambda1 * (message1.value) + lambda2 * (message2.value) + lambda3 * (message3.value)).rem_euclid(party.general_prime);
 
     let mut new_messags = party.view.messages.clone();
     new_messags.extend(messages);
@@ -215,31 +223,31 @@ fn lagrange_interpolation(messages: Vec<Message>, party: Party) -> Party {
     }
 }
 
-fn lambda_i_of(message1: Message, message2: Message, message3: Message, prime: i128) -> i128 {
+fn lambda_i_of(message1: Message, message2: Message, message3: Message, prime: Int) -> Int {
     let x1 = message1.sender;
     let x2 = message2.sender;
     let x3 = message3.sender;
 
-    let numer = &x3 * &x2;
+    let numer = x3 * x2;
 
-    let denom = math::modulo((&x1 - &x3) * (&x1 - &x2), prime);
-    let denom_inv = FIELD.multiplicative_inverse(denom);
+    let denom = ((x1 - x3) * (x1 - x2)).rem_euclid(prime);
+    let denom_inv = field().multiplicative_inverse(denom);
     // let gcd = &denom.extended_gcd(prime);
     // let denom_inv = gcd.x.rem_euclid(prime);
 
-    math::modulo(numer * denom_inv, prime)
+    (numer * denom_inv).rem_euclid(prime)
 }
 
 
-fn check_consistent_view(view1: View, view2: View, n: usize, general_prime: i128) -> bool {
+fn check_consistent_view(view1: View, view2: View, n: usize, general_prime: Int) -> bool {
     let number_iter = n..n + n;
     let result = number_iter.fold(true, |acc, number| {
         view1.messages[number].sender == view2.messages[number].sender &&
             view1.messages[number].value == view2.messages[number].value && acc
     });
 
-    let party1_value = math::modulo(view1.secret + view1.randomness * view2.party_id + view1.randomness * view2.party_id * view2.party_id, general_prime);
-    let party2_value = math::modulo(view2.secret + view2.randomness * view1.party_id + view2.randomness * view1.party_id * view1.party_id,general_prime);
+    let party1_value = (view1.secret + view1.randomness * view2.party_id + view1.randomness * view2.party_id * view2.party_id).rem_euclid(general_prime);
+    let party2_value = (view2.secret + view2.randomness * view1.party_id + view2.randomness * view1.party_id * view1.party_id).rem_euclid(general_prime);
 
     let has_seen_message_from_party_1 = view2.messages.iter().fold(false, |acc, message| {
         acc || (message.sender == view1.party_id && message.value == party1_value)
@@ -252,19 +260,20 @@ fn check_consistent_view(view1: View, view2: View, n: usize, general_prime: i128
     result && has_seen_message_from_party_1 && has_seen_message_from_party_2
 }
 
-fn parties_get_right_secret(parties: Vec<Party>, secret: i128) -> bool{
+fn parties_get_right_secret(parties: Vec<Party>, secret: Int) -> bool{
     let result = parties.iter().fold(true, |acc, party| {party.computed_secret == secret && acc});
 
     result
 }
 
+/*
 fn update_secret(x: &Party, parties: Vec<Party>) -> Vec<Party> {
     let new_secret = parties.into_iter().map(|y| Party{secret: y.secret,
         computed_secret: y.computed_secret + x.secret,
         randomness: y.randomness,
         general_prime: y.general_prime,
         party_id: y.party_id,
-        received: y.received + 1
+        received: y.received + 1.to_int()
     }).collect::<Vec<_>>();
     new_secret
 }

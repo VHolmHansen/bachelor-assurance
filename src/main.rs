@@ -2,8 +2,9 @@ mod utils;
 mod mpc;
 mod lpzk;
 
-#[hax_lib::requires(true)]
+#[hax_lib::exclude]
 fn main() {
-    //mpc::main();
-    //lpzk::main()
+    mpc::main();
+    lpzk::main()
 }
+

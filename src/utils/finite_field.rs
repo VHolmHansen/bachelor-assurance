@@ -117,7 +117,9 @@ impl Field {
                         //&& hax_lib::forall(|i: usize| hax_lib::implies(i < y.len(), y[i] > 0.to_int() && y[i] < self.p))
                         && check_less_than_vec(x, self.p)
                         && alpha < self.p)]
-    #[hax_lib::ensures(|result| result.len() == x.len())]
+    #[hax_lib::ensures(|result| result.len() > 0
+                        && result.len() == x.len()
+                        && check_less_than_vec(result, self.p))]
     pub fn vector_scalar(&self, x: Vec<Int>, alpha: Int) -> Vec<Int> {
         let mut combined = Vec::with_capacity(x.len());
 
@@ -138,7 +140,7 @@ impl Field {
 
 #[hax_lib::include]
 #[hax_lib::requires(v.len() > 0)]
-fn check_less_than_vec(v: Vec<Int>, x: Int) -> bool {
+pub fn check_less_than_vec(v: Vec<Int>, x: Int) -> bool {
     for i in 0..v.len() {
         if v[i] >= x {
             return false;

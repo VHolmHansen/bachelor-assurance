@@ -39,16 +39,13 @@ impl Field {
 
     #[hax_lib::requires(x < self.p
                         && x > 0.to_int()
-                        && self.p > 0.to_int()
-                        && self.p < (i128::MAX / 2).to_int())]
+                        && self.p > 0.to_int())]
     #[hax_lib::ensures(|result| result < self.p)]
     // Burde vi have result * x == 1?
     pub fn multiplicative_inverse(&self, x: Int) -> Int {
 
         #[hax_lib::requires(a > 0.to_int()
-                    && a < (i128::MAX / 2).to_int()
-                    && b >= 0.to_int()
-                    && b < (i128::MAX / 2).to_int())]
+                            && b >= 0.to_int())]
         #[hax_lib::decreases(b)]
         #[hax_lib::ensures(|(gcd, x, y)| gcd > 0.to_int())]
         fn egcd(a: Int, b: Int) -> (Int, Int, Int) {

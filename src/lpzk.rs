@@ -8,11 +8,13 @@ struct Prover {
     b: Vec<Int>,
 }
 
+#[include]
 struct Verifier {
     alpha: Int,
     v: Vec<Int>,
 }
 
+#[include]
 fn field() -> finite_field::Field {
     finite_field::Field { p: 257.to_int()}
 }
@@ -37,6 +39,7 @@ pub fn main() {
 }
 
 //#[hax_lib::ensures(|result| result[2] - result[1] * result[0] == 0)]
+#[include]
 #[requires(x < field().p
                     && y < field().p
                     && z < field().p
@@ -44,7 +47,10 @@ pub fn main() {
                     && b1 < field().p
                     && b2 < field().p
                     && b3 < field().p
-                    && b4 < field().p)]
+                    && b3 >= 0.to_int()
+                    && b4 < field().p
+                    && b4 >= 0.to_int()
+                    )]
 #[ensures(|result| result.a.len() > 0 && result.b.len() > 0)]
 fn generate_prover(x: Int, y: Int, z: Int, b1: Int, b2: Int, b3: Int, b4: Int) -> Prover {
 
@@ -79,9 +85,19 @@ fn generate_verifier() -> Verifier {
     }
 }
 
-#[exclude]
+#[include]
+#[attributes]
 impl Verifier {
 
+    #[requires(self.v.len() >= 5
+                && self.v[0] < field().p
+                && self.v[1] < field().p
+                && self.v[2] < field().p
+                && self.v[3] < field().p
+                && self.v[4] < field().p
+                && self.v[3] >= 0.to_int()
+                && self.v[4] >= 0.to_int()
+                && self.alpha < field().p)]
     fn check_relation(&self) -> bool {
         let v_1 = self.v[0];
         let v_2 = self.v[1];
@@ -92,6 +108,7 @@ impl Verifier {
 
         let v_1v_2 = field().multiplication(v_1, v_2);
         let v_3alpha = field().multiplication(v_3, alpha);
+        hax_lib::assert!(v_3alpha >= 0.to_int());
         let v_3alpha_minus = field().additive_inverse(v_3alpha);
         let v_4_minus = field().additive_inverse(v_4);
         let v_5_minus = field().additive_inverse(v_5);
@@ -108,7 +125,11 @@ impl Verifier {
     }
 }
 
-#[exclude]
+#[include]
+#[requires(prover.a.len() > 0
+            && verifier.v.len() > 0
+            && prover.a.len() == verifier.v.len()
+            && verifier.alpha < field().p)]
 fn vole(prover: Prover, verifier: Verifier) -> Verifier {
     let left_vec = field().vector_scalar(prover.a, verifier.alpha);
     let vec = field().vector_add(left_vec, prover.b);

@@ -1,5 +1,5 @@
 use crate::utils::math;
-use hax_lib::Int;
+use hax_lib::{assume, Int};
 use hax_lib::int::*;
 
 #[hax_lib::include]
@@ -32,7 +32,8 @@ impl Field {
     #[hax_lib::requires(x < self.p
                         && y < self.p
                         && self.p > 0.to_int())]
-    #[hax_lib::ensures(|result| result == (x * y).rem_euclid(self.p))]
+    #[hax_lib::ensures(|result| result == (x * y).rem_euclid(self.p)
+                        && result < self.p)]
     pub fn multiplication(&self, x: Int, y: Int) -> Int {
         (x * y).rem_euclid(self.p)
     }
@@ -118,8 +119,7 @@ impl Field {
                         && check_less_than_vec(x, self.p)
                         && alpha < self.p)]
     #[hax_lib::ensures(|result| result.len() > 0
-                        && result.len() == x.len()
-                        && check_less_than_vec(result, self.p))]
+                        && result.len() == x.len())]
     pub fn vector_scalar(&self, x: Vec<Int>, alpha: Int) -> Vec<Int> {
         let mut combined = Vec::with_capacity(x.len());
 
@@ -127,10 +127,10 @@ impl Field {
             hax_lib::loop_invariant!(|i: usize| {
                 combined.len() == i
                 && i <= x.len()
-
             });
             hax_lib::assume!(x[i] < self.p);
             combined.push(self.multiplication(x[i], alpha));
+            hax_lib::assert!(combined[i] < self.p);
         }
 
         combined

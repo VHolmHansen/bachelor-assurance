@@ -14,7 +14,8 @@ impl Field {
     #[hax_lib::requires(x < self.p
                         && y < self.p
                         && self.p > 0.to_int())]
-    #[hax_lib::ensures(|result| result == (x + y).rem_euclid(self.p))]
+    #[hax_lib::ensures(|result| result == (x + y).rem_euclid(self.p)
+                        && result < self.p)]
     pub fn addition(&self, x: Int, y: Int) -> Int {
         (x + y).rem_euclid(self.p)
     }

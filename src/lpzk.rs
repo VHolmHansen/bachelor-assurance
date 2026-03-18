@@ -136,13 +136,16 @@ impl Verifier {
             && verifier.alpha < field().p
             && finite_field::check_less_than_vec(prover.a, field().p)
             && finite_field::check_less_than_vec(prover.b, field().p)
-            && finite_field::check_less_than_vec(verifier.v, field().p))]
+            && finite_field::check_less_than_vec(verifier.v, field().p)
+            )]
 #[ensures(|result| result.v.len() == prover.a.len() && result.alpha < field().p)]
 fn vole(prover: Prover, verifier: Verifier) -> Verifier {
     let left_vec = field().vector_scalar(prover.a, verifier.alpha);
 
-    hax_lib::assert!(left_vec.len() > 0 && check_less_than_vec(left_vec.clone(), field().p));
-    assert_eq!(left_vec.len(), prover.b.len());
+    hax_lib::assert!(finite_field::check_less_than_vec(left_vec.clone(), field().p));
+    hax_lib::assert!(left_vec.len() > 0);
+
+    hax_lib::assert!(left_vec.len() == prover.b.len());
     let vec = field().vector_add(left_vec, prover.b);
 
     Verifier {

@@ -1,10 +1,17 @@
 use crate::utils::math;
-use hax_lib::{assume, Int};
+use hax_lib::{assume, Int, ToProp};
 use hax_lib::int::*;
 
 #[hax_lib::include]
 pub struct Field {
     pub p: Int
+}
+
+#[hax_lib::attributes]
+#[hax_lib::requires(p > 0.to_int())]
+#[hax_lib::ensures(|result| result.p > 0.to_int())]
+pub fn new(p: Int) -> Field {
+    Field {p}
 }
 
 #[hax_lib::include]
@@ -69,10 +76,11 @@ impl Field {
 
     #[hax_lib::requires(x.len() > 0
                         && self.p > 0.to_int()
+                        && x.len() < 29999
                         && x.len() == y.len()
-                        //&& hax_lib::forall(|i: usize| hax_lib::implies(i < y.len(), y[i] > 0.to_int() && y[i] < self.p))
                         && check_less_than_vec(x, self.p)
-                        && check_less_than_vec(y, self.p))]
+                        && check_less_than_vec(y, self.p)
+                        )]
     #[hax_lib::ensures(|result| result.len() == x.len())]
     pub fn vector_multiply(&self, x: Vec<Int>, y: Vec<Int>) -> Vec<Int> {
         let mut combined = Vec::with_capacity(x.len());
@@ -94,9 +102,9 @@ impl Field {
     #[hax_lib::requires(x.len() > 0
                         && self.p > 0.to_int()
                         && x.len() == y.len()
-                        //&& hax_lib::forall(|i: usize| hax_lib::implies(i < y.len(), y[i] > 0.to_int() && y[i] < self.p))
                         && check_less_than_vec(x, self.p)
-                        && check_less_than_vec(y, self.p))]
+                        && check_less_than_vec(y, self.p)
+                        )]
     #[hax_lib::ensures(|result| result.len() == x.len())]
     pub fn vector_add(&self, x: Vec<Int>, y: Vec<Int>) -> Vec<Int> {
         let mut combined = Vec::with_capacity(x.len());
@@ -116,7 +124,6 @@ impl Field {
 
     #[hax_lib::requires(x.len() > 0
                         && self.p > 0.to_int()
-                        //&& hax_lib::forall(|i: usize| hax_lib::implies(i < y.len(), y[i] > 0.to_int() && y[i] < self.p))
                         && check_less_than_vec(x, self.p)
                         && alpha < self.p)]
     #[hax_lib::ensures(|result| result.len() > 0
@@ -140,14 +147,16 @@ impl Field {
 }
 
 #[hax_lib::include]
-#[hax_lib::requires(v.len() > 0)]
+#[hax_lib::requires(v.len() > 0
+                    && x > 0.to_int())]
+#[hax_lib::ensures(|result| (0..v.len()).fold(true, |acc, i| {
+                            hax_lib::assume!(i < v.len());
+                            acc && v[i] < x})
+)]
 pub fn check_less_than_vec(v: Vec<Int>, x: Int) -> bool {
-    for i in 0..v.len() {
-        if v[i] >= x {
-            return false;
-        }
-    }
-    //hax_lib::assert_prop!(hax_lib::forall(|i: usize| hax_lib::implies(i < v.len(), v[i] > 0.to_int() && v[i] < x)));
-    true
+    (0..v.len()).fold(true, |acc, i| {
+        hax_lib::assume!(i < v.len());
+        acc && v[i] < x})
 }
+
 

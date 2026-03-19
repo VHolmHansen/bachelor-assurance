@@ -148,6 +148,7 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
     // let resulting_parties = parties.iter().fold(parties.clone(), |acc, party| {println!("{:?}", acc); update_secret(party, acc)});
     // resulting_parties
 
+    /*
     let first_messages: Vec<Vec<Message>> = array::from_fn::<Vec<Message>, 6, _>(|i: usize| {
         assume!(i < parties.len());
         #[hax_lib::requires(i < parties.len())]
@@ -163,8 +164,27 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
         inner_messages(parties.clone(), i)
 
     }).to_vec();
+
+     */
+
+    let mut first_messages: Vec<Vec<Message>> = vec![];
+    for i in 0..6 {
+        let mut inner: Vec<Message> = vec![];
+        for j in 0..6 {
+            /*hax_lib::loop_invariant!(|j: usize| {
+
+            });
+             */
+
+            inner.push(generate_first_message(&parties[j].clone(), (i+1).to_int()));
+        }
+        first_messages.push(inner);
+
+    }
+
     assume!(first_messages.len() == parties.len());
     /*
+
     let first_messages = (0..6).fold(
         vec![], |outer_acc, i| {
             let inner = parties.clone().into_iter().fold(
@@ -181,21 +201,50 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
      */
 
     // new parties have calculated R_partyID
-    let parties_containing_first_messages = (0..6).fold(vec![], |mut acc, i| {
-        acc.push(sum_of_polynomials(parties[i].clone(), first_messages[i].clone())); acc
+    let mut parties_containing_first_messages = vec![];
+    for i in 0..6 {
+        parties_containing_first_messages.push(sum_of_polynomials(parties[i].clone(), first_messages[i].clone()));
+    }
+
+    /*
+    let parties_containing_first_messages = (0..6).fold(Vec::new(), |acc, i| {
+        let mut temp: Vec<Party> = vec![];
+        temp.push(sum_of_polynomials(parties[i].clone(), first_messages[i].clone())); temp
     });
 
+     */
+
+
     // need messages (partyID, R_partyID)
-    let second_messages = parties_containing_first_messages.clone().into_iter().fold(vec![], |mut acc, party| {
+    let mut second_messages: Vec<Message> = vec![];
+
+    for i in 0..6 {
+        second_messages.push(generate_second_message(parties_containing_first_messages[i].clone()))
+    };
+
+
+    /*
+    let second_messages = parties_containing_first_messages.clone().into_iter().fold(Vec::new(), |mut acc, party| {
         acc.push(generate_second_message(party));
         acc
     });
 
+     */
     // new parties with MPC been finished
-    let final_parties = parties_containing_first_messages.into_iter().fold(vec![], |mut acc, party| {
+
+    let mut final_parties: Vec<Party> = vec![];
+    for i in 0..6 {
+        final_parties.push(lagrange_interpolation(second_messages.clone(), parties_containing_first_messages[i].clone()));
+    }
+
+    /*
+    let final_parties = parties_containing_first_messages.into_iter().fold(Vec::new(), |mut acc, party| {
+        hax_lib::assume!(second_messages.len() > 2);
         acc.push(lagrange_interpolation(second_messages.clone(), party));
         acc
     });
+
+     */
 
     final_parties
 }
@@ -253,7 +302,7 @@ fn sum_of_polynomials(party: Party, messages: Vec<Message>) -> Party {
     }
 }
 
-#[hax_lib::requires(messages.len() > 0
+#[hax_lib::requires(messages.len() > 2
                     && field().p > 0.to_int()
                     )]
 #[hax_lib::ensures(|result| result.computed_secret < field().p
@@ -298,7 +347,7 @@ fn lagrange_interpolation(messages: Vec<Message>, party: Party) -> Party {
         tmp
     });
 
-
+    hax_lib::assert!(new_messages.len() > 0);
     Party {
         computed_secret: secret,
         view: View {messages: new_messages, ..party.view},

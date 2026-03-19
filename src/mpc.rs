@@ -42,6 +42,8 @@ fn field() -> finite_field::Field {
     finite_field::new(257.to_int())
 }
 
+// const FIELD: finite_field::Field  = field();
+
 // main method for running simulation
 
 pub fn main() {
@@ -146,14 +148,37 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
     // let resulting_parties = parties.iter().fold(parties.clone(), |acc, party| {println!("{:?}", acc); update_secret(party, acc)});
     // resulting_parties
 
+    let first_messages: Vec<Vec<Message>> = array::from_fn::<Vec<Message>, 6, _>(|i: usize| {
+        assume!(i < parties.len());
+        #[hax_lib::requires(i < parties.len())]
+        #[hax_lib::ensures(|result|
+                            result.len() > 0
+                            && result.len() == parties.len()
+                            )]
+        fn inner_messages (parties: Vec<Party>, i: usize) -> Vec<Message> { array::from_fn::<Message, 6, _>(|j: usize| {
+            assume!(j < parties.len());
+            generate_first_message(&parties[j].clone(), (i+1).to_int())
+        }).to_vec() };
+
+        inner_messages(parties.clone(), i)
+
+    }).to_vec();
+    assume!(first_messages.len() == parties.len());
+    /*
     let first_messages = (0..6).fold(
-        vec![], |mut outer_acc, i| {
-            let inner = parties.clone().into_iter().fold(vec![], |mut inner_acc, party| {
-                inner_acc.push(generate_first_message(&party, (i+1).to_int()));
-            inner_acc });
-            outer_acc.push(inner);
-        outer_acc
+        vec![], |outer_acc, i| {
+            let inner = parties.clone().into_iter().fold(
+                vec![], |inner_acc, party| {
+                    let mut acc = inner_acc;
+                    acc.push(generate_first_message(&party, (i+1).to_int()));
+                    acc
+                });
+            let mut acc = outer_acc;
+            acc.push(inner);
+            acc
         });
+
+     */
 
     // new parties have calculated R_partyID
     let parties_containing_first_messages = (0..6).fold(vec![], |mut acc, i| {
@@ -178,6 +203,8 @@ fn perform_mpc(parties: Vec<Party>) -> Vec<Party>{
 
 #[hax_lib::requires(message_receiver > 0.to_int()
                     && x.party_id > 0.to_int()
+                    && message_receiver < field().p
+                    && x.party_id < field().p
                     //&& field().p > 0.to_int()
                     )]
 #[hax_lib::ensures(|result| result.value < field().p
@@ -285,6 +312,8 @@ fn lagrange_interpolation(messages: Vec<Message>, party: Party) -> Party {
                     && message1.sender < field().p
                     && message2.sender < field().p
                     && message3.sender < field().p
+                    && message1.sender != message2.sender
+                    && message1.sender != message3.sender
                     )]
 #[hax_lib::ensures(|result| result < field().p)]
 fn lambda_i_of(message1: Message, message2: Message, message3: Message) -> Int {
@@ -297,18 +326,19 @@ fn lambda_i_of(message1: Message, message2: Message, message3: Message) -> Int {
     let x1 = message1.sender;
     let x2 = message2.sender;
     let x3 = message3.sender;
+    let f = field();
 
-    let numer = field().multiplication(x3, x2);
+    let numer = f.multiplication(x3, x2);
     //let numer = x3 * x2;
-    hax_lib::assume!(numer < field().p);
-    let denom= field().multiplication(field().addition(x1, field().additive_inverse(x3)), field().addition(x1, field().additive_inverse(x2)));
+    hax_lib::assume!(numer < f.p);
+    let denom= f.multiplication(f.addition(x1, f.additive_inverse(x3)), f.addition(x1, f.additive_inverse(x2)));
     //let denom = ((x1 - x3) * (x1 - x2)).rem_euclid(field().p);
-    hax_lib::assume!(denom < field().p);
-    let denom_inv = field().multiplicative_inverse(denom);
-    hax_lib::assume!(denom_inv < field().p);
+    hax_lib::assume!(denom < f.p && denom > 0.to_int());
+    let denom_inv = f.multiplicative_inverse(denom);
+    hax_lib::assume!(denom_inv < f.p);
 
     //(numer * denom_inv).rem_euclid(field().p)
-    field().multiplication(numer, denom_inv)
+    f.multiplication(numer, denom_inv)
 }
 
 #[hax_lib::requires(view1.messages.len() > 0

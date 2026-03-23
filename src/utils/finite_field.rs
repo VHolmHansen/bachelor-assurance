@@ -1,3 +1,4 @@
+use std::ops::Add;
 use crate::utils::math;
 use hax_lib::{assume, Int, ToProp};
 use hax_lib::int::*;
@@ -7,12 +8,19 @@ pub struct Field {
     pub p: Int
 }
 
+pub type Matrix = Vec<Vec<Int>>;
+
+pub struct MatrixStruct {
+    pub field: Field
+}
+
 #[hax_lib::attributes]
 #[hax_lib::requires(p > 0.to_int())]
 #[hax_lib::ensures(|result| result.p > 0.to_int())]
 pub fn new(p: Int) -> Field {
     Field {p}
 }
+
 
 #[hax_lib::include]
 #[hax_lib::attributes]
@@ -41,7 +49,8 @@ impl Field {
                         && y < self.p
                         && self.p > 0.to_int())]
     #[hax_lib::ensures(|result| result == (x * y).rem_euclid(self.p)
-                        && result < self.p)]
+                        && result < self.p
+                        )]
     pub fn multiplication(&self, x: Int, y: Int) -> Int {
         (x * y).rem_euclid(self.p)
     }
@@ -143,7 +152,52 @@ impl Field {
 
         combined
     }
+}
 
+impl MatrixStruct {
+    pub fn matrix_addition(&self, a: Matrix, b: Matrix) -> Matrix {
+        let rows = a.len();
+        let columns = b[0].len();
+        let k = b.len();
+
+        let mut res: Matrix = vec![vec![0.to_int(); columns]; rows];
+
+        for i in 0..rows {
+            for j in 0..columns {
+                res[i][j] = self.field.addition(a[i][j], b[j][k]);
+            }
+        }
+
+        res
+    }
+
+    pub fn matrix_multiplication(&self, a: Matrix, b: Matrix) -> Matrix {
+        let rows = a.len();
+        let columns = b[0].len();
+        let k = b.len();
+
+        let mut res: Matrix = vec![vec![0.to_int(); columns]; rows];
+
+        for i in 0..rows {
+            for j in 0..columns {
+                for k in 0..k {
+                    res[i][j] = self.field.addition(res[i][j], (self.field.multiplication(a[i][k], b[k][j])));
+                }
+            }
+        }
+
+        res
+    }
+
+    pub fn matrix_modulo(&self, input: Matrix) -> Matrix {
+        let mut m = input.clone();
+        for i in 0..input.len() {
+            for j in 0..input[i].len() {
+                m[i][j] = input[i][j].rem_euclid(self.field.p);
+            }
+        }
+        m
+    }
 }
 
 #[hax_lib::include]
@@ -158,5 +212,7 @@ pub fn check_less_than_vec(v: Vec<Int>, x: Int) -> bool {
         hax_lib::assume!(i < v.len());
         acc && v[i] < x})
 }
+
+
 
 

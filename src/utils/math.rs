@@ -1,3 +1,5 @@
+use hax_lib::{Int, ToInt};
+
 /*
 #[hax_lib::include]
 #[hax_lib::requires(y > 0)]
@@ -44,3 +46,15 @@ pub fn multiplication(x: i128, y: i128) -> i128 {
     x * y
 }
 */
+
+pub fn convert_byte_array_to_int(bytes: &[u8]) -> Int {
+    let mut result = 0.to_int();
+    let mut multiplier = 1.to_int();
+
+    for i in 0..bytes.len() {
+        result = result + (bytes[i] as usize).to_int() * multiplier;
+        multiplier = multiplier * 256.to_int();
+    }
+
+    result
+}

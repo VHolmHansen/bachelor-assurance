@@ -1,8 +1,7 @@
 use hax_lib::{Int, ToInt};
 use libcrux::drbg::Drbg;
 use crate::utils::finite_field::Matrix;
-
-
+use crate::utils::math;
 
 fn main() {
     let l = 10; // dimension m
@@ -27,13 +26,14 @@ fn generate_random_matrix(m: usize, n: usize) -> Matrix {
     for i in 0..m {
         for j in 0..n {
             let mut rand_bytes = [0u8; 16];
+
             match rand_gen.generate(&mut rand_bytes) {
                 Ok(_) => (),
                 Err(e) => panic!("{}", e)
             };
 
-            //let rand_num = 
-            //result_matrix[i][j] = rand_num;
+            let rand_num = math::convert_byte_array_to_int(&rand_bytes);
+            result_matrix[i][j] = rand_num;
         }
     }
 

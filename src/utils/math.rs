@@ -1,4 +1,4 @@
-use hax_lib::{Int, ToInt};
+use hax_lib::{assume, loop_invariant, Int, ToInt};
 
 /*
 #[hax_lib::include]
@@ -57,4 +57,59 @@ pub fn convert_byte_array_to_int(bytes: &[u8]) -> Int {
     }
 
     result
+}
+
+#[hax_lib::requires(vec3.len() <= usize::MAX
+                    && vec3.len() > 0
+                    && vec2.len() <= usize::MAX - vec3.len()
+                    && vec2.len() >= 0
+)]
+#[hax_lib::ensures(|result| result.len() > 0
+                    && result.len() > vec2.len()
+                    && result.len() == vec2.len() + vec3.len()
+)]
+pub fn push_on_vec<T: Clone>(vec2: Vec<T>, vec3: Vec<T>) -> Vec<T> {
+    let mut vec1 = vec2.clone();
+    /*
+    assume!(vec1.len() <= usize::MAX - 1);
+    assume!(vec2.len() > 0);
+
+    if vec2.len() > 0 {
+    for i in 0..vec2.len() {
+        loop_invariant!(|i: usize| {
+            i <= vec2.len()
+            && vec1.len() == i
+        });
+        let old_len = vec1.len();
+        assume!(i < vec2.len() && vec1.len() < usize::MAX - 1);
+        vec1.push(vec2[i].clone());
+        assert!(old_len <= usize::MAX - 1);
+        assert!(vec1.len() == old_len + 1);
+        assert!(old_len == i);
+        assert!(vec1.len() == (i + 1));
+        assert!(vec1.len() <= usize::MAX);
+    }}
+
+     */
+
+
+    for i in 0..vec3.len() {
+        loop_invariant!(|i: usize| {
+            i <= vec3.len()
+            && vec1.len() == vec2.clone().len() + i
+        });
+        let old_len = vec1.len();
+
+        vec1.insert(vec2.len() + i, vec3[i].clone());
+        //vec1.push(vec3[i].clone());
+        assert!(vec2.len() <= usize::MAX - (i + 1));
+        assert!(old_len <= usize::MAX - 1);
+        //assert!(vec1.len() <= usize::MAX - (vec2.len() + i + 1));
+        assert!(vec1.len() == old_len + 1);
+        assert!(old_len == vec2.clone().len() + i);
+        assert!(vec1.len() == vec2.len() + (i + 1));
+    }
+
+    assume!(vec1.len() <= usize::MAX && vec1.len() > 0 && vec1.len() == vec2.len() + vec3.len());
+    vec1
 }

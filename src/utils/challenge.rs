@@ -15,8 +15,8 @@ fn get_challenge() -> Int {
 
 }
 
-fn generate_random_matrix(m: usize, n: usize) -> Matrix {
-    let mut result_matrix: Matrix = vec![vec![0.to_int(); n]; m];
+fn generate_random_matrix(m: usize, n: usize) -> Matrix<Int> {
+    let mut result_matrix: Matrix<Int> = vec![vec![0.to_int(); n]; m];
 
     let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
         Ok(drbg) => drbg,

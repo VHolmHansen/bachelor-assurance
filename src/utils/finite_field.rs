@@ -8,7 +8,7 @@ pub struct Field {
     pub p: Int
 }
 
-pub type Matrix = Vec<Vec<Int>>;
+pub type Matrix<T> = Vec<Vec<T>>;
 
 pub struct MatrixStruct {
     pub field: Field
@@ -17,7 +17,7 @@ pub struct MatrixStruct {
 #[hax_lib::attributes]
 #[hax_lib::requires(p > 0.to_int())]
 #[hax_lib::ensures(|result| result.p > 0.to_int())]
-pub fn new(p: Int) -> Field {
+pub const fn new(p: Int) -> Field {
     Field {p}
 }
 
@@ -155,12 +155,12 @@ impl Field {
 }
 
 impl MatrixStruct {
-    pub fn matrix_addition(&self, a: Matrix, b: Matrix) -> Matrix {
+    pub fn matrix_addition(&self, a: Matrix<Int>, b: Matrix<Int>) -> Matrix<Int> {
         let rows = a.len();
         let columns = b[0].len();
         let k = b.len();
 
-        let mut res: Matrix = vec![vec![0.to_int(); columns]; rows];
+        let mut res: Matrix<Int> = vec![vec![0.to_int(); columns]; rows];
 
         for i in 0..rows {
             for j in 0..columns {
@@ -171,12 +171,12 @@ impl MatrixStruct {
         res
     }
 
-    pub fn matrix_multiplication(&self, a: Matrix, b: Matrix) -> Matrix {
+    pub fn matrix_multiplication(&self, a: Matrix<Int>, b: Matrix<Int>) -> Matrix<Int> {
         let rows = a.len();
         let columns = b[0].len();
         let k = b.len();
 
-        let mut res: Matrix = vec![vec![0.to_int(); columns]; rows];
+        let mut res: Matrix<Int> = vec![vec![0.to_int(); columns]; rows];
 
         for i in 0..rows {
             for j in 0..columns {
@@ -189,7 +189,7 @@ impl MatrixStruct {
         res
     }
 
-    pub fn matrix_modulo(&self, input: Matrix) -> Matrix {
+    pub fn matrix_modulo(&self, input: Matrix<Int>) -> Matrix<Int> {
         let mut m = input.clone();
         for i in 0..input.len() {
             for j in 0..input[i].len() {

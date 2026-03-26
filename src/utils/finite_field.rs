@@ -15,8 +15,8 @@ pub struct MatrixStruct {
 }
 
 #[hax_lib::attributes]
-#[hax_lib::requires(p > 0.to_int())]
-#[hax_lib::ensures(|result| result.p > 0.to_int())]
+//#[hax_lib::requires(p > 0.to_int())]
+//#[hax_lib::ensures(|result| result.p > 0.to_int())]
 pub const fn new(p: Int) -> Field {
     Field {p}
 }

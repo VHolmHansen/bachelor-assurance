@@ -1,0 +1,222 @@
+
+#[cfg(test)]
+mod tests {
+    use Bachelor_Assurance::utils::aes;
+    use Bachelor_Assurance::utils::aes::{gf2_affine_transform, state_to_matrix, State};
+    use Bachelor_Assurance::utils::aes::Word;
+    use Bachelor_Assurance::utils::finite_field::Matrix;
+
+    #[test]
+    fn test_encrypt() {
+
+        let key = [
+            0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
+        ];
+
+        let plaintext: [[u8; 4]; 4] = [
+            [0x32, 0x43, 0xf6, 0xa8],
+            [0x88, 0x5a, 0x30, 0x8d],
+            [0x31, 0x31, 0x98, 0xa2],
+            [0xe0, 0x37, 0x07, 0x34],
+        ];
+
+        let expected: [[u8; 4]; 4] = [
+            [0x39, 0x25, 0x84, 0x1d],
+            [0x02, 0xdc, 0x09, 0xfb],
+            [0xdc, 0x11, 0x85, 0x97],
+            [0x19, 0x6a, 0x0b, 0x32],
+        ];
+
+        let key_mark = aes::key_expansion(key);
+
+
+
+        assert_eq!(aes::encrypt(plaintext, key_mark), expected);
+    }
+
+    #[test]
+    fn test_add_round_key() {
+        let mut plaintext: State = [[50, 67, 246, 168], [136, 90, 48, 141],
+            [49, 49, 152, 162], [224, 55, 7, 52]];
+
+        let key: Vec<Word> = vec![[43, 126, 21, 22], [40, 174, 210, 166],
+                                       [171, 247, 21, 136], [9, 207, 79, 60]];
+
+        let expected: State = [[25, 61, 227, 190], [160, 244, 226, 43],
+            [154, 198, 141, 42], [233, 248, 72, 8]];
+
+        aes::add_round_key(&mut plaintext, key);
+
+        assert_eq!(plaintext, expected);
+    }
+
+    #[test]
+    fn test_add_round_key_two_props() {
+        let plaintext1: State = [[50, 67, 246, 168], [136, 90, 48, 141],
+            [49, 49, 152, 162], [224, 55, 7, 52]];
+
+        let mut plaintext2: State = [[50, 67, 246, 168], [136, 90, 48, 141],
+            [49, 49, 152, 162], [224, 55, 7, 52]];
+
+        let key: Vec<Word> = vec![[43, 126, 21, 22], [40, 174, 210, 166],
+                                       [171, 247, 21, 136], [9, 207, 79, 60]];
+
+        aes::add_round_key(&mut plaintext2, key.clone());
+        aes::add_round_key(&mut plaintext2, key);
+        assert_eq!(plaintext2, plaintext1);
+
+        let zero_key: Vec<Word> = vec![[0u8; 4]; 4];
+        aes::add_round_key(&mut plaintext2, zero_key);
+        assert_eq!(plaintext2, plaintext1);
+
+    }
+
+   #[test]
+    fn test_key_expansion() {
+        let key = [43, 126, 21, 22, 40, 174, 210, 166, 171, 247, 21, 136, 9, 207, 79, 60];
+
+        let expected: Vec<Word> = vec![[43,  126, 21,  22], [40,  174, 210, 166], [171, 247, 21,  136], [9,   207, 79,  60],
+            [160, 250, 254, 23], [136, 84,  44,  177], [35,  163, 57,  57], [42,  108, 118, 5], [242, 194, 149, 242],
+            [122, 150, 185, 67], [89,  53,  128, 122], [115, 89,  246, 127], [61,  128, 71,  125],
+            [71,  22,  254, 62], [30,  35,  126, 68], [109, 122, 136, 59], [239, 68,  165, 65], [168, 82,  91,  127],
+            [182, 113, 37,  59], [219, 11,  173, 0], [212, 209, 198, 248]];
+
+       let result = aes::key_expansion(key)[0..21].to_vec();
+
+       println!("result: {:?}", result);
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_gf2_affine_transformation() {
+
+        let bytes: [u8; 6] = [0, 42, 69, 91, 128, 255];
+
+        let expected: [u8; 6] = [99, 70, 199, 140, 236, 156];
+
+        let mut result = vec![];
+        for b in bytes.iter() {
+            result.push(aes::gf2_affine_transform(*b))
+        }
+
+        let x = gf2_affine_transform(42 ^ 69);
+        let y = gf2_affine_transform(42) ^ gf2_affine_transform(69) ^ 0x63;
+
+        println!("test_gf28_inverse result: {:?}", result);
+        assert_eq!(x, y);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_gf28_matrix_multiplication_identity() {
+        let A: Matrix<u8> = vec![vec![1, 0, 0, 0],
+                                 vec![0, 1, 0, 0],
+                                 vec![0, 0, 1, 0],
+                                 vec![0, 0, 0, 1]];
+
+        let B: State = [[2, 3, 1, 1],
+            [1, 2, 3, 1],
+            [1, 1, 2, 3],
+            [3, 1, 1, 2]];
+
+        let expected: Matrix<u8> = vec![vec![2, 3, 1, 1],
+                                        vec![1, 2, 3, 1],
+                                        vec![1, 1, 2, 3],
+                                        vec![3, 1, 1, 2]];
+
+        assert_eq!(aes::gf28_matrix_multiplication(A, state_to_matrix(B)), expected);
+
+    }
+
+    #[test]
+    fn test_gf28_matrix_multiplication() {
+        /*
+        let A: Matrix<u8> = vec![vec![87,  131, 1,   0  ],
+                                 vec![2,   87,  131, 1  ],
+                                 vec![1,   2,   87,  131],
+                                 vec![131, 1,   2,   87 ]];
+        */
+        let B: State = [[19,  69,  0,   1  ],
+                        [1,   19,  69,  0  ],
+                        [0,   1,   19,  69 ],
+                        [69,  0,   1,   19 ]];
+        /*
+        let expected: Matrix<u8> = vec![vec![125, 108, 73,  122],
+                                        vec![122, 125, 108, 73 ],
+                                        vec![73,  122, 125, 108],
+                                        vec![108, 73,  122, 125]];
+
+         */
+
+        let A: Matrix<u8> = vec![vec![1, 2, 3, 4],vec![5, 6, 7, 8]];
+
+        let expected: Matrix<u8> = vec![vec![30, 100, 195, 134], vec![67, 39, 4, 109]];
+
+        assert_eq!(aes::gf28_matrix_multiplication(A, aes::state_to_matrix(B)), expected);
+
+    }
+
+    #[test]
+    fn test_gf28_multiply() {
+        let a: [u8; 5] = [69, 0x57, 1, 0, 42];
+        let b: [u8; 5] = [87, 0x04, 1, 0, 3];
+        let mut res = vec![];
+
+        for i in 0..a.len() {
+            res.push(aes::gf28_multiply(a[i], b[i]));
+        }
+
+        let expected: [u8; 5] = [12, 0x47, 1, 0, 126];
+        assert_eq!(aes::gf28_multiply(0x57, 0x05), 0x10);
+        assert_eq!(res, expected);
+    }
+
+    #[test]
+    fn test_shift_rows() {
+        let mut state: State = [[19,  69,  0,   1  ],
+            [1,   19,  69,  0  ],
+            [0,   1,   19,  69 ],
+            [69,  0,   1,   19 ]];
+
+        let expected: State = [[19, 69, 0, 1],
+                                [19, 69, 0, 1],
+                                [19, 69, 0, 1],
+                                [19, 69, 0, 1]];
+        aes::shift_rows(&mut state);
+
+        assert_eq!(state, expected);
+    }
+
+    #[test]
+    fn test_mix_columns() {
+        let mut state: State = [[19,  69,  0,   1  ],
+                                [1,   19,  69,  0  ],
+                                [0,   1,   19,  69 ],
+                                [69,  0,   1,   19 ]];
+        for c in 0..4 {
+            println!(
+                "col {} = {:?}",
+                c,
+                [state[0][c], state[1][c], state[2][c], state[3][c]]
+            );
+        }
+        println!("{:?}", aes::gf28_multiply(2, 200));
+
+        let c = vec![vec![2, 3, 1, 1],
+                                    vec![1, 2, 3, 1],
+                                    vec![1, 1, 2, 3],
+                                    vec![3, 1, 1, 2]];
+
+        let expected: State = [[19, 69, 0, 1],
+                                [19, 69, 0, 1],
+                                [19, 69, 0, 1],
+                                [19, 69, 0, 1]];
+        aes::mix_columns(&mut state);
+        println!("res00: {:?}", aes::gf28_multiply(19, 2) ^
+            aes::gf28_multiply(3, 1) ^
+            aes::gf28_multiply(1, 0) ^
+            aes::gf28_multiply(1, 69));
+        assert_eq!(state, expected);
+    }
+}

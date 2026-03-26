@@ -6,8 +6,8 @@ use libcrux::drbg::{Drbg, RngCore};
 use crate::utils::{math, finite_field};
 use crate::utils::finite_field::{Field, Matrix};
 
-type Word = [u8; 4];
-type State = [[u8; nst]; nk];
+pub type Word = [u8; 4];
+pub type State = [[u8; nst]; nk];
 
 const nk: usize = 4;
 const nst: usize = 4;
@@ -36,6 +36,27 @@ pub fn main(field: Field) {
 }
 
 #[hax_lib::exclude]
+pub fn encrypt(state: State, key: Vec<Word>) -> State {
+    let mut res_state = state;
+    add_round_key(&mut res_state, key[0..nst].to_vec());
+    println!("state_matrix: {:?}", res_state);
+
+    //4-8
+    for r in 1..R {
+        sub_bytes(&mut res_state);
+        shift_rows(&mut res_state);
+        mix_columns(&mut res_state);
+        add_round_key(&mut res_state, key[(nst * r)..(nst*(r+1))].to_vec());
+    }
+
+    sub_bytes(&mut res_state);
+    shift_rows(&mut res_state);
+    add_round_key(&mut res_state, key[nst*(R)..nst*(R+1)].to_vec()); //replace R where R = nk*11 as temp
+
+    res_state
+}
+
+#[hax_lib::exclude]
 pub fn key_expansion(key: [u8; 16]) -> Vec<Word> {
     let w= key.chunks(4).collect::<Vec<_>>();
     let new_w: Vec<Word> = w.into_iter().map(|e| {e.try_into().unwrap()}).collect();
@@ -47,8 +68,9 @@ pub fn key_expansion(key: [u8; 16]) -> Vec<Word> {
     for i in nk..44 {
         let mut temp = result_key[i-1];
         if i.rem_euclid(nk) == 0 {
-            let xor_temp = sub_word(rot_word(temp))[0] ^ rcon[i/nk - 1] ;
-            temp = [xor_temp, 0x00, 0x00, 0x00]
+            let mut rotated = sub_word(rot_word(temp));
+            rotated[0] ^= rcon[i/nk-1];
+            temp = rotated;
         };
         if nk > 6 && i.rem_euclid(nk) == 4 {
             temp = sub_word(temp);
@@ -62,8 +84,6 @@ pub fn key_expansion(key: [u8; 16]) -> Vec<Word> {
 
     println!("resultkey {:?}", result_key);
     result_key
-
-
 }
 
 #[hax_lib::exclude]

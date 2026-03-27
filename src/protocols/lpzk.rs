@@ -59,7 +59,7 @@ fn generate_prover(x: Int, y: Int, z: Int, b1: Int, b2: Int, b3: Int, b4: Int) -
     let yb1 = field().multiplication(y, b1);
     let xb2yb1 = field().addition(xb2, yb1);
     let inverseb3 = field().additive_inverse(b3);
-
+    
     let b1b2 = field().multiplication(b1, b2);
     let inverseb4 = field().additive_inverse(b4);
 

@@ -2,13 +2,14 @@ use std::ops::Add;
 use crate::utils::math;
 use hax_lib::{assume, Int, ToProp};
 use hax_lib::int::*;
+use crate::utils::types::Matrix;
 
 #[hax_lib::include]
 pub struct Field {
     pub p: Int
 }
 
-pub type Matrix<T> = Vec<Vec<T>>;
+
 
 pub struct MatrixStruct {
     pub field: Field

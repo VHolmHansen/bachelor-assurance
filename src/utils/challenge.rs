@@ -1,6 +1,6 @@
 use hax_lib::{Int, ToInt};
 use libcrux::drbg::Drbg;
-use crate::utils::finite_field::Matrix;
+use crate::utils::types::Matrix;
 use crate::utils::math;
 
 fn main() {

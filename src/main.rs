@@ -1,8 +1,8 @@
 use hax_lib::ToInt;
-use crate::utils::{aes, finite_field};
+use crate::utils::{finite_field};
+use crate::protocols::aes;
 mod utils;
-mod mpc;
-mod lpzk;
+mod protocols;
 mod verifier;
 mod prover;
 

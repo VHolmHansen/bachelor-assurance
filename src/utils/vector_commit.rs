@@ -42,8 +42,13 @@ fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[u8; 
     let decom = (k, coms);
     (h, decom, sds)
 }
-//
-fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), index: i128){
-
+// the indexing structure, needs to be some kind of bytes
+// the decom, is what is returned by the vec_commit function
+fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), index: u32, d: u32){
+    let j_star = index;
+    let k = decom.0;
+    let coms = decom.1;
+    let mut a = 0;
+    
 }
 

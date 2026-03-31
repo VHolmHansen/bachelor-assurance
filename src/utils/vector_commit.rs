@@ -42,7 +42,7 @@ fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[u8; 
     let decom = (k, coms);
     (h, decom, sds)
 }
-
+//
 fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), index: i128){
 
 }

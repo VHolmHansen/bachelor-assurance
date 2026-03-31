@@ -7,3 +7,6 @@ mod faest_zk;
 pub mod galois_field;
 pub mod types;
 mod constants;
+mod vector_commit;
+pub mod hash_functions;
+pub mod prg;

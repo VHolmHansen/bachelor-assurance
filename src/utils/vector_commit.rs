@@ -1,5 +1,6 @@
 use crate::utils::hash_functions::{h_0, h_1};
 use crate::utils::prg::{prg};
+use crate::utils::preliminary_helper_methods::{num_rec,get_complement_of_b,get_b};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
@@ -42,13 +43,22 @@ fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[u8; 
     let decom = (k, coms);
     (h, decom, sds)
 }
-// the indexing structure, needs to be some kind of bytes
+// the indexing structure, needs to be some kind of bytes, im very confusing of what it should be
+// for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
-fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), index: u32, d: u32){
-    let j_star = index;
+// there must be a smarter way to this that to get the bits
+fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), b: Vec<bool>, d: u64) -> (Vec<Vec<[u8; 16]>>,[u8; 32]){
+    let j_star = num_rec(b.clone(), d);
     let k = decom.0;
     let coms = decom.1;
     let mut a = 0;
-    
+    let mut cop: Vec<Vec<[u8; 16]>> = vec![vec![]; (d + 1) as usize];
+    for i in 1..=d{
+        cop[i as usize].push(k[i as usize][(2*a+get_complement_of_b(b.clone(),d-i)) as usize]);
+        a = 2*a+get_b(b.clone(), d-i);
+    }
+    let pdecom:(Vec<Vec<[u8; 16]>>,[u8; 32]) = (cop, coms[j_star as usize]);
+    pdecom
 }
+
 

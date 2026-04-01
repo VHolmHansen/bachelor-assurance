@@ -112,3 +112,14 @@ fn vec_reconstruct(pdecom: (Vec<Vec<[u8; 16]>>,[u8; 32]), b: Vec<bool>, iv: [u8;
     let h = h_1(coms.clone());
     (h, sds)
 }
+// vec_verify should help us do some testing, basically it takes the hash of the commitments from
+// commit, then it reconstruct using the pdecom, from vec_open to the commitments, and checks that those
+// two hashes are teh same
+fn vec_verify(h: [u8; 56], pdecom: (Vec<Vec<[u8; 16]>>,[u8; 32]), b: Vec<bool>, iv: [u8; 16]) -> bool{
+    let (rec_com, rec_sd) = vec_reconstruct(pdecom, b, iv);
+    if rec_com == h {
+        true
+    } else {
+        false
+    }
+}

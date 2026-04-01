@@ -52,6 +52,7 @@ fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), b: Vec<bool>, d: u64) ->
     let k = decom.0;
     let coms = decom.1;
     let mut a = 0;
+    // cop[0] should be empty
     let mut cop: Vec<Vec<[u8; 16]>> = vec![vec![]; (d + 1) as usize];
     for i in 1..=d{
         cop[i as usize].push(k[i as usize][(2*a+get_complement_of_b(b.clone(),d-i)) as usize]);
@@ -61,4 +62,53 @@ fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), b: Vec<bool>, d: u64) ->
     pdecom
 }
 
+// we want to know using the pdecom, to reconstruct all the committed seeds, except the j* one
+// we should still be able to check if we have the right values, using the commitments, and the saved commitment for jstar
+// i have no idea if this works
+fn vec_reconstruct(pdecom: (Vec<Vec<[u8; 16]>>,[u8; 32]), b: Vec<bool>, iv: [u8; 16]) -> ([u8;56],Vec<[u8;16]>)
+{
+    let cop = pdecom.0;
+    let com_star = pdecom.1;
+    let d = (cop.len()-1) as u64;
+    let j_star = num_rec(b.clone(), d);
+    let mut a = 0;
+    // the root should be empty
+    let mut k: Vec<Vec<[u8; 16]>> = vec![vec![]; (d + 1) as usize];
+    for i in 1..=d{
+        let index = 2*a+get_complement_of_b(b.clone(),d-i);
+        k[i as usize][index as usize] = cop[i as usize][index as usize];
+        let N = 2_i32.pow((i-1) as u32);
+        for j in 0..N{
+            if (j as u64) == j_star {
+                continue;
+            }
+            let k_helper = k.clone();
+            let k_new = prg(k_helper[(i-1) as usize][j as usize],iv);
 
+            let mut first_k = [0u8; 16];
+            let mut second_k = [0u8; 16];
+
+            first_k.copy_from_slice(&k_new[..16]);
+            second_k.copy_from_slice(&k_new[16..]);
+
+            k[i as usize][(2*j) as usize] = first_k;
+            k[i as usize][(2*j) as usize] =second_k;
+        }
+        a = 2*a+get_b(b.clone(), d-i);
+    }
+
+    let N = 2_i32.pow(d as u32);
+    let mut sds: Vec<[u8; 16]> = vec![];
+    let mut coms: Vec<[u8; 32]> = vec![];
+    for j in 0..N{
+        if (j as u64) == j_star {
+            coms.push(com_star.clone());
+            continue;
+        }
+        let (sd, com) = h_0(k[d as usize][j as usize], iv);
+        sds.push(sd);
+        coms.push(com);
+    }
+    let h = h_1(coms.clone());
+    (h, sds)
+}

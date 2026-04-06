@@ -69,3 +69,73 @@ fn get_all_leaf_nodes(tree: Tree) -> Vec<[u8; 16]> {
     leaves
 }
 
+fn get_tree_from_cop_and_b(b: u8, cop: Vec<[u8; 16]>, iv: [u8;16]) -> Tree {
+    fn get_tree_from_cop_and_b_helper(b: u8, cop: Vec<[u8; 16]>, current_level: i128,iv: [u8;16]) -> Tree {
+        let node: Tree_node;
+        let node_from_cop :  Option<Box<Tree>>;
+        let node_unknown :  Option<Box<Tree>>;
+        if current_level == 7 {
+            node_from_cop = Some(Box::from(Leaf(Some(cop[current_level as usize]))));
+                node_unknown = Some(Box::from(Leaf(None)));
+        } else {
+            node_from_cop = Some(Box::from(construct_tree_at_certain_levels(cop[current_level as usize], iv, 7 - current_level)));
+            node_unknown = Some(Box::from(get_tree_from_cop_and_b_helper(b, cop, current_level+1, iv)));
+        }
+        if if_left_at_index_at_level(b, current_level){
+                node = Tree_node {
+                    value: None, left: node_from_cop, right: node_unknown
+                };
+                Node(Box::from(node))
+
+        } else {
+            node = Tree_node {
+                value: None, left: node_unknown, right: node_from_cop
+            };
+            Node(Box::from(node))
+        }
+    }
+    get_tree_from_cop_and_b_helper(b, cop, 0, iv)
+}
+
+
+fn if_left_at_index_at_level(b: u8, level: i128) -> bool {
+    let mut index = b;
+
+    for i in 0..(7-level) {
+           if index & 1 == 0 {
+               index = 2*index / 4
+           } else {
+               index = (2*index - 2) / 4
+           }
+    }
+
+    if index & 1 == 0 {
+        return true;
+    }
+    false
+}
+
+fn construct_tree_at_certain_levels(r: [u8; 16], iv: [u8; 16], levels: i128) -> Tree {
+    fn construct_tree_rec(iv: [u8; 16], r: [u8; 16], tree_length: i128, tree_length_to_be: i128) -> (Tree, Tree){
+        let nodes:[u8; 32] = prg(r, iv);
+        let left_node_value = nodes[..16].try_into().unwrap();
+        let right_node_value = nodes[16..].try_into().unwrap();
+
+        if tree_length_to_be == 6 {
+            (Leaf(Some(left_node_value)), Leaf(Some(right_node_value)))
+        } else {
+            let (left_left_node, left_right_node) = construct_tree_rec(iv, left_node_value, tree_length + 1, tree_length_to_be);
+            let (right_left_node, right_right_node) = construct_tree_rec(iv, right_node_value, tree_length + 1, tree_length_to_be);
+            let left_tree_node = Tree_node {value: Some(left_node_value), left: Some(Box::from(left_left_node)), right: Some(Box::from(left_right_node))};
+            let right_tree_node = Tree_node {value: Some(right_node_value), left: Some(Box::from(right_left_node)), right: Some(Box::from(right_right_node))};
+            (Node(Box::from(left_tree_node)), Node(Box::from(right_tree_node)))
+        }
+    }
+
+    let (root_left_node, root_right_node) = construct_tree_rec(iv, r, 0, levels);
+    let root_tree_node = Tree_node {
+        value: Some(r), left: Some(Box::from(root_left_node)), right: Some(Box::from(root_right_node))
+    };
+    let tree = Node(Box::from(root_tree_node));
+    tree
+}

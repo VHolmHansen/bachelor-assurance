@@ -61,6 +61,8 @@ pub fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), b: Vec<bool>, d: u64
         cop.push(k[i as usize][(2*a+get_complement_of_b(b.clone(),d-i)) as usize]);
         a = 2*a+get_b(b.clone(), d-i);
     }
+    println!("cop: {:?}", cop);
+    println!("length of cop {:?}", cop.len());
     let pdecom:(Vec<[u8; 16]>,[u8; 32]) = (cop, coms[j_star as usize]);
 
     pdecom

@@ -1,38 +1,15 @@
 use crate::utils::hash_functions::{h_0, h_1};
 use crate::utils::prg::{prg};
 use crate::utils::preliminary_helper_methods::{num_rec,get_complement_of_b,get_b};
+use crate::utils::types::{construct_tree, get_all_leaf_nodes, Tree, get_cop};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
-pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), Vec<[u8; 16]>){
-    let d = n_d.ilog(2);
-    let mut k: Vec<Vec<[u8; 16]>> = vec![vec![]; (d + 1) as usize];
-    k[0].push(r);
+pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Tree, Vec<[u8; 32]>), Vec<[u8; 16]>){
 
-    // should give us the GGM tree construction
-    for i in 1..=d as usize{
-        let priv_k = k[i-1].clone();
-        for ks in priv_k{
-            // use prg to make two k's, the next to nodes of the tree
-            let new_k = prg(ks.clone(), iv);
-
-            // prepare places to store each part of the new_k
-            let mut first_k = [0u8; 16];
-            let mut second_k = [0u8; 16];
-
-            // get each part of the first k and then the seond k
-            first_k.copy_from_slice(&new_k[..16]);
-            second_k.copy_from_slice(&new_k[16..]);
-
-            // push first and second k
-            k[i].push(first_k);
-            k[i].push(second_k);
-        }
-    }
-    println!("this is k {:?}", k[d as usize]);
-
-
-    let leafs = k[d as usize].clone();
+    let k_tree = construct_tree(r, iv);
+    let leafs = get_all_leaf_nodes(k_tree.clone());
+    
     let mut sds: Vec<[u8; 16]> = vec![];
     let mut coms: Vec<[u8; 32]> = vec![];
     for ks in leafs{
@@ -41,7 +18,7 @@ pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[
         coms.push(com);
     }
     let h = h_1(coms.clone());
-    let decom = (k, coms);
+    let decom = (k_tree, coms);
 
     (h, decom, sds)
 }
@@ -49,22 +26,11 @@ pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[
 // for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
 // there must be a smarter way to this that to get the bits
-pub fn vec_open(decom: (Vec<Vec<[u8; 16]>>, Vec<[u8; 32]>), b: Vec<bool>, d: u64) -> (Vec<[u8; 16]>,[u8; 32]){
-    let j_star = num_rec(b.clone(), d);
+pub fn vec_open(decom: (Tree, Vec<[u8; 32]>), b: u8, d: u64) -> (Vec<[u8; 16]>,[u8; 32]){
     let k = decom.0;
     let coms = decom.1;
-    let mut a = 0;
-    // cop[0] should be empty
-    let mut cop: Vec<[u8; 16]> = Vec::with_capacity((d+1) as usize);
-    cop.push( [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
-    for i in 1..=d{
-        cop.push(k[i as usize][(2*a+get_complement_of_b(b.clone(),d-i)) as usize]);
-        a = 2*a+get_b(b.clone(), d-i);
-    }
-    println!("cop: {:?}", cop);
-    println!("length of cop {:?}", cop.len());
-    let pdecom:(Vec<[u8; 16]>,[u8; 32]) = (cop, coms[j_star as usize]);
-
+    let cop = get_cop(b, k);
+    let pdecom:(Vec<[u8; 16]>,[u8; 32]) = (cop, coms[b as usize]);
     pdecom
 }
 
@@ -84,7 +50,6 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 
 
     for i in 1..=d {
         let index = 2*a+get_complement_of_b(b.clone(),d-i);
-        println!("index: {:?}", index);
         k[i as usize][index as usize] = cop[i as usize];
         let N = 2_i32.pow((i-1) as u32);
         for j in 0..N{
@@ -104,9 +69,8 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 
             k[i as usize][(2*j) as usize] = second_k;
         }
         a = 2*a+get_b(b.clone(), d-i);
-        println!("a is: {:?}", a);
+        
     }
-    println!("this is k {:?}", k[d as usize]);
 
     let N = 2_i32.pow(d as u32);
     let mut sds: Vec<[u8; 16]> = vec![];

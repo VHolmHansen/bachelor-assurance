@@ -24,7 +24,7 @@ struct Tree_node {
 }
 
 
-fn construct_tree(r: [u8; 16], iv: [u8; 16]) -> Tree {
+pub fn construct_tree(r: [u8; 16], iv: [u8; 16]) -> Tree {
     fn construct_tree_rec(iv: [u8; 16], r: [u8; 16], tree_length: i128) -> (Tree, Tree){
         let nodes:[u8; 32] = prg(r, iv);
         let left_node_value = nodes[..16].try_into().unwrap();
@@ -49,7 +49,7 @@ fn construct_tree(r: [u8; 16], iv: [u8; 16]) -> Tree {
     tree
 }
 
-fn get_all_leaf_nodes(tree: Tree) -> Vec<[u8; 16]> {
+pub fn get_all_leaf_nodes(tree: Tree) -> Vec<[u8; 16]> {
     fn helper(t: &Tree, leaves: &mut Vec<[u8; 16]>) {
         match t {
             Leaf(Some(v)) => leaves.push(*v),
@@ -69,7 +69,44 @@ fn get_all_leaf_nodes(tree: Tree) -> Vec<[u8; 16]> {
     leaves
 }
 
-fn get_tree_from_cop_and_b(b: u8, cop: Vec<[u8; 16]>, iv: [u8;16]) -> Tree {
+pub fn get_cop(b: u8, tre: Tree) -> Vec<[u8; 16]> {
+    fn get_cop_helper(b: u8, tre: &Tree, mut acc: Vec<[u8; 16]>, level : i128) -> Vec<[u8; 16]> {
+        let is_left = if_left_at_index_at_level(b, level);
+        if is_left {
+            match tre {
+                Leaf(Some(v)) => { acc.push(*v); acc },
+                Node(node) => {
+                    match &**node {
+                        Tree_node { value: Some(v), left: Some(ln), right: rn } => {
+                            acc.push(*v);
+                            get_cop_helper(b, ln, acc, level + 1)
+                        }
+                        _ => unreachable!()
+                    }
+                },
+                _ => unreachable!()
+            }
+        } else {
+            match tre {
+                Leaf(Some(v)) => { acc.push(*v); acc },
+                Node(node) => {
+                    match &**node {
+                        Tree_node { value: Some(v), left: Some(ln), right: rn } => {
+                            acc.push(*v);
+                            get_cop_helper(b, ln, acc, level + 1)
+                        }
+                        _ => unreachable!()
+                    }
+                },
+                _ => unreachable!()
+            }
+        }
+    }
+    let cop: Vec<[u8; 16]> = Vec::with_capacity(8);
+    get_cop_helper(b, &tre, cop,0)
+}
+
+pub fn get_tree_from_cop_and_b(b: u8, cop: Vec<[u8; 16]>, iv: [u8;16]) -> Tree {
     fn get_tree_from_cop_and_b_helper(b: u8, cop: Vec<[u8; 16]>, current_level: i128,iv: [u8;16]) -> Tree {
         let node: Tree_node;
         let node_from_cop :  Option<Box<Tree>>;

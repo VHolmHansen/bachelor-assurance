@@ -29,6 +29,7 @@ pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[
             k[i].push(second_k);
         }
     }
+    println!("this is k {:?}", k[d as usize]);
 
 
     let leafs = k[d as usize].clone();
@@ -39,7 +40,6 @@ pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Vec<Vec<[
         sds.push(sd);
         coms.push(com);
     }
-    println!("this is coms from commit: {:?}", coms);
     let h = h_1(coms.clone());
     let decom = (k, coms);
 
@@ -82,6 +82,7 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 
 
     for i in 1..=d {
         let index = 2*a+get_complement_of_b(b.clone(),d-i);
+        println!("index: {:?}", index);
         k[i as usize][index as usize] = cop[i as usize];
         let N = 2_i32.pow((i-1) as u32);
         for j in 0..N{
@@ -98,11 +99,12 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 
             second_k.copy_from_slice(&k_new[16..]);
 
             k[i as usize][(2*j) as usize] = first_k;
-            k[i as usize][(2*j) as usize] =second_k;
+            k[i as usize][(2*j) as usize] = second_k;
         }
         a = 2*a+get_b(b.clone(), d-i);
+        println!("a is: {:?}", a);
     }
-
+    println!("this is k {:?}", k[d as usize]);
 
     let N = 2_i32.pow(d as u32);
     let mut sds: Vec<[u8; 16]> = vec![];
@@ -116,7 +118,6 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 
         sds.push(sd);
         coms.push(com);
     }
-    println!("this is coms from reconstruct: {:?}", coms);
     let h = h_1(coms.clone());
     (h, sds)
 }
@@ -125,8 +126,6 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 
 // two hashes are teh same
 pub fn vec_verify(h: [u8; 56], pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 16]) -> bool{
     let (rec_com, rec_sd) = vec_reconstruct(pdecom, b, iv);
-    println!("rec_com: {:?}", rec_com);
-    println!("h: {:?}", h);
     if rec_com == h {
         true
     } else {

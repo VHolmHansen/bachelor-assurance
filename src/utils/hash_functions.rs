@@ -19,5 +19,6 @@ pub fn h_0(k: [u8; 16], iv: [u8; 16]) -> ([u8; 16], [u8; 32]) {
 pub fn h_1(coms: Vec<[u8; 32]>) -> [u8; 56] {
     let concat_coms: Vec<u8> = coms.iter().flat_map(|c| c.to_vec()).collect();
     let mut input: Vec<u8> = vec![0u8; concat_coms.len() + 16];
+    input.extend_from_slice(&concat_coms);
     digest::shake128::<56>(&mut input)
 }

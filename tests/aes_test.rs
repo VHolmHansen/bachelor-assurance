@@ -10,26 +10,28 @@ mod tests {
     fn test_encrypt() {
 
         let key = [
-            0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
         ];
 
         let plaintext: [[u8; 4]; 4] = [
-            [0x32, 0x43, 0xf6, 0xa8],
-            [0x88, 0x5a, 0x30, 0x8d],
-            [0x31, 0x31, 0x98, 0xa2],
-            [0xe0, 0x37, 0x07, 0x34],
+            [0x00, 0x44, 0x88, 0xcc],
+            [0x11, 0x55, 0x99, 0xdd],
+            [0x22, 0x66, 0xaa, 0xee],
+            [0x33, 0x77, 0xbb, 0xff],
         ];
 
         let expected: [[u8; 4]; 4] = [
-            [0x39, 0x25, 0x84, 0x1d],
-            [0x02, 0xdc, 0x09, 0xfb],
-            [0xdc, 0x11, 0x85, 0x97],
-            [0x19, 0x6a, 0x0b, 0x32],
+            [0x69, 0x6a, 0xd8, 0x70],
+            [0xc4, 0x7b, 0xcd, 0xb4],
+            [0xe0, 0x04, 0xb7, 0xc5],
+            [0xd8, 0x30, 0x80, 0x5a],
         ];
+
+
 
         let key_mark = aes::key_expansion(key);
 
-
+        println!("key = {:?}", key_mark);
 
         assert_eq!(aes::encrypt(plaintext, key_mark), expected);
     }
@@ -42,8 +44,7 @@ mod tests {
         let key: Vec<Word> = vec![[43, 126, 21, 22], [40, 174, 210, 166],
                                        [171, 247, 21, 136], [9, 207, 79, 60]];
 
-        let expected: State = [[25, 61, 227, 190], [160, 244, 226, 43],
-            [154, 198, 141, 42], [233, 248, 72, 8]];
+        let expected: State = [[25, 107, 93, 161], [246, 244, 199, 66], [36, 227, 141, 237], [246, 145, 143, 8]];
 
         aes::add_round_key(&mut plaintext, key);
 
@@ -136,10 +137,10 @@ mod tests {
                                 [0,   1,   19,  69 ],
                                 [69,  0,   1,   19 ]];
 
-        let expected: State = [[96, 69, 0, 1],
-            [19, 69, 0, 1],
-            [19, 69, 0, 1],
-            [19, 69, 0, 1]];
+        let expected: State = [[96, 190, 221, 84],
+            [84, 96, 190, 221],
+            [221, 84, 96, 190],
+            [190, 221, 84, 96]];
         aes::mix_columns(&mut state);
 
         for c in 0..4 {

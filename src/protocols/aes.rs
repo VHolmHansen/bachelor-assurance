@@ -1,5 +1,4 @@
-use std::cmp::Ord;
-use std::iter::Map;
+
 use std::ops::Rem;
 use hax_lib::{loop_invariant, Int, ToInt};
 use libcrux::drbg::{Drbg, RngCore};
@@ -117,7 +116,7 @@ fn s_box(b: u8) -> u8{
 pub fn add_round_key(state: &mut State, keys: Vec<Word>) {
     for row in 0..4 {
         for c in 0..4 {
-            state[row][c] = state[row][c] ^ keys[row][c];
+            state[row][c] = state[row][c] ^ keys[c][row];
         }
     }
 }
@@ -141,7 +140,6 @@ pub fn shift_rows(state: &mut State){
 #[hax_lib::ensures(|state| state.len() == nk
                     && state[0].len() == nst)]
 pub fn mix_columns(state: &mut State) {
-    // dummy ?
     let a: Matrix<u8> = vec![vec![2, 3, 1, 1],
                              vec![1, 2, 3, 1],
                              vec![1, 1, 2, 3],

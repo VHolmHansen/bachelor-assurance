@@ -8,20 +8,17 @@ pub fn gf28_multiply(mut a: u8, mut b: u8) -> u8 {
     let mut result = 0u8;
     let old_a = a;
     let old_b = b;
-    for i in 0..8 {
-        if b & 1 != 0{
+    for _ in 0..8 {
+        if (b & 1) != 0 {
+            result ^= a;
+        }
 
-            result ^= a; // TODO: should maybe be +=, not sure which is correct
-            if old_b == 19 && old_a == 3{
-                println!("result in round {:?}: {:?}\n for a = {:?} and b = {:?}", i, result, a, b)
-            }
+        if (a & 0x80) != 0 {
+            a = (a << 1) ^ 0b00011011;
+        } else {
+            a <<= 1;
         }
-        let hi_bit_set = a & 0x80;      // check overflow with 128
-        a <<= 1;                            // shift left
-        a &= 0xFF;                          // mod 256
-        if hi_bit_set != 0 {
-            a ^= 0x1B;
-        }
+
         b >>= 1;
     }
     //println!("result for {:?} mul {:?} = {:?}", old_a, old_b, result);
@@ -143,7 +140,16 @@ pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
                 hax_lib::assert!(i < res.len() && j < res[i].len());
 
                 hax_lib::assert!(i < a.len() && k < a[i].len() && k < b.len() && j < b[k].len());
+                if i == 0 && j == 1 {
+                    println!("current value {:?}:", temp);
+                    println!("value to add {:?}", gf28_multiply(a[i][k], b[k][j]))
+                }
+
                 temp ^= gf28_multiply(a[i][k], b[k][j]); // can be optimized with bit trickery
+
+                if i == 0 && j == 1 {
+                    println!("result {:?}:", temp);
+                }
 
 
                 hax_lib::assert!(res.len() == rows && res.len() == a.len());

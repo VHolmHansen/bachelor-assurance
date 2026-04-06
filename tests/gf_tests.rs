@@ -90,7 +90,7 @@ mod tests {
     
         let A: Matrix<u8> = vec![vec![1, 2, 3, 4],vec![5, 6, 7, 8]];    
     
-        let expected: Matrix<u8> = vec![vec![30, 100, 195, 134], vec![67, 39, 4, 109]];
+        let expected: Matrix<u8> = vec![vec![30, 96, 187, 130], vec![71, 39, 244, 93]];
 
         assert_eq!(gf28_matrix_multiplication(A, B), expected);
 

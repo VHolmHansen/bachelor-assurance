@@ -27,8 +27,6 @@ mod tests {
             [0xd8, 0x30, 0x80, 0x5a],
         ];
 
-
-
         let key_mark = aes::key_expansion(key);
 
         println!("key = {:?}", key_mark);
@@ -56,8 +54,6 @@ mod tests {
             [0x76, 0x92, 0x7c, 0x7f],  // col 2
             [0x3e, 0x59, 0xc9, 0x5e],
         ];
-
-
 
         let key_mark = aes::key_expansion(key);
 
@@ -89,8 +85,6 @@ mod tests {
             [0x1e, 0x51, 0x6f, 0x84],  // col 2
             [0x69, 0xe0, 0xb4, 0x65],
         ];
-
-
 
         let key_mark = aes::key_expansion(key);
 

@@ -1,8 +1,7 @@
 
-use std::ops::Rem;
 use hax_lib::{loop_invariant, Int, ToInt};
 use libcrux::drbg::{Drbg, RngCore};
-use crate::utils::{math, finite_field, galois_field};
+use crate::utils::{math, galois_field};
 use crate::utils::finite_field::{Field};
 use crate::utils::types::{Matrix, State, Word};
 

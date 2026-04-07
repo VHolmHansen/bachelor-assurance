@@ -37,6 +37,69 @@ mod tests {
     }
 
     #[test]
+    fn test_encrypt2() {
+
+        let key = [
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        ];
+
+        let plaintext: [[u8; 4]; 4] = [
+            [0xf3, 0x3c, 0xcd, 0x08],  // col 0
+            [0x44, 0xc6, 0x5d, 0xf2],  // col 1
+            [0x81, 0x27, 0xc3, 0x73],  // col 2
+            [0xec, 0xba, 0xfb, 0xe6],
+        ];
+
+        let expected: [[u8; 4]; 4] = [
+            [0x03, 0x96, 0x5a, 0xce],  // col 0
+            [0x36, 0x6d, 0x56, 0x53],  // col 1
+            [0x76, 0x92, 0x7c, 0x7f],  // col 2
+            [0x3e, 0x59, 0xc9, 0x5e],
+        ];
+
+
+
+        let key_mark = aes::key_expansion(key);
+
+        println!("key = {:?}", key_mark);
+
+        assert_eq!(aes::encrypt(plaintext, key_mark), expected);
+    }
+
+    #[test]
+    fn test_encrypt3() {
+
+        let key = [
+            0x10, 0xa5, 0x88, 0x69,
+            0xd7, 0x4b, 0xe5, 0xa3,
+            0x74, 0xcf, 0x86, 0x7c,
+            0xfb, 0x47, 0x38, 0x59
+        ];
+
+        let plaintext: [[u8; 4]; 4] = [
+            [0x00, 0x00, 0x00, 0x00],  // col 0
+            [0x00, 0x00, 0x00, 0x00],  // col 1
+            [0x00, 0x00, 0x00, 0x00],  // col 2
+            [0x00, 0x00, 0x00, 0x00],
+        ];
+
+        let expected: [[u8; 4]; 4] = [
+            [0x6d, 0x44, 0x4e, 0xdb],  // col 0
+            [0x25, 0xb0, 0xaa, 0xf7],  // col 1
+            [0x1e, 0x51, 0x6f, 0x84],  // col 2
+            [0x69, 0xe0, 0xb4, 0x65],
+        ];
+
+
+
+        let key_mark = aes::key_expansion(key);
+
+        println!("key = {:?}", key_mark);
+
+        assert_eq!(aes::encrypt(plaintext, key_mark), expected);
+    }
+
+    #[test]
     fn test_add_round_key() {
         let mut plaintext: State = [[50, 67, 246, 168], [136, 90, 48, 141],
             [49, 49, 152, 162], [224, 55, 7, 52]];

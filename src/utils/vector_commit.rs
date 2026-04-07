@@ -17,7 +17,7 @@ pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Tree, Vec
         sds.push(sd);
         coms.push(com);
     }
-    let h = h_1(coms.clone());
+    let h = h_1(&coms);
     let decom = (k_tree, coms);
 
     (h, decom, sds)
@@ -84,7 +84,7 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 
         sds.push(sd);
         coms.push(com);
     }
-    let h = h_1(coms.clone());
+    let h = h_1(&coms);
     (h, sds)
 }
 // vec_verify should help us do some testing, basically it takes the hash of the commitments from

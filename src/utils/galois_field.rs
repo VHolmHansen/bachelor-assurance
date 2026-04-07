@@ -21,7 +21,7 @@ pub fn gf28_multiply(mut a: u8, mut b: u8) -> u8 {
 
         b >>= 1;
     }
-    //println!("result for {:?} mul {:?} = {:?}", old_a, old_b, result);
+
     result
 }
 
@@ -140,28 +140,16 @@ pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
                 hax_lib::assert!(i < res.len() && j < res[i].len());
 
                 hax_lib::assert!(i < a.len() && k < a[i].len() && k < b.len() && j < b[k].len());
-                if i == 0 && j == 1 {
-                    println!("current value {:?}:", temp);
-                    println!("value to add {:?}", gf28_multiply(a[i][k], b[k][j]))
-                }
 
                 temp ^= gf28_multiply(a[i][k], b[k][j]); // can be optimized with bit trickery
-
-                if i == 0 && j == 1 {
-                    println!("result {:?}:", temp);
-                }
-
 
                 hax_lib::assert!(res.len() == rows && res.len() == a.len());
                 hax_lib::assert!(res[i].len() == columns && res[i].len() == b.len());
             }
-            //println!("res[{:?}][{:?}] = {:?}", i, j, temp);
+
             res[i][j] = temp;
         }
     }
-    //println!("gf28mul 87 * 69: {:?}", gf28_multiply(a[0][0], b[0][1]));
-    //res[0][1] =  gf28_multiply(a[0][0],b[0][1]) ^ gf28_multiply(a[0][1],b[1][1]) ^ gf28_multiply(a[0][2],b[2][1]) ^ gf28_multiply(a[0][3],b[3][1]);
-
 
     res
 }

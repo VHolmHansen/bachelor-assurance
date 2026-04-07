@@ -36,7 +36,6 @@ pub fn main(field: Field) {
 pub fn encrypt(state: State, key: Vec<Word>) -> State {
     let mut res_state = state;
     add_round_key(&mut res_state, key[0..nst].to_vec());
-    println!("state_matrix: {:?}", res_state);
 
     //4-8
     for r in 1..R {
@@ -79,7 +78,6 @@ pub fn key_expansion(key: [u8; 16]) -> Vec<Word> {
         result_key.push(temp_word);
     }
 
-    println!("resultkey {:?}", result_key);
     result_key
 }
 

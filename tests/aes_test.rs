@@ -29,8 +29,6 @@ mod tests {
 
         let key_mark = aes::key_expansion(key);
 
-        println!("key = {:?}", key_mark);
-
         assert_eq!(aes::encrypt(plaintext, key_mark), expected);
     }
 
@@ -56,8 +54,6 @@ mod tests {
         ];
 
         let key_mark = aes::key_expansion(key);
-
-        println!("key = {:?}", key_mark);
 
         assert_eq!(aes::encrypt(plaintext, key_mark), expected);
     }
@@ -87,8 +83,6 @@ mod tests {
         ];
 
         let key_mark = aes::key_expansion(key);
-
-        println!("key = {:?}", key_mark);
 
         assert_eq!(aes::encrypt(plaintext, key_mark), expected);
     }
@@ -141,8 +135,6 @@ mod tests {
 
        let result = aes::key_expansion(key)[0..21].to_vec();
 
-       println!("result: {:?}", result);
-
         assert_eq!(result, expected);
     }
 
@@ -161,7 +153,6 @@ mod tests {
         let x = gf2_affine_transform(42 ^ 69);
         let y = gf2_affine_transform(42) ^ gf2_affine_transform(69) ^ 0x63;
 
-        println!("test_gf28_inverse result: {:?}", result);
         assert_eq!(x, y);
         assert_eq!(result, expected);
     }
@@ -200,18 +191,6 @@ mod tests {
             [190, 221, 84, 96]];
         aes::mix_columns(&mut state);
 
-        for c in 0..4 {
-            println!(
-                "col {} = {:?}",
-                c,
-                [state[0][c], state[1][c], state[2][c], state[3][c]]
-            );
-        }
-        println!("{:?}", gf28_multiply(2, 200));
-        println!("res00: {:?}", gf28_multiply(19, 2) ^
-            gf28_multiply(3, 1) ^
-            gf28_multiply(1, 0) ^
-            gf28_multiply(1, 69));
         assert_eq!(state, expected);
     }
 }

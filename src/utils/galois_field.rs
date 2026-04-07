@@ -6,8 +6,7 @@ use crate::utils::types::{State, Word, Matrix};
 #[hax_lib::ensures(|result| result <= u8::MAX)]
 pub fn gf28_multiply(mut a: u8, mut b: u8) -> u8 {
     let mut result = 0u8;
-    let old_a = a;
-    let old_b = b;
+
     for _ in 0..8 {
         if (b & 1) != 0 {
             result ^= a;

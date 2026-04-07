@@ -1,18 +1,18 @@
 use crate::utils::hash_functions::{h_0, h_1};
 use crate::utils::prg::{prg};
 use crate::utils::preliminary_helper_methods::{num_rec,get_complement_of_b,get_b};
-use crate::utils::types::{construct_tree, get_all_leaf_nodes, Tree, get_cop};
+use crate::utils::types::{construct_tree, get_all_leaf_nodes, Tree, get_cop, get_leaves_from_cop_and_b};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
 pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Tree, Vec<[u8; 32]>), Vec<[u8; 16]>){
 
     let k_tree = construct_tree(r, iv);
-    let leafs = get_all_leaf_nodes(k_tree.clone());
-    
+    let leaves = get_all_leaf_nodes(&k_tree);
+
     let mut sds: Vec<[u8; 16]> = vec![];
     let mut coms: Vec<[u8; 32]> = vec![];
-    for ks in leafs{
+    for ks in leaves{
         let (mut sd, mut com) = h_0(ks, iv);
         sds.push(sd);
         coms.push(com);
@@ -37,60 +37,38 @@ pub fn vec_open(decom: (Tree, Vec<[u8; 32]>), b: u8, d: u64) -> (Vec<[u8; 16]>,[
 // we want to know using the pdecom, to reconstruct all the committed seeds, except the j* one
 // we should still be able to check if we have the right values, using the commitments, and the saved commitment for jstar
 // i have no idea if this works
-pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 16]) -> ([u8;56],Vec<[u8;16]>)
+pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: u8, iv: [u8; 16]) -> ([u8;56],Vec<[u8;16]>)
 {
-    let cop = pdecom.0;
-    let com_star = pdecom.1;
-    let d = (cop.len()-1) as u64;
-    let j_star = num_rec(b.clone(), d);
-    let mut a = 0;
-    // the root should be empty
-    let nul_u8_vector : [u8 ; 16] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-    let mut k: Vec<Vec<[u8; 16]>> = vec![vec![nul_u8_vector; 128]; (d + 1) as usize];
-
-    for i in 1..=d {
-        let index = 2*a+get_complement_of_b(b.clone(),d-i);
-        k[i as usize][index as usize] = cop[i as usize];
-        let N = 2_i32.pow((i-1) as u32);
-        for j in 0..N{
-            if (j as u64) == j_star {
-                continue;
-            }
-            let k_helper = k.clone();
-            let k_new = prg(k_helper[(i-1) as usize][j as usize],iv);
-
-            let mut first_k = [0u8; 16];
-            let mut second_k = [0u8; 16];
-
-            first_k.copy_from_slice(&k_new[..16]);
-            second_k.copy_from_slice(&k_new[16..]);
-
-            k[i as usize][(2*j) as usize] = first_k;
-            k[i as usize][(2*j) as usize] = second_k;
-        }
-        a = 2*a+get_b(b.clone(), d-i);
-        
-    }
-
-    let N = 2_i32.pow(d as u32);
     let mut sds: Vec<[u8; 16]> = vec![];
     let mut coms: Vec<[u8; 32]> = vec![];
-    for j in 0..N{
-        if (j as u64) == j_star {
-            coms.push(com_star.clone());
-            continue;
+
+    let cop = pdecom.0;
+    let com_star = pdecom.1;
+
+    // it just works
+    let leaves = get_leaves_from_cop_and_b(b, cop, iv);
+    for l in leaves {
+        match l {
+            Some(leaf) => {
+                let (sd, com) = h_0(leaf, iv);
+                sds.push(sd);
+                coms.push(com);
+            },
+            None => {
+                coms.push(com_star);
+            },
         }
-        let (sd, com) = h_0(k[d as usize][j as usize], iv);
-        sds.push(sd);
-        coms.push(com);
     }
+
+
+
     let h = h_1(&coms);
     (h, sds)
 }
 // vec_verify should help us do some testing, basically it takes the hash of the commitments from
 // commit, then it reconstruct using the pdecom, from vec_open to the commitments, and checks that those
 // two hashes are teh same
-pub fn vec_verify(h: [u8; 56], pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<bool>, iv: [u8; 16]) -> bool{
+pub fn vec_verify(h: [u8; 56], pdecom: (Vec<[u8; 16]>,[u8; 32]), b: u8, iv: [u8; 16]) -> bool{
     let (rec_com, rec_sd) = vec_reconstruct(pdecom, b, iv);
     if rec_com == h {
         true

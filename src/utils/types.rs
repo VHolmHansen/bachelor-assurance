@@ -1,3 +1,4 @@
+use std::thread::current;
 use crate::utils::galois_field;
 use crate::utils::prg::prg;
 use crate::utils::types::Tree::{Leaf, Node};
@@ -49,7 +50,7 @@ pub fn construct_tree(r: [u8; 16], iv: [u8; 16]) -> Tree {
     tree
 }
 
-pub fn get_all_leaf_nodes(tree: Tree) -> Vec<[u8; 16]> {
+pub fn get_all_leaf_nodes(tree: &Tree) -> Vec<[u8; 16]> {
     fn helper(t: &Tree, leaves: &mut Vec<[u8; 16]>) {
         match t {
             Leaf(Some(v)) => leaves.push(*v),
@@ -72,13 +73,14 @@ pub fn get_all_leaf_nodes(tree: Tree) -> Vec<[u8; 16]> {
 pub fn get_cop(b: u8, tre: Tree) -> Vec<[u8; 16]> {
     fn get_cop_helper(b: u8, tre: &Tree, mut acc: Vec<[u8; 16]>, level : i128) -> Vec<[u8; 16]> {
         let is_left = if_left_at_index_at_level(b, level);
+        // might have made a mistake therefore !
         if is_left {
             match tre {
-                Leaf(Some(v)) => { acc.push(*v); acc },
+                Leaf(Some(v)) => { acc},
                 Node(node) => {
                     match &**node {
-                        Tree_node { value: Some(v), left: Some(ln), right: rn } => {
-                            acc.push(*v);
+                        Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
+                            acc.push(get_value_of_node(rn).unwrap());
                             get_cop_helper(b, ln, acc, level + 1)
                         }
                         _ => unreachable!()
@@ -88,12 +90,12 @@ pub fn get_cop(b: u8, tre: Tree) -> Vec<[u8; 16]> {
             }
         } else {
             match tre {
-                Leaf(Some(v)) => { acc.push(*v); acc },
+                Leaf(Some(v)) => { acc},
                 Node(node) => {
                     match &**node {
-                        Tree_node { value: Some(v), left: Some(ln), right: rn } => {
-                            acc.push(*v);
-                            get_cop_helper(b, ln, acc, level + 1)
+                        Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
+                            acc.push(get_value_of_node(ln).unwrap());
+                            get_cop_helper(b, rn, acc, level + 1)
                         }
                         _ => unreachable!()
                     }
@@ -103,41 +105,38 @@ pub fn get_cop(b: u8, tre: Tree) -> Vec<[u8; 16]> {
         }
     }
     let cop: Vec<[u8; 16]> = Vec::with_capacity(8);
-    get_cop_helper(b, &tre, cop,0)
+    get_cop_helper(b, &tre, cop,1)
 }
-
-pub fn get_tree_from_cop_and_b(b: u8, cop: Vec<[u8; 16]>, iv: [u8;16]) -> Tree {
-    fn get_tree_from_cop_and_b_helper(b: u8, cop: Vec<[u8; 16]>, current_level: i128,iv: [u8;16]) -> Tree {
-        let node: Tree_node;
-        let node_from_cop :  Option<Box<Tree>>;
-        let node_unknown :  Option<Box<Tree>>;
-        if current_level == 7 {
-            node_from_cop = Some(Box::from(Leaf(Some(cop[current_level as usize]))));
-                node_unknown = Some(Box::from(Leaf(None)));
-        } else {
-            node_from_cop = Some(Box::from(construct_tree_at_certain_levels(cop[current_level as usize], iv, 7 - current_level)));
-            node_unknown = Some(Box::from(get_tree_from_cop_and_b_helper(b, cop, current_level+1, iv)));
-        }
-        if if_left_at_index_at_level(b, current_level){
-                node = Tree_node {
-                    value: None, left: node_from_cop, right: node_unknown
-                };
-                Node(Box::from(node))
-
-        } else {
-            node = Tree_node {
-                value: None, left: node_unknown, right: node_from_cop
-            };
-            Node(Box::from(node))
+// got a bunch of overflows, so changed it to use an accumulator, and not so much recursion
+pub fn get_leaves_from_cop_and_b(b: u8, cop: Vec<[u8; 16]>, iv: [u8;16]) -> Vec<Option<[u8; 16]>> {
+    let mut leaves_acc : Vec<Option<[u8; 16]>> = Vec::new();
+    let mut current_length = 0;
+    let is_b_left = if_left_at_index_at_level(b, 7);
+    for i in (0..6).rev(){
+        let tre = construct_tree_at_certain_levels(cop[i as usize], iv, 5-i);
+        let leaves = get_all_leaf_nodes(&tre);
+        for l in leaves {
+            if is_b_left {
+                if current_length == b {
+                    leaves_acc.push(None);
+                    leaves_acc.push(Some(cop[6]));
+                }
+            } else {
+                if current_length == b-1{
+                    leaves_acc.push(Some(cop[6]));
+                    leaves_acc.push(None);
+                }
+            }
+            leaves_acc.push(Some(l));
+            current_length += 1;
         }
     }
-    get_tree_from_cop_and_b_helper(b, cop, 0, iv)
+    leaves_acc
 }
 
 
 fn if_left_at_index_at_level(b: u8, level: i128) -> bool {
     let mut index = b;
-
     for i in 0..(7-level) {
            if index & 1 == 0 {
                index = 2*index / 4
@@ -158,7 +157,7 @@ fn construct_tree_at_certain_levels(r: [u8; 16], iv: [u8; 16], levels: i128) -> 
         let left_node_value = nodes[..16].try_into().unwrap();
         let right_node_value = nodes[16..].try_into().unwrap();
 
-        if tree_length_to_be == 6 {
+        if tree_length == tree_length_to_be {
             (Leaf(Some(left_node_value)), Leaf(Some(right_node_value)))
         } else {
             let (left_left_node, left_right_node) = construct_tree_rec(iv, left_node_value, tree_length + 1, tree_length_to_be);
@@ -175,4 +174,17 @@ fn construct_tree_at_certain_levels(r: [u8; 16], iv: [u8; 16], levels: i128) -> 
     };
     let tree = Node(Box::from(root_tree_node));
     tree
+}
+
+fn get_value_of_node(tre: &Tree) -> Option<[u8; 16]> {
+    match tre {
+        Leaf(Some(v)) => Some(*v),
+        Node(node) => match &**node {
+            Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
+                Some(*v)
+            }
+            _ => unreachable!()
+        }
+        _ => None
+    }
 }

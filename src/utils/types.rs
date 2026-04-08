@@ -8,7 +8,9 @@ pub type Matrix<T> = Vec<Vec<T>>;
 
 const nk: usize = 4;            // code dup
 const nst: usize = 4;           // code dup
+pub const ell : usize = (1600 + 2*128 + 16)/8;
 pub type State = [[u8; nst]; nk];
+
 
 
 #[derive(Clone, Debug)]
@@ -72,7 +74,13 @@ pub fn get_all_leaf_nodes(tree: &Tree) -> Vec<[u8; 16]> {
 
 pub fn get_cop(b: u8, tre: Tree) -> Vec<[u8; 16]> {
     fn get_cop_helper(b: u8, tre: &Tree, mut acc: Vec<[u8; 16]>, level : i128) -> Vec<[u8; 16]> {
-        let is_left = if_left_at_index_at_level(b, level);
+        let is_left;
+        if level == 8 {
+            is_left = true;
+        } else {
+            is_left = if_left_at_index_at_level(b, level);
+        }
+
         // might have made a mistake therefore !
         if is_left {
             match tre {
@@ -110,45 +118,38 @@ pub fn get_cop(b: u8, tre: Tree) -> Vec<[u8; 16]> {
 // got a bunch of overflows, so changed it to use an accumulator, and not so much recursion
 pub fn get_leaves_from_cop_and_b(b: u8, cop: Vec<[u8; 16]>, iv: [u8;16]) -> Vec<Option<[u8; 16]>> {
     let mut leaves_acc : Vec<Option<[u8; 16]>> = Vec::new();
-    let mut current_length = 0;
     let is_b_left = if_left_at_index_at_level(b, 7);
     for i in (0..6).rev(){
         let tre = construct_tree_at_certain_levels(cop[i as usize], iv, 5-i);
+        let is_left_compared_to_b = if_left_at_index_at_level(b, i+1);
         let leaves = get_all_leaf_nodes(&tre);
+
+        let mut acc = 0;
         for l in leaves {
-            if is_b_left {
-                if current_length == b {
-                    leaves_acc.push(None);
-                    leaves_acc.push(Some(cop[6]));
-                }
+            if is_left_compared_to_b {
+                leaves_acc.push(Some(l));
             } else {
-                if current_length == b-1{
-                    leaves_acc.push(Some(cop[6]));
-                    leaves_acc.push(None);
-                }
+                leaves_acc.insert(acc, Some(l));
+                acc += 1;
             }
-            leaves_acc.push(Some(l));
-            current_length += 1;
         }
     }
+
+    if if_left_at_index_at_level(b, 7) {
+        leaves_acc.insert(b as usize, None);
+        leaves_acc.insert((b+1) as usize, Some(cop[6]));
+    } else {
+        leaves_acc.insert((b-1) as usize, Some(cop[6]));
+        leaves_acc.insert(b as usize, None);
+    }
+
+
     leaves_acc
 }
 
 
 fn if_left_at_index_at_level(b: u8, level: i128) -> bool {
-    let mut index = b;
-    for i in 0..(7-level) {
-           if index & 1 == 0 {
-               index = 2*index / 4
-           } else {
-               index = (2*index - 2) / 4
-           }
-    }
-
-    if index & 1 == 0 {
-        return true;
-    }
-    false
+    (b >> (7 - level)) & 1 == 0
 }
 
 fn construct_tree_at_certain_levels(r: [u8; 16], iv: [u8; 16], levels: i128) -> Tree {

@@ -24,8 +24,37 @@ mod tests{
 
         let (h, decom, sds) = vec_commit(r, iv, n_d);
         let pdecom = vec_open(decom, b, d);
-        let (h_1, sds) = vec_reconstruct(pdecom, b, iv);
+        let good_or_bad = vec_verify(h, pdecom, b, iv);
+        assert!(good_or_bad);
     }
+    #[test]
+    fn test_vector_commitment_b_is3(){
+        let n_d : i128 = 128;
+        let d = n_d.ilog(3) as u64;
+        let b : u8 = 3;
+        let r : [u8; 16] = [0x03, 0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x2c, 0x0d, 0x0e, 0x0f];
+        let iv : [u8; 16] = [0xff, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x00];
+
+        let (h, decom, sds) = vec_commit(r, iv, n_d);
+        let pdecom = vec_open(decom, b, d);
+        let good_or_bad = vec_verify(h, pdecom, b, iv);
+        assert!(good_or_bad);
+    }
+
+    #[test]
+    fn test_vector_commitment_b_is4(){
+        let n_d : i128 = 128;
+        let d = n_d.ilog(2) as u64;
+        let b : u8 = 4;
+        let r : [u8; 16] = [0x03, 0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x2c, 0x0d, 0x0e, 0x0f];
+        let iv : [u8; 16] = [0xff, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x00];
+
+        let (h, decom, sds) = vec_commit(r, iv, n_d);
+        let pdecom = vec_open(decom, b, d);
+        let good_or_bad = vec_verify(h, pdecom, b, iv);
+        assert!(good_or_bad);
+    }
+
     #[test]
     fn test_vector_commitment_b_is27(){
         let n_d : i128 = 128;
@@ -36,6 +65,34 @@ mod tests{
 
         let (h, decom, sds) = vec_commit(r, iv, n_d);
         let pdecom = vec_open(decom, b, d);
-        let (h_1, sds) = vec_reconstruct(pdecom, b, iv);
+        let good_or_bad = vec_verify(h, pdecom, b, iv);
+        assert!(good_or_bad);
+    }
+    #[test]
+    fn test_vector_commitment_b_is28(){
+        let n_d : i128 = 128;
+        let d = n_d.ilog(2) as u64;
+        let b : u8 = 28;
+        let r : [u8; 16] = [0x03, 0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x2c, 0x0d, 0x0e, 0x0f];
+        let iv : [u8; 16] = [0xff, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x00];
+
+        let (h, decom, sds) = vec_commit(r, iv, n_d);
+        let pdecom = vec_open(decom, b, d);
+        let good_or_bad = vec_verify(h, pdecom, b, iv);
+        assert!(good_or_bad);
+    }
+
+    #[test]
+    fn test_vector_commitment_b_is127(){
+        let n_d : i128 = 128;
+        let d = n_d.ilog(2) as u64;
+        let b : u8 = 127;
+        let r : [u8; 16] = [0x03, 0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x2c, 0x0d, 0x0e, 0x0f];
+        let iv : [u8; 16] = [0xff, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x00];
+
+        let (h, decom, sds) = vec_commit(r, iv, n_d);
+        let pdecom = vec_open(decom, b, d);
+        let good_or_bad = vec_verify(h, pdecom, b, iv);
+        assert!(good_or_bad);
     }
 }

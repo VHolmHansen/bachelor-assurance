@@ -113,3 +113,12 @@ pub fn push_on_vec<T: Clone>(vec2: Vec<T>, vec3: Vec<T>) -> Vec<T> {
     assume!(vec1.len() <= usize::MAX && vec1.len() > 0 && vec1.len() == vec2.len() + vec3.len());
     vec1
 }
+
+
+pub fn xor_arrays<const N: usize>(a: &[u8; N], b: &[u8; N]) -> [u8; N] {
+    let mut result = [0u8; N];
+    for i in 0..N {
+        result[i] = a[i] ^ b[i];
+    }
+    result
+}

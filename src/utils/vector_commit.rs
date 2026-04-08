@@ -9,7 +9,6 @@ pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Tree, Vec
 
     let k_tree = construct_tree(r, iv);
     let leaves = get_all_leaf_nodes(&k_tree);
-
     let mut sds: Vec<[u8; 16]> = vec![];
     let mut coms: Vec<[u8; 32]> = vec![];
     for ks in leaves{
@@ -17,8 +16,12 @@ pub fn vec_commit(r: [u8; 16], iv: [u8; 16], n_d: i128) -> ([u8; 56], (Tree, Vec
         sds.push(sd);
         coms.push(com);
     }
+
+    
     let h = h_1(&coms);
     let decom = (k_tree, coms);
+
+
 
     (h, decom, sds)
 }
@@ -42,11 +45,15 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: u8, iv: [u8; 16]) ->
     let mut sds: Vec<[u8; 16]> = vec![];
     let mut coms: Vec<[u8; 32]> = vec![];
 
+
+    sds.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+
     let cop = pdecom.0;
     let com_star = pdecom.1;
 
     // it just works
     let leaves = get_leaves_from_cop_and_b(b, cop, iv);
+
     for l in leaves {
         match l {
             Some(leaf) => {
@@ -59,7 +66,6 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: u8, iv: [u8; 16]) ->
             },
         }
     }
-
 
 
     let h = h_1(&coms);

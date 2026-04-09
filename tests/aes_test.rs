@@ -29,7 +29,7 @@ mod tests {
 
         let key_mark = aes::key_expansion(key);
 
-        assert_eq!(aes::encrypt(plaintext, key_mark), expected);
+        assert_eq!(aes::encrypt(plaintext, &key_mark), expected);
     }
 
     #[test]
@@ -55,7 +55,7 @@ mod tests {
 
         let key_mark = aes::key_expansion(key);
 
-        assert_eq!(aes::encrypt(plaintext, key_mark), expected);
+        assert_eq!(aes::encrypt(plaintext, &key_mark), expected);
     }
 
     #[test]
@@ -84,7 +84,64 @@ mod tests {
 
         let key_mark = aes::key_expansion(key);
 
-        assert_eq!(aes::encrypt(plaintext, key_mark), expected);
+        assert_eq!(aes::encrypt(plaintext, &key_mark), expected);
+    }
+
+    #[test]
+    fn test_encrypt4() {
+
+        let key = [
+            0xff, 0xff, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0xff,
+            0xf0, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00
+        ];
+
+        let plaintext: [[u8; 4]; 4] = [
+            [0x00, 0x00, 0x00, 0x00],  // col 0
+            [0x00, 0x00, 0x00, 0x00],  // col 1
+            [0x00, 0x00, 0x00, 0x00],  // col 2
+            [0x00, 0x00, 0x00, 0x00],
+        ];
+
+        let expected: [[u8; 4]; 4] = [
+            [0x35, 0xac, 0xb2, 0xc6],  // col 0
+            [0x35, 0xe3, 0x49, 0x76],  // col 1
+            [0xd5, 0xf3, 0xba, 0x5d],  // col 2
+            [0x65, 0x1e, 0x2c, 0x7a],
+        ];
+
+        let key_mark = aes::key_expansion(key);
+
+        assert_eq!(aes::encrypt(plaintext, &key_mark), expected);
+    }
+
+    #[test]
+    fn test_encrypt5() {
+        let key = [
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00
+        ];
+
+        let plaintext: [[u8; 4]; 4] = [
+            [0x58, 0x26, 0x54, 0x91],  // col 0
+            [0xc8, 0x31, 0xea, 0xf0],  // col 1
+            [0xe0, 0x68, 0xb8, 0xac],  // col 2
+            [0x0b, 0x6d, 0x4b, 0xa1],
+        ];
+
+        let expected: [[u8; 4]; 4] = [
+            [0x08, 0xec, 0x12, 0xb9],  // col 0
+            [0xa4, 0x8a, 0xca, 0x04],  // col 1
+            [0xe2, 0x8e, 0x74, 0x0b],  // col 2
+            [0xef, 0x33, 0x60, 0xbf],
+        ];
+
+        let key_mark = aes::key_expansion(key);
+
+        assert_eq!(aes::encrypt(plaintext, &key_mark), expected);
     }
 
     #[test]

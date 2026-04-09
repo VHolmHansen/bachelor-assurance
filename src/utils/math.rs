@@ -1,5 +1,5 @@
 use hax_lib::{assume, loop_invariant, Int, ToInt};
-
+use Bachelor_Assurance::utils::types::State;
 /*
 #[hax_lib::include]
 #[hax_lib::requires(y > 0)]
@@ -46,6 +46,18 @@ pub fn multiplication(x: i128, y: i128) -> i128 {
     x * y
 }
 */
+
+fn main() {
+    let array_test = [
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+    ];
+
+    let res_state = transform_byte_array_to_state(&array_test);
+
+    println!("{:?}", res_state);
+
+    println!("{:?}", transform_state_to_array(&res_state));
+}
 
 pub fn convert_byte_array_to_int(bytes: &[u8]) -> Int {
     let mut result = 0.to_int();
@@ -121,4 +133,28 @@ pub fn xor_arrays<const N: usize>(a: &[u8; N], b: &[u8; N]) -> [u8; N] {
         result[i] = a[i] ^ b[i];
     }
     result
+}
+
+pub fn transform_byte_array_to_state(a: &[u8]) -> State {
+    let mut state = [[0u8; 4]; 4];
+
+    for col in 0..4 {
+        for row in 0..4 {
+            state[col][row] = a[col * 4 + row];
+        }
+    }
+
+    state
+}
+
+pub fn transform_state_to_array(state: &State) -> [u8; 16] {
+    let mut bytes = [0u8; 16];
+
+    for col in 0..4 {
+        for row in 0..4 {
+            bytes[col * 4 + row] = state[col][row];
+        }
+    }
+
+    bytes
 }

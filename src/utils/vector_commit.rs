@@ -45,9 +45,6 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: u8, iv: [u8; 16]) ->
     let mut sds: Vec<[u8; 16]> = vec![];
     let mut coms: Vec<[u8; 32]> = vec![];
 
-
-    sds.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
-
     let cop = pdecom.0;
     let com_star = pdecom.1;
 
@@ -63,6 +60,7 @@ pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: u8, iv: [u8; 16]) ->
             },
             None => {
                 coms.push(com_star);
+                sds.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
             },
         }
     }

@@ -33,7 +33,7 @@ pub fn main(field: Field) {
 }
 
 #[hax_lib::exclude]
-pub fn encrypt(state: State, key: Vec<Word>) -> State {
+pub fn encrypt(state: State, key: &Vec<Word>) -> State {
     let mut res_state = state;
     add_round_key(&mut res_state, key[0..nst].to_vec());
 

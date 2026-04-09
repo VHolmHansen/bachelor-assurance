@@ -8,7 +8,13 @@ pub type Matrix<T> = Vec<Vec<T>>;
 
 const nk: usize = 4;            // code dup
 const nst: usize = 4;           // code dup
+pub const lambda: usize = 128;
 pub const ell : usize = (1600 + 2*128 + 16)/8;
+pub const tau : usize = 11;
+pub const k_0 : usize = 12;
+pub const k_1 : usize = 11;
+pub const tau_0 : usize = 7;
+pub const tau_1 : usize = 4;
 pub type State = [[u8; nst]; nk];
 
 

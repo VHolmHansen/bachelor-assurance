@@ -1,5 +1,5 @@
 use hax_lib::{assume, loop_invariant, Int, ToInt};
-use Bachelor_Assurance::utils::types::State;
+use crate::utils::types::State;
 /*
 #[hax_lib::include]
 #[hax_lib::requires(y > 0)]

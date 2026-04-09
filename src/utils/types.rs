@@ -34,8 +34,9 @@ struct Tree_node {
 
 
 pub fn construct_tree(r: [u8; 16], iv: [u8; 16]) -> Tree {
-    fn construct_tree_rec(iv: [u8; 16], r: [u8; 16], tree_length: i128) -> (Tree, Tree){
-        let nodes:[u8; 32] = prg(r, iv);
+    fn construct_tree_rec(iv: [u8; 16], r: [u8; 16], tree_length: i128) -> (Tree, Tree) {
+        let mut nodes = [0u8; 32];
+        prg(r, iv, &mut nodes);
         let left_node_value = nodes[..16].try_into().unwrap();
         let right_node_value = nodes[16..].try_into().unwrap();
 
@@ -160,7 +161,8 @@ fn if_left_at_index_at_level(b: u8, level: i128) -> bool {
 
 fn construct_tree_at_certain_levels(r: [u8; 16], iv: [u8; 16], levels: i128) -> Tree {
     fn construct_tree_rec(iv: [u8; 16], r: [u8; 16], tree_length: i128, tree_length_to_be: i128) -> (Tree, Tree){
-        let nodes:[u8; 32] = prg(r, iv);
+        let mut nodes = [0u8; 32];
+        prg(r, iv, &mut nodes);
         let left_node_value = nodes[..16].try_into().unwrap();
         let right_node_value = nodes[16..].try_into().unwrap();
 

@@ -6,8 +6,8 @@ use crate::protocols::aes;
 
 // should have an extra parameter based on size, but we know size is 2 \lambda, which for us is 256
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
-pub fn prg(k: [u8; 16], iv: [u8; 16], output_len: usize) -> Vec<u8> {
-    let num_blocks = (output_len + 15) / 16; // ceiling division
+pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
+    let num_blocks = (output.len() + 15) / 16; // ceiling division
     let mut output = Vec::with_capacity(num_blocks * 16);
 
     let iv_int = u128::from_le_bytes(iv);
@@ -18,12 +18,19 @@ pub fn prg(k: [u8; 16], iv: [u8; 16], output_len: usize) -> Vec<u8> {
         let counter = (iv_int + i as u128).to_le_bytes();
         let counter_state = math::transform_byte_array_to_state(&counter);
         let block = aes::encrypt(counter_state, &key_ex); // your existing function
-        let block_Vec: Vec<u8> = math::transform_state_to_array(&block).try_into().unwrap();
-        output.extend_from_slice(&block_Vec);
-    }
+        let block_arr= math::transform_state_to_array(&block);
 
-    output.truncate(output_len);
-    output
+        let start = i * 16;
+
+        if i == num_blocks - 1 {
+            output[start..].copy_from_slice(&block_arr[..output.len() - start]);
+        } else {
+            output[start..start + 16].copy_from_slice(&block_arr);
+        }
+
+        let start = i * 16;
+        output[start..start + 16].copy_from_slice(&block_arr);
+    }
 }
 
 pub fn prg_convert_to_vole(sd: [u8;16], iv: [u8; 16]) -> [u8; ell]{

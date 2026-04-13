@@ -4,7 +4,7 @@ use hax_lib::{loop_invariant, Int, ToInt};
 use libcrux::drbg::{Drbg, RngCore};
 use crate::utils::{math, finite_field, galois_field};
 use crate::utils::finite_field::{Field};
-use crate::utils::types::{Matrix, State, Word};
+use crate::utils::types::{Matrix, MatrixWrapper, State, Word, from_state_to_matrix};
 
 
 pub const nk: usize = 4;            // code dup
@@ -144,8 +144,9 @@ pub fn mix_columns(state: &mut State) {
                              vec![1, 2, 3, 1],
                              vec![1, 1, 2, 3],
                              vec![3, 1, 1, 2]];
+    //let a: MatrixWrapper<u8> = MatrixWrapper(m);
 
-    let temp_state = galois_field::gf28_matrix_multiplication(a, *state);
+    let temp_state = galois_field::gf28_matrix_multiplication(a, from_state_to_matrix(*state));
     for row in 0..4 {
         for c in 0..4 {
             state[row][c] = temp_state[row][c];

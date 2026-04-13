@@ -70,28 +70,6 @@ pub fn convert_byte_array_to_int(bytes: &[u8]) -> Int {
 )]
 pub fn push_on_vec<T: Clone>(vec2: Vec<T>, vec3: Vec<T>) -> Vec<T> {
     let mut vec1 = vec2.clone();
-    /*
-    assume!(vec1.len() <= usize::MAX - 1);
-    assume!(vec2.len() > 0);
-
-    if vec2.len() > 0 {
-    for i in 0..vec2.len() {
-        loop_invariant!(|i: usize| {
-            i <= vec2.len()
-            && vec1.len() == i
-        });
-        let old_len = vec1.len();
-        assume!(i < vec2.len() && vec1.len() < usize::MAX - 1);
-        vec1.push(vec2[i].clone());
-        assert!(old_len <= usize::MAX - 1);
-        assert!(vec1.len() == old_len + 1);
-        assert!(old_len == i);
-        assert!(vec1.len() == (i + 1));
-        assert!(vec1.len() <= usize::MAX);
-    }}
-
-     */
-
 
     for i in 0..vec3.len() {
         loop_invariant!(|i: usize| {

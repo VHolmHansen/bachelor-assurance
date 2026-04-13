@@ -15,7 +15,7 @@ pub struct MatrixStruct {
     pub field: Field
 }
 
-#[hax_lib::attributes]
+//#[hax_lib::attributes]
 //#[hax_lib::requires(p > 0.to_int())]
 //#[hax_lib::ensures(|result| result.p > 0.to_int())]
 pub const fn new(p: Int) -> Field {
@@ -156,6 +156,8 @@ impl Field {
 }
 
 impl MatrixStruct {
+
+    #[hax_lib::opaque]
     pub fn matrix_addition(&self, a: Matrix<Int>, b: Matrix<Int>) -> Matrix<Int> {
         let rows = a.len();
         let columns = b[0].len();
@@ -172,6 +174,7 @@ impl MatrixStruct {
         res
     }
 
+    #[hax_lib::opaque]
     pub fn matrix_multiplication(&self, a: Matrix<Int>, b: Matrix<Int>) -> Matrix<Int> {
         let rows = a.len();
         let columns = b[0].len();
@@ -190,6 +193,7 @@ impl MatrixStruct {
         res
     }
 
+    #[hax_lib::opaque]
     pub fn matrix_modulo(&self, input: Matrix<Int>) -> Matrix<Int> {
         let mut m = input.clone();
         for i in 0..input.len() {

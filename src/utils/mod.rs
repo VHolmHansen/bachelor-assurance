@@ -11,3 +11,4 @@ pub mod vector_commit;
 pub mod hash_functions;
 pub mod prg;
 mod preliminary_helper_methods;
+mod hax_helper_functions;

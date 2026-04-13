@@ -1,4 +1,5 @@
-use crate::utils::types::{State, Word, Matrix};
+use crate::utils::types::{State, Word, Matrix, MatrixWrapper};
+use crate::utils::hax_helper_functions::*;
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
                     && a >= 0
@@ -27,6 +28,8 @@ pub fn gf28_multiply(mut a: u8, mut b: u8) -> u8 {
 
 
 
+
+
 #[hax_lib::opaque]
 #[hax_lib::requires(a <= u8::MAX
 && a >= 0)]
@@ -36,132 +39,55 @@ pub fn gf28_inverse(a: u8) -> u8 {
         return 0;
     };
 
-    #[hax_lib::requires(base <= u8::MAX && exp <= u8::MAX)]
-    #[hax_lib::ensures(|result| result <= u8::MAX)]
-    fn gf28_pow(mut base: u8, mut exp: u8) -> u8 {
-        let mut result = 1;
-        while exp > 0 {
-            if exp & 1 != 0 {
-                result = gf28_multiply(base, result);
-            }
-            base = gf28_multiply(base, base);
-            exp >>= 1;
-        }
-        result
-    }
-
     let result = gf28_pow(a, 254);
     assert!(result > 0);
     result
 }
 
+#[hax_lib::opaque]
+#[hax_lib::requires(base <= u8::MAX && exp <= u8::MAX)]
+#[hax_lib::ensures(|result| result <= u8::MAX)]
+fn gf28_pow(mut base: u8, mut exp: u8) -> u8 {
+    let mut result = 1;
+    while exp > 0 {
+        if exp & 1 != 0 {
+            result = gf28_multiply(base, result);
+        }
+        base = gf28_multiply(base, base);
+        exp >>= 1;
+    }
+    result
+}
 
 
-#[hax_lib::requires(a.len() > 0
-                    && a[0].len() > 0
-                    && b.len() > 0
-                    && b[0].len() > 0)]
+
+
+#[hax_lib::requires(ensure_non_zero_matrix(a)
+                    && ensure_non_zero_matrix(b))]
 #[hax_lib::ensures(|result| result.len() == a.len()
                     && result[0].len() == b.len())]
-pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
-    assert!(a.len() > 0);
-    let rows = a.len();
-    let columns = b[0].len();
-    let n = b.len();
-
-    let mut res: Matrix<u8> = vec![vec![0; columns]; rows];
-    assert!(n > 0);
-    assert!(res.len() == a.len());
-    assert!(res.len() > 0);
-    assert!(res[0].len() == b.len());
-
-    for i in 0..rows {
+pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: Matrix<u8>) -> Matrix<u8> {
+    let mut res: Matrix<u8> = vec![vec![0; b[0].len()]; a.len()]; // new matrix with proportions according to rows of a and columns of b
+    for i in 0..a.len() {   // rows
         hax_lib::loop_invariant!(|i: usize| {
-            i < res.len()
-            && res.len() > 0
-            && res[i].len() > 0
-            && i < rows
-            /*
-            && a.len() > 0
-            && b.len() > 0
-            && i < a.len()
-
-             */
+            ensure_inbounds_indexing(vec![i],
+                vec![res.len(), a.len(), res[i].len()])
         });
-        assert!(res[i].len() > 0);
-        hax_lib::assert!(i < a.len());
-        hax_lib::assert!(i < res.len());
-        for j in 0..columns {
+        for j in 0..b[0].len() {    // columns
             hax_lib::loop_invariant!(|j: usize| {
-                i < res.len()
-                && j < res[i].len()
-                && j < columns
-                && res.len() > 0
-                && res[i].len() > 0
-                /*
-                && a.len() > 0
-                && b.len() > 0
-                && j < res[i].len()
-                && i < a.len()
-                && j < b[0].len()
-
-                 */
+                ensure_inbounds_indexing(vec![i, j],
+                    vec![res.len(), res[i].len()])
             });
-            hax_lib::assert!(i < a.len());
-            hax_lib::assert!(i < res.len() && j < res[i].len());
-            let mut temp = 0u8;
-            for k in 0..n {
+            let mut temp = 0u8;     // might not be needed
+            for k in 0..b.len() {
                 hax_lib::loop_invariant!(|k: usize| {
-
-                    res.len() > 0
-                    && i < res.len()
-                    && res[i].len() > 0
-
-                    && a.len() > 0
-                    && a[i].len() > 0
-                    && b.len() > 0
-                    && k < n
-                    && k < a[i].len()
-                    && k < b.len()
-                    /*
-                    && a.len() > 0
-                    && b.len() > 0
-                    && j < res[i].len()
-                    && k < res.len()
-                    && k < res[i].len()
-                    && i < a.len()
-                    && k < a[i].len()
-                    && k < b.len()
-                    && j < b[k].len()
-
-                     */
+                    ensure_inbounds_indexing(vec![i, j, k],
+                        vec![res.len(), a.len(), b.len()])
                 });
-                let old_len = res.len();
-                hax_lib::assert!(i < res.len() && j < res[i].len());
-
-                hax_lib::assert!(i < a.len() && k < a[i].len() && k < b.len() && j < b[k].len());
-                if i == 0 && j == 1 {
-                    println!("current value {:?}:", temp);
-                    println!("value to add {:?}", gf28_multiply(a[i][k], b[k][j]))
-                }
-
                 temp ^= gf28_multiply(a[i][k], b[k][j]); // can be optimized with bit trickery
-
-                if i == 0 && j == 1 {
-                    println!("result {:?}:", temp);
-                }
-
-
-                hax_lib::assert!(res.len() == rows && res.len() == a.len());
-                hax_lib::assert!(res[i].len() == columns && res[i].len() == b.len());
             }
-            //println!("res[{:?}][{:?}] = {:?}", i, j, temp);
             res[i][j] = temp;
         }
     }
-    //println!("gf28mul 87 * 69: {:?}", gf28_multiply(a[0][0], b[0][1]));
-    //res[0][1] =  gf28_multiply(a[0][0],b[0][1]) ^ gf28_multiply(a[0][1],b[1][1]) ^ gf28_multiply(a[0][2],b[2][1]) ^ gf28_multiply(a[0][3],b[3][1]);
-
-
     res
 }

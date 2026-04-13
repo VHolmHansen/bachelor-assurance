@@ -3,5 +3,5 @@ target
 .DS_Store
 .idea
 proofs/fstar/extraction/.depend
-proofs/fstar/extraction/Bachelor_Assurance.fst
+proofs/fstar/extraction/Bachelor_Assurance.*
 proofs/fstar/extraction/hax.fst.config.json

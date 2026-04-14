@@ -8,7 +8,7 @@ use crate::utils::types::{Matrix, State, Word};
 
 pub const nk: usize = 4;            // code dup
 pub const nst: usize = 4;           // code dup
-const R: usize = nk + 6; // max(nk, nst) + 6
+pub const R: usize = nk + 6; // max(nk, nst) + 6
 
 
 #[hax_lib::exclude]
@@ -82,7 +82,7 @@ pub fn key_expansion(key: [u8; 16]) -> Vec<Word> {
 }
 
 #[hax_lib::exclude]
-fn setup_rcon_table(n: usize) -> Vec<u8> {
+pub fn setup_rcon_table(n: usize) -> Vec<u8> {
     let mut rcon: Vec<u8> = Vec::with_capacity(n);
 
     let mut value = 0x01;
@@ -95,7 +95,7 @@ fn setup_rcon_table(n: usize) -> Vec<u8> {
 }
 
 #[hax_lib::exclude]
-fn sub_bytes(state: &mut State) {
+pub fn sub_bytes(state: &mut State) {
     for i in 0..nk {
         for j in 0..nst {
             state[i][j] = s_box(state[i][j]);

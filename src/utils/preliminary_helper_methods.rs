@@ -1,10 +1,8 @@
-pub fn num_rec(b: Vec<bool>, d: u64) -> u64{
+pub fn num_rec(b: Vec<u8>, d: u64) -> u64{
     let d_minus_one = d-1;
     let mut j_star = 0u64;
     for i in 0..=d_minus_one{
-        if b[i as usize] {
-            j_star += 2_u64.pow(i as u32);
-        }
+        j_star += (b[i as usize] as u64) * (2_i32.pow(i as u32) as u64);
     }
     j_star
 }

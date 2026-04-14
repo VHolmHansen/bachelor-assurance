@@ -22,3 +22,9 @@ pub fn h_1(coms: &Vec<[u8; 32]>) -> [u8; 56] {
     input.extend_from_slice(&concat_coms);
     digest::shake128::<56>(&mut input)
 }
+
+pub fn h_1_for_non_specific_size(coms: Vec<u8>) -> [u8; 56] {
+    let mut input: Vec<u8> = vec![0u8; coms.len() + 16];
+    input.extend_from_slice(&coms);
+    digest::shake128::<56>(&mut input)
+}

@@ -156,7 +156,7 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(m : usize, x: T, mtag : bool, mkey :
 
 
 // x_k is the size of
-pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) /*-> [<T as ret_value>::Elem;ret_size_exp_bwd]*/ {
+pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [<T as ret_value>::Elem;ret_size_exp_bwd] {
     if mtag && mkey{
         panic!("invalid tags")
     }
@@ -233,9 +233,8 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
             }
         }
 
-
     }
-
+    y
 
 }
 

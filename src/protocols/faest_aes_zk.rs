@@ -5,19 +5,23 @@ use crate::utils::math::{transform_byte_array_to_state, xor_arrays};
 use crate::utils::types::{lambda, Word};
 
 trait ret_value {
-    type Elem;
+    type Elem: Clone;
     const dummy_value : Self::Elem;
-    fn get_slice(&self, x : usize, y: usize) -> Self;
+    const value_of_one : Self::Elem;
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
     fn get_element(&self, x : usize) -> Self::Elem;
     fn push_value(self, x : Self::Elem) -> Self;
     fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Vec<Self::Elem>;
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
+    fn set_element(&mut self, index : usize, value : &Self::Elem);
+    fn new_with_size(size: usize, value: Self::Elem) -> Self;
 }
 impl ret_value for Vec<[u8;16]> {
     type Elem = [u8;16];
     const dummy_value : Self::Elem = [0;16];
-    fn get_slice(&self, x : usize, y: usize) -> Self {
-        self[x..y].to_vec()
+    const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
     }
     fn get_element(&self, x : usize) -> [u8;16] {
         self[x]
@@ -30,7 +34,7 @@ impl ret_value for Vec<[u8;16]> {
         xor_arrays(x, y)
     }
 
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Vec<Self::Elem> {
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
         let mut res: Vec<[u8;16]> = vec![];
         for i in 0..8 {
             let value_to_push = Self::xor_array(&x[i], &y[i]);
@@ -39,13 +43,21 @@ impl ret_value for Vec<[u8;16]> {
         res
     }
 
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        vec![value; size]
+    }
+
 }
 
 impl ret_value for Vec<u8> {
     type Elem = u8;
     const dummy_value : Self::Elem = 0;
-    fn get_slice(&self, x : usize, y: usize) -> Self {
-        self[x..y].to_vec()
+    const value_of_one : Self::Elem = 1;
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
     }
     fn get_element(&self, x : usize) -> u8 {
         self[x]
@@ -57,13 +69,20 @@ impl ret_value for Vec<u8> {
     fn xor_array(x : &u8, y : &u8) -> u8{
         x ^ y
     }
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Vec<Self::Elem> {
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
         let mut res: Vec<u8> = vec![];
         for i in 0..8 {
             let value_to_push = Self::xor_array(&x[i], &y[i]);
             res.push(value_to_push);
         }
         res
+    }
+
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        vec![value; size]
     }
 }
 
@@ -137,7 +156,7 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(m : usize, x: T, mtag : bool, mkey :
 
 
 // x_k is the size of
-pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: bool, mkey : bool, Delta : [u8;16]) /*-> [<T as ret_value>::Elem;ret_size_exp_bwd]*/ {
+pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) /*-> [<T as ret_value>::Elem;ret_size_exp_bwd]*/ {
     if mtag && mkey{
         panic!("invalid tags")
     }
@@ -153,12 +172,12 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
     let one_f2m : &[u8;16] = &[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     // return value
-    let mut y = vec![[0u8; 16]; (8 * S_ke) as usize];
+    let mut y : [<T as ret_value>::Elem;ret_size_exp_bwd] = [<T as ret_value>::dummy_value;ret_size_exp_bwd];
 
     for j in 0..S_ke{
         // first value in minues operation
-        let parameter_a : &[[u8; 16]] = &x.get_slice(8*j,8*j+8);
-        let parameter_b : &[[u8; 16]] = &x_k.get_slice(i_wd+8*c,i_wd+8*c+8);
+        let parameter_a  = x.get_slice(8*j,8*j+8);
+        let parameter_b = x_k.get_slice(i_wd+8*c,i_wd+8*c+8);
 
         let mut x_tilde : T = <T as ret_value>::xor_two_array(parameter_a, parameter_b);
 
@@ -169,35 +188,35 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
             i_rcon += 1;
             for i in 0..8{
                 let r =
-                    if (rcon_value & 1) == 0 {[0;16]}
+                    if (rcon_value & 1) == 0 {&<T as ret_value>::dummy_value}
                     else {if mkey
-                        {Delta}
-                        else {*one_f2m}};
-                x_tilde[i] = xor_arrays(&x_tilde[i], &r);
+                        {&Delta}
+                        else {&<T as ret_value>::value_of_one}};
+                x_tilde.set_element(i, r);
                 rcon_value = rcon_value >> 1;
             }
         }
 
-        let mut y_tilde : Vec<[u8;16]> = vec![[0u8;16];8];
+        let mut y_tilde : T = <T as ret_value>::new_with_size(8, T::dummy_value);
         for i in 0..8{
             // all three parameters
-            let parameter_a = x_tilde[((i-1) as i32).rem_euclid(8) as usize];
-            let parameter_b = x_tilde[((i-3) as i32).rem_euclid(8) as usize];
-            let parameter_c = x_tilde[((i-6) as i32).rem_euclid(8) as usize];
+            let parameter_a = x_tilde.get_element(((i-1) as i32).rem_euclid(8) as usize);
+            let parameter_b = x_tilde.get_element(((i-3) as i32).rem_euclid(8) as usize);
+            let parameter_c = x_tilde.get_element(((i-6) as i32).rem_euclid(8) as usize);
 
-            let middle_result = xor_arrays(&parameter_a, &parameter_b);
-            let final_result = xor_arrays(&middle_result, &parameter_c);
+            let middle_result = <T as ret_value>::xor_array(&parameter_a, &parameter_b);
+            let final_result = <T as ret_value>::xor_array(&middle_result, &parameter_c);
 
-            y_tilde[i] = final_result;
+            y_tilde.set_element(i, &final_result);
         }
         if !mtag {
-            let delta_or_1 = if mkey {Delta} else {*one_f2m};
-            y_tilde[0] = xor_arrays(&y_tilde[0], &delta_or_1);
-            y_tilde[2] = xor_arrays(&y_tilde[2], &delta_or_1);
+            let delta_or_1 = if mkey {&Delta} else {&<T as ret_value>::value_of_one};
+            y_tilde.set_element(0, &<T as ret_value>::xor_array(&y_tilde.get_element(0), delta_or_1));
+            y_tilde.set_element(2, &<T as ret_value>::xor_array(&y_tilde.get_element(2), delta_or_1));
         }
 
         for i in 0..8{
-            y[(8 * j + i) as usize] = y_tilde[i as usize];
+            y[8 * j + i] = y_tilde.get_element(i);
         }
 
 

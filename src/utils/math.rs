@@ -158,3 +158,4 @@ pub fn transform_state_to_array(state: &State) -> [u8; 16] {
 
     bytes
 }
+

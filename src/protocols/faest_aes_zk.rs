@@ -1,6 +1,8 @@
+use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{add_round_key, setup_rcon_table, R};
 use crate::utils::types::{k_0, k_1, tau_0, S_ke, State};
 use crate::protocols::aes::{key_expansion, mix_columns, nk, shift_rows, sub_bytes};
+use crate::utils::galois_field::gf128_pow;
 use crate::utils::math::{transform_byte_array_to_state, xor_arrays};
 use crate::utils::types::{lambda, Word};
 
@@ -15,6 +17,8 @@ trait ret_value {
     fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
     fn set_element(&mut self, index : usize, value : &Self::Elem);
     fn new_with_size(size: usize, value: Self::Elem) -> Self;
+    fn len(&self) -> usize;
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
 }
 impl ret_value for Vec<[u8;16]> {
     type Elem = [u8;16];
@@ -49,7 +53,13 @@ impl ret_value for Vec<[u8;16]> {
     fn new_with_size(size: usize, value: Self::Elem) -> Self {
         vec![value; size]
     }
+    fn len(&self) -> usize{
+        self.len()
+    }
 
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
+        gf128_mul(&x, &alpha_val)
+    }
 }
 
 impl ret_value for Vec<u8> {
@@ -84,14 +94,27 @@ impl ret_value for Vec<u8> {
     fn new_with_size(size: usize, value: Self::Elem) -> Self {
         vec![value; size]
     }
+    fn len(&self) -> usize{
+        self.len()
+    }
+
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
+        if x == 1 {
+            alpha_val
+        } else {
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        }
+    }
 }
 
 const ret_size_exp_fwd : usize = lambda*(R+1);
 const ret_size_exp_bwd : usize = 8 * S_ke;
 
+const s_enc : usize = 16 * R;
+
 
 // pk, is a tuple with a in message and out that is 128 * (\lambda / 128)
-pub fn faest_aes_extend_witness(k :[u8;16], pk : (State,State)) -> Vec<[u8;16]>{
+pub fn faest_aes_extend_witness(k :[u8;16], pk : (State,State)) -> Vec<u8>{
     let (in_aes, out_aes) = pk;
     let k_overline = key_expansion(k);
     let mut witness : Vec<Word> = k_overline[0..nk].to_vec();
@@ -120,7 +143,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State,State)) -> Vec<[u8;16]>{
             add_round_key(&mut state_new, k_overline[4*j..4*j+4].to_vec());
         }
     }
-    words_to_blocks(witness)
+    words_to_blocks(witness).into_iter().flat_map(|arr| arr).collect()
 }
 // m = 1 for mtag=0 and mkey=0
 // m = lambda for mtag=1 and mkey=0
@@ -238,6 +261,79 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
 
 }
 
+pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> ([[u8;16]; s_enc], [[u8;16]; s_enc], [u8; 1408],[[u8;16]; 1408] ) {
+    if !mkey {
+        panic!("invalid tags")
+    }
+    let k = faest_aes_key_exp_fwd::<Vec<u8>>(1, w.clone(), false, false, [0;16]);
+    let v_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, v.clone(), true, false, [0;16]);
+    let w_tilde: [u8;ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<u8>>(1, w[lambda..].to_vec(), k.to_vec(), false, false, 0);
+    let v_w: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, v[lambda..].to_vec(), v_k.to_vec(), true, false, [0;16]);
+
+    let mut i_wd = 32 * (nk-1);
+
+    let mut do_rot_word = true;
+
+    let mut A_0 : [[u8;16]; s_enc] = [[0;16];s_enc];
+    let mut A_1 : [[u8;16]; s_enc] = [[0;16];s_enc];
+
+    for j in 0..(S_ke/4){
+        let mut k_hat : [[u8;16];4] = [[0;16];4];
+        let mut v_k_hat : [[u8;16];4] = [[0;16];4];
+        let mut w_hat: [[u8;16];4] = [[0;16];4];
+        let mut v_w_hat : [[u8;16];4] = [[0;16];4];
+
+        for r in 0..4 {
+            let mut r_mark = r;
+            if do_rot_word {r_mark = ((r+3) as i64).rem_euclid(4) as usize}
+            k_hat[r_mark] = byte_combine(k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
+            v_k_hat[r_mark] = byte_combine(v_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
+            w_hat[r] = byte_combine(w_tilde[(32*j+8*r)..(32*j+8*r+8)].to_vec());
+            v_w_hat[r] = byte_combine(v_w[(32*j+8*r)..(32*j+8*4+8)].to_vec())
+        }
+        if lambda == 256 {do_rot_word = ! do_rot_word}
+        for r in 0..4{
+            A_0[4*j+r] = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
+            let product = gf128_mul(&<Vec<[u8;16]> as ret_value>::xor_array(&k_hat[r],&v_k_hat[r]),&<Vec<[u8;16]> as ret_value>::xor_array(&w_hat[r],&v_w_hat[r]));
+            let xor = <Vec<[u8;16]> as ret_value>::xor_array(&<Vec<[u8;16]> as ret_value>::value_of_one,&A_0[4*j+r]);
+            A_1[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&product,&xor);
+        }
+        if lambda == 192 {i_wd += 192} else {i_wd += 128}
+    }
+    (A_0, A_1, k, v_k)
+
+}
+
+pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bool) -> ([[u8;16];s_enc], [[u8;16];1408]){
+    if mkey {
+        panic!("invalid tags")
+    }
+    let q_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, q.clone(), false, true, Delta);
+    let q_w_hat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
+
+    let mut B : [[u8;16];s_enc] = [[0;16];s_enc];
+
+    let mut i_wd = 32 * (nk-1);
+    let mut do_rot_word = true;
+    for j in 0..(S_ke/4) {
+        let mut q_hat_k : [[u8;16];4] = [[0;16];4];
+        let mut q_w_hat : [[u8;16];4] = [[0;16];4];
+        for r in 0..4 {
+            let mut r_mark = r;
+            if do_rot_word {r_mark = ((r+3) as i64).rem_euclid(4) as usize}
+            q_hat_k[r_mark] = byte_combine(q_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
+            q_w_hat[r_mark] = byte_combine(q_w_hat[(32*j+8*r)..(32*j+8*r+8)].to_vec());
+        }
+        if lambda == 256 {do_rot_word = ! do_rot_word}
+        for r in 0..4{
+            B[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_w_hat[r]), &gf128_mul(&Delta, &Delta));
+        }
+        if lambda == 192 {i_wd += 192} else {i_wd += 128}
+    }
+    (B, q_k)
+}
+
+
 fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
     x.chunks(4)
         .map(|chunk| {
@@ -250,17 +346,27 @@ fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
         .collect()
 }
 
-fn blocks_to_words(x: Vec<[u8; 16]>) -> Vec<Word> {
-    x.into_iter()
-        .flat_map(|block| {
-            // Split the 16-byte block into four 4-byte chunks
-            block.chunks_exact(4)
-                .map(|chunk| {
-                    let mut word = [0u8; 4];
-                    word.copy_from_slice(chunk);
-                    word
-                })
-                .collect::<Vec<Word>>()
-        })
-        .collect()
+fn byte_combine<T : ret_value>(x : T) -> [u8;16] {
+    if x.len() % 8 != 0 {
+        panic!("invalid byte length")
+    }
+    let mut res : [u8;16] = [0;16];
+    for i in 0..8 {
+        let alpha_pow_val = alpha_pow(i);
+        res = <Vec<[u8;16]> as ret_value>::xor_array(&res, &<T as ret_value>::multiply_with_alpha(x.get_element(i as usize), alpha_pow_val));
+    }
+    res
 }
+
+fn alpha_pow(i : i32) -> [u8;16] {
+    if i == 0 {
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    } else if i == 1 {
+        alpha
+    } else {
+        gf128_pow(&alpha, i)
+    }
+}
+
+const alpha : [u8;16] = [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1, 0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05];
+

@@ -18,7 +18,7 @@ pub const tau_0 : usize = 7;
 pub const tau_1 : usize = 4;
 pub type State = [[u8; nst]; nk];
 
-pub const S_ke : usize = (56+28-(lambda as i128/8)) as usize;
+pub const S_ke : usize = (56-(lambda as i128/8)+28 * (lambda as i128/256)) as usize;
 
 
 #[derive(Clone, Debug)]

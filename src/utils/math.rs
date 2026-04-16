@@ -140,7 +140,7 @@ pub fn transform_byte_array_to_state(a: &[u8]) -> State {
 
     for col in 0..4 {
         for row in 0..4 {
-            state[col][row] = a[row * 4 + col];
+            state[col][row] = a[col * 4 + row];
         }
     }
 
@@ -152,7 +152,7 @@ pub fn transform_state_to_array(state: &State) -> [u8; 16] {
 
     for col in 0..4 {
         for row in 0..4 {
-            bytes[row * 4 + col] = state[col][row];
+            bytes[col * 4 + row] = state[col][row];
         }
     }
 

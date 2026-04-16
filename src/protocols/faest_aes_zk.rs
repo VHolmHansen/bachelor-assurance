@@ -6,7 +6,7 @@ use crate::utils::galois_field::gf128_pow;
 use crate::utils::math::{transform_byte_array_to_state, xor_arrays};
 use crate::utils::types::{lambda, Word};
 
-trait ret_value {
+pub trait ret_value {
     type Elem: Clone;
     const dummy_value : Self::Elem;
     const value_of_one : Self::Elem;
@@ -117,33 +117,52 @@ const s_enc : usize = 16 * R;
 pub fn faest_aes_extend_witness(k :[u8;16], pk : (State,State)) -> Vec<u8>{
     let (in_aes, out_aes) = pk;
     let k_overline = key_expansion(k);
-    let mut witness : Vec<Word> = k_overline[0..nk].to_vec();
+    let bytes_from_k_overline : Vec<u8> = words_to_blocks(k_overline.clone()[0..nk].to_vec()).into_iter().flat_map(|arr| arr).collect();
+    let mut witness : Vec<u8> = vec![];
+    for b in bytes_from_k_overline{
+        let bits = byte_to_bits(b);
+        for bit in bits {
+            witness.push(bit);
+        }
+    }
+
+    let k_overline_for_loops : Vec<u8> = k_overline.clone().into_iter().flat_map(|word| word).collect();
 
     let mut ik = nk;
 
-    let ske = ((-(lambda as i128)/8) + 56 + 28*((lambda as i128) / 256))/4;
+    for j in 0..(S_ke/4){
+        for byte in &k_overline_for_loops[ik*4..(ik+1)*4] {
+            let bits = byte_to_bits(*byte);
+            for bit in bits {
+                witness.push(bit);
+            }
+        }
 
-    for j in 0..ske{
-
-        witness.push(k_overline[ik]);
 
         ik = if lambda == 192 { ik+6 } else { ik+4 };
     }
+    // fejl herunder
     let Beta = lambda / 128;
     for b in 0..Beta{
-        let mut state_new = in_aes;
+        let mut state_new : State = in_aes;
         add_round_key(&mut state_new, k_overline[0..4].to_vec());
         for j in 1..R{
             sub_bytes(&mut state_new);
             shift_rows(&mut state_new);
-            for i in 0..nk{
-                witness.push(state_new[i]);
-            }
+            for col in 0..4 {
+                    for row in 0..4 {
+                        let bits = byte_to_bits(state_new[col][row]);
+                        for bit in bits{
+                            witness.push(bit);
+                        }
+                    }
+                }
             mix_columns(&mut state_new);
             add_round_key(&mut state_new, k_overline[4*j..4*j+4].to_vec());
         }
     }
-    words_to_blocks(witness).into_iter().flat_map(|arr| arr).collect()
+
+    witness
 }
 // m = 1 for mtag=0 and mkey=0
 // m = lambda for mtag=1 and mkey=0
@@ -215,7 +234,8 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
                     else {if mkey
                         {&Delta}
                         else {&<T as ret_value>::value_of_one}};
-                x_tilde.set_element(i, r);
+                let existing = x_tilde.get_element(i);
+                x_tilde.set_element(i, &<T as ret_value>::xor_array(&existing, &r));
                 rcon_value = rcon_value >> 1;
             }
         }
@@ -223,9 +243,9 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
         let mut y_tilde : T = <T as ret_value>::new_with_size(8, T::dummy_value);
         for i in 0..8{
             // all three parameters
-            let parameter_a = x_tilde.get_element(((i-1) as i32).rem_euclid(8) as usize);
-            let parameter_b = x_tilde.get_element(((i-3) as i32).rem_euclid(8) as usize);
-            let parameter_c = x_tilde.get_element(((i-6) as i32).rem_euclid(8) as usize);
+            let parameter_a = x_tilde.get_element(((i+7) as i32).rem_euclid(8) as usize); // should be same for usize as -1
+            let parameter_b = x_tilde.get_element(((i+5) as i32).rem_euclid(8) as usize); // should be same for usize as -3
+            let parameter_c = x_tilde.get_element(((i+2) as i32).rem_euclid(8) as usize); // should be same for usize as -6
 
             let middle_result = <T as ret_value>::xor_array(&parameter_a, &parameter_b);
             let final_result = <T as ret_value>::xor_array(&middle_result, &parameter_c);
@@ -370,3 +390,18 @@ fn alpha_pow(i : i32) -> [u8;16] {
 
 const alpha : [u8;16] = [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1, 0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05];
 
+pub fn byte_to_bits(byte: u8) -> [u8; 8] {
+    let mut bits = [0u8; 8];
+    for i in 0..8 {
+        bits[i] = (byte >> i) & 1;
+    }
+    bits
+}
+
+pub fn bits_to_byte(bits: &[u8]) -> u8 {
+    let mut result = 0u8;
+    for i in 0..8 {
+        result |= bits[i] << i;
+    }
+    result
+}

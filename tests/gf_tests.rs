@@ -21,7 +21,7 @@ mod tests {
                                              vec![1, 1, 2, 3],
                                              vec![3, 1, 1, 2]];
      
-             assert_eq!(gf28_matrix_multiplication(A, B), expected);
+             assert_eq!(gf28_matrix_multiplication(A, from_state_to_matrix(B)), expected);
      
          }
      
@@ -44,8 +44,8 @@ mod tests {
                                        vec![0, 0, 0, 1]];
  
          println!("b state: {:?}", b);
-         println!("a mul b: {:?}", gf28_matrix_multiplication(a.clone(), b.clone()));
-         assert_eq!(gf28_matrix_multiplication(a, b), expected);
+         println!("a mul b: {:?}", gf28_matrix_multiplication(a.clone(), from_state_to_matrix(b.clone())));
+         assert_eq!(gf28_matrix_multiplication(a, from_state_to_matrix(b)), expected);
      }
     
     #[test]    
@@ -64,7 +64,7 @@ mod tests {
                                         vec![0, 0, 0, 0],
                                         vec![0, 0, 0, 0],
                                         vec![0, 0, 0, 0]];
-        let res = gf28_matrix_multiplication(a, b);
+        let res = gf28_matrix_multiplication(a, from_state_to_matrix(b));
         assert_eq!([res[0][0], res[1][1], res[2][2], res[3][3]], [expected[0][0], expected[1][1], expected[2][2], expected[3][3]]);
     }
 
@@ -92,7 +92,7 @@ mod tests {
     
         let expected: Matrix<u8> = vec![vec![30, 96, 187, 130], vec![71, 39, 244, 93]];
 
-        assert_eq!(gf28_matrix_multiplication(A, B), expected);
+        assert_eq!(gf28_matrix_multiplication(A, from_state_to_matrix(B)), expected);
 
     }
 

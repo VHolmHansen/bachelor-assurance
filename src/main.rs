@@ -10,7 +10,8 @@ mod prover;
 fn main() {
     //mpc::main();
     //lpzk::main();
-    let field = finite_field::new(257.to_int());
-    aes::main(field);
+    //let field = finite_field::new(257.to_int());
+    //aes::main(field);
+    //hax_poc::non_empty_vec_test();
 }
 

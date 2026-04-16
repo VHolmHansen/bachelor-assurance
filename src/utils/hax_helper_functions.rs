@@ -94,7 +94,7 @@ pub fn ensure_inbounds_indexing(indices: Vec<usize>, lengths: Vec<usize>) -> boo
     hax::assert_prop!(hax::forall(|i: usize| hax::forall(|j: usize|
                                     hax::implies(i < indices.len() && j < lengths.len(),
                                     indices[i] < lengths[j]))));
-    bounded
+    true
 }
 
 

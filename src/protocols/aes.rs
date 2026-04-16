@@ -5,6 +5,7 @@ use libcrux::drbg::{Drbg, RngCore};
 use crate::utils::{math, finite_field, galois_field};
 use crate::utils::finite_field::{Field};
 use crate::utils::types::{Matrix, MatrixWrapper, State, Word, from_state_to_matrix};
+use hax_lib::Prop as prop;
 
 
 pub const nk: usize = 4;            // code dup
@@ -135,8 +136,10 @@ pub fn shift_rows(state: &mut State){
     }
 }
 
-#[hax_lib::requires(state.len() == nk
-                    && state[0].len() == nst)]
+#[hax_lib::requires(prop::from(state.len() == nk)
+                    .and(hax_lib::forall(
+                    |i: usize| hax_lib::implies(
+                    i < state.len(), state[i].len() == nst))))]
 #[hax_lib::ensures(|state| state.len() == nk
                     && state[0].len() == nst)]
 pub fn mix_columns(state: &mut State) {
@@ -145,10 +148,26 @@ pub fn mix_columns(state: &mut State) {
                              vec![1, 1, 2, 3],
                              vec![3, 1, 1, 2]];
     //let a: MatrixWrapper<u8> = MatrixWrapper(m);
+    let b: Matrix<u8> = from_state_to_matrix(*state);
+    hax_lib::assert!(a.len() == b.len());
+    hax_lib::assert_prop!(hax_lib::forall(|i: usize| (i >= a.len() && i >= b.len()) || a[i].len() == b[i].len()));
 
-    let temp_state = galois_field::gf28_matrix_multiplication(a, from_state_to_matrix(*state));
+
+    let temp_state = galois_field::gf28_matrix_multiplication(a, b);
+    hax_lib::assert!(temp_state.len() == state.len());
+    hax_lib::assert_prop!(hax_lib::forall(|i: usize| (i >= state.len() && i >= temp_state.len()) || state[i].len() == temp_state[i].len()));
+
+
     for row in 0..4 {
+        hax_lib::loop_invariant!(|row: usize|
+            row <= state.len()
+            && temp_state.len() == state.len()
+        );
         for c in 0..4 {
+            loop_invariant!(|c: usize|
+                c <= state[row].len()
+                && temp_state[row].len() == state[row].len()
+            );
             state[row][c] = temp_state[row][c];
         }
     }

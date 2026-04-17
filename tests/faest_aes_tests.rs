@@ -116,6 +116,8 @@ mod tests {
 
 
             let product = gf28_multiply(w_alpha, w_gamma);
+            // der er det problem, at hvis en af værdierne i s-box beviset bliver 0, så blier det hele 0
+            // det opfylder ikke at de er invers, siden 0 ikke har et invers, er i tvivl om hvordan vi skal tage højde for det
             if w_alpha != 0 && w_gamma != 0 {
                 assert_eq!(product, one_gf8);
             }

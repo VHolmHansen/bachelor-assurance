@@ -1,4 +1,7 @@
 use std::thread::current;
+use crate::protocols::aes::R;
+use crate::utils::galois_field::gf128_mul;
+use crate::utils::math::xor_arrays;
 use crate::utils::galois_field;
 use crate::utils::preliminary_helper_methods::num_rec;
 use crate::utils::prg::prg;
@@ -19,6 +22,113 @@ pub const tau_1 : usize = 4;
 pub type State = [[u8; nst]; nk];
 
 pub const S_ke : usize = (56-(lambda as i128/8)+28 * (lambda as i128/256)) as usize;
+
+pub trait ret_value {
+    type Elem: Clone;
+    const dummy_value : Self::Elem;
+    const value_of_one : Self::Elem;
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
+    fn get_element(&self, x : usize) -> Self::Elem;
+    fn push_value(self, x : Self::Elem) -> Self;
+    fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
+    fn set_element(&mut self, index : usize, value : &Self::Elem);
+    fn new_with_size(size: usize, value: Self::Elem) -> Self;
+    fn len(&self) -> usize;
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
+}
+impl ret_value for Vec<[u8;16]> {
+    type Elem = [u8;16];
+    const dummy_value : Self::Elem = [0;16];
+    const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
+    }
+    fn get_element(&self, x : usize) -> [u8;16] {
+        self[x]
+    }
+    fn push_value(mut self, x: [u8;16]) -> Self {
+        self.push(x);
+        self
+    }
+    fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
+        xor_arrays(x, y)
+    }
+
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
+        let mut res: Vec<[u8;16]> = vec![];
+        for i in 0..8 {
+            let value_to_push = Self::xor_array(&x[i], &y[i]);
+            res.push(value_to_push);
+        }
+        res
+    }
+
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        vec![value; size]
+    }
+    fn len(&self) -> usize{
+        self.len()
+    }
+
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
+        gf128_mul(&x, &alpha_val)
+    }
+}
+
+impl ret_value for Vec<u8> {
+    type Elem = u8;
+    const dummy_value : Self::Elem = 0;
+    const value_of_one : Self::Elem = 1;
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
+    }
+    fn get_element(&self, x : usize) -> u8 {
+        self[x]
+    }
+    fn push_value(mut self, x: u8) -> Self {
+        self.push(x);
+        self
+    }
+    fn xor_array(x : &u8, y : &u8) -> u8{
+        x ^ y
+    }
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
+        let mut res: Vec<u8> = vec![];
+        for i in 0..8 {
+            let value_to_push = Self::xor_array(&x[i], &y[i]);
+            res.push(value_to_push);
+        }
+        res
+    }
+
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        vec![value; size]
+    }
+    fn len(&self) -> usize{
+        self.len()
+    }
+
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
+        if x == 1 {
+            alpha_val
+        } else {
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        }
+    }
+}
+
+pub const ret_size_exp_fwd : usize = lambda*(R+1);
+pub const ret_size_exp_bwd : usize = 8 * S_ke;
+
+pub const s_enc : usize = 16 * R;
+
 
 
 #[derive(Clone, Debug)]

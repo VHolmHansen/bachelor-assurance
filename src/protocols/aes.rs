@@ -1,7 +1,9 @@
 
-use crate::utils::{galois_field};
-use crate::utils::types::{ArrayMatrix, State, Word};
-use hax_lib::Prop as prop;
+use hax_lib::{loop_invariant, Int, ToInt};
+use libcrux::drbg::{Drbg, RngCore};
+use crate::utils::{math, galois_field};
+use crate::utils::finite_field::{Field};
+use crate::utils::types::{Matrix, State, Word};
 
 
 pub const nk: usize = 4;            // code dup
@@ -94,7 +96,7 @@ fn s_box(b: u8) -> u8{
 pub fn add_round_key(state: &mut State, keys: [Word; nst]) {
     for row in 0..4 {
         for c in 0..4 {
-            state[row][c] = state[row][c] ^ keys[c][row];
+            state[c][row] = state[c][row] ^ keys[c][row];
         }
     }
 }
@@ -106,9 +108,9 @@ pub fn add_round_key(state: &mut State, keys: [Word; nst]) {
                     .and(hax_lib::forall(|i: usize| i >= state.len() || state[i].len() == nst)))]
 pub fn shift_rows(state: &mut State){
     let temp_state = state.clone();
-    for i in 1..nk {
-        for j in 0..nst {
-            state[i][j] = temp_state[i][(j + i).rem_euclid(nst)] ;
+    for row in 1..4 {
+        for col in 0..4 {
+            state[col][row] = temp_state[(col + row).rem_euclid(4)][row];
         }
     }
 }
@@ -123,14 +125,14 @@ pub fn mix_columns(state: &mut State) {
                              [1, 1, 2, 3],
                              [3, 1, 1, 2]];
 
-    hax_lib::assert!(a.len() == nk);
-    hax_lib::assert_prop!(hax_lib::forall(|i: usize| i >= a.len() || a[i].len() == nst));
-    let temp_state = galois_field::gf28_matrix_multiplication(a, *state);
-    //hax_lib::assume!(temp_state.len() == nk);
-    //hax_lib::assume!(hax_lib::forall(|i: usize| i >= temp_state.len() || temp_state[i].len() == nst));
-    for row in 0..4 {
-        for c in 0..4 {
-            state[row][c] = temp_state[row][c];
+    for col in 0..4 {
+        let column = [state[col][0], state[col][1], state[col][2], state[col][3]];
+        for row in 0..4 {
+            state[col][row] =
+                galois_field::gf28_multiply(a[row][0], column[0]) ^
+                    galois_field::gf28_multiply(a[row][1], column[1]) ^
+                    galois_field::gf28_multiply(a[row][2], column[2]) ^
+                    galois_field::gf28_multiply(a[row][3], column[3]);
         }
     }
 }

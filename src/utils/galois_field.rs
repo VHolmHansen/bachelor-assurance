@@ -185,9 +185,15 @@ pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     result[0..16].try_into().unwrap()
 }
 
-pub fn gf128_pow(base: &[u8;16], pow_of: i32) -> [u8;16] {
-    let mut res = base.clone();
-    for _ in 2..pow_of {
+pub fn gf128_pow(base: &[u8; 16], pow_of: i32) -> [u8; 16] {
+    if pow_of == 0 {
+        return [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    }
+    if pow_of == 1 {
+        return *base;
+    }
+    let mut res = *base;
+    for _ in 2..=pow_of {
         res = gf128_mul(&res, base);
     }
     res

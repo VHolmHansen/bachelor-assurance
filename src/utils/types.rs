@@ -1,3 +1,8 @@
+use std::thread::current;
+use crate::protocols::aes::R;
+use crate::utils::galois_field::gf128_mul;
+use crate::utils::math::xor_arrays;
+use crate::utils::galois_field;
 use crate::utils::preliminary_helper_methods::num_rec;
 use crate::utils::prg::prg;
 use crate::utils::types::Tree::{Leaf, Node};
@@ -16,9 +21,119 @@ pub const k_0 : usize = 12;
 pub const k_1 : usize = 11;
 pub const tau_0 : usize = 7;
 pub const tau_1 : usize = 4;
+pub const l_ke : usize = lambda+8*S_ke;
 pub type State = [[u8; nst]; nk];
 
-pub const S_ke : usize = (56+28-(lambda as i128/8)) as usize;
+pub const S_ke : usize = (56-(lambda as i128/8)+28 * (lambda as i128/256)) as usize;
+
+pub trait ret_value {
+    type Elem: Clone;
+    const dummy_value : Self::Elem;
+    const value_of_one : Self::Elem;
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
+    fn get_element(&self, x : usize) -> Self::Elem;
+    fn push_value(self, x : Self::Elem) -> Self;
+    fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
+    fn set_element(&mut self, index : usize, value : &Self::Elem);
+    fn new_with_size(size: usize, value: Self::Elem) -> Self;
+    fn len(&self) -> usize;
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
+}
+impl ret_value for Vec<[u8;16]> {
+    type Elem = [u8;16];
+    const dummy_value : Self::Elem = [0;16];
+    const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
+    }
+    fn get_element(&self, x : usize) -> [u8;16] {
+        self[x]
+    }
+    fn push_value(mut self, x: [u8;16]) -> Self {
+        self.push(x);
+        self
+    }
+    fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
+        xor_arrays(x, y)
+    }
+
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
+        let mut res: Vec<[u8;16]> = vec![];
+        for i in 0..8 {
+            let value_to_push = Self::xor_array(&x[i], &y[i]);
+            res.push(value_to_push);
+        }
+        res
+    }
+
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        vec![value; size]
+    }
+    fn len(&self) -> usize{
+        self.len()
+    }
+
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
+        gf128_mul(&x, &alpha_val)
+    }
+}
+
+impl ret_value for Vec<u8> {
+    type Elem = u8;
+    const dummy_value : Self::Elem = 0;
+    const value_of_one : Self::Elem = 1;
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
+    }
+    fn get_element(&self, x : usize) -> u8 {
+        self[x]
+    }
+    fn push_value(mut self, x: u8) -> Self {
+        self.push(x);
+        self
+    }
+    fn xor_array(x : &u8, y : &u8) -> u8{
+        x ^ y
+    }
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
+        let mut res: Vec<u8> = vec![];
+        for i in 0..8 {
+            let value_to_push = Self::xor_array(&x[i], &y[i]);
+            res.push(value_to_push);
+        }
+        res
+    }
+
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        vec![value; size]
+    }
+    fn len(&self) -> usize{
+        self.len()
+    }
+
+    fn multiply_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
+        // x is a scalar bit (0 or 1)
+        // result is either 0 or alpha_val
+        if x == 0 {
+            [0u8; 16]
+        } else {
+            alpha_val
+        }
+    }
+}
+
+pub const ret_size_exp_fwd : usize = lambda*(R+1);
+pub const ret_size_exp_bwd : usize = 8 * S_ke;
+
+pub const s_enc : usize = 16 * R;
+
 
 
 #[derive(Clone, Debug)]
@@ -82,7 +197,6 @@ pub fn get_all_leaf_nodes(tree: &Tree) -> Vec<[u8; 16]> {
     leaves
 }
 
-#[hax_lib::exclude]
 pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
     fn get_cop_helper(b: u64, tre: &Tree, mut acc: Vec<[u8; 16]>, level : i128, height_of_tree : i128) -> Vec<[u8; 16]> {
         let is_left;
@@ -95,10 +209,10 @@ pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
         // might have made a mistake therefore !
         if is_left {
             match tre {
-                Leaf(Some(_)) => { acc},
+                Leaf(Some(v)) => { acc},
                 Node(node) => {
                     match &**node {
-                        Tree_node { value: Some(_), left: Some(ln), right: Some(rn) } => {
+                        Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
                             acc.push(get_value_of_node(rn).unwrap());
                             get_cop_helper(b, ln, acc, level + 1, height_of_tree)
                         }
@@ -109,10 +223,10 @@ pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
             }
         } else {
             match tre {
-                Leaf(Some(_)) => { acc},
+                Leaf(Some(v)) => { acc},
                 Node(node) => {
                     match &**node {
-                        Tree_node { value: Some(_), left: Some(ln), right: Some(rn) } => {
+                        Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
                             acc.push(get_value_of_node(ln).unwrap());
                             get_cop_helper(b, rn, acc, level + 1, height_of_tree)
                         }
@@ -124,7 +238,7 @@ pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
         }
     }
     let cop: Vec<[u8; 16]> = Vec::with_capacity(b.len());
-    let _ = b.len() as u64; //unused length_of_b
+    let length_of_b = b.len() as u64;
     let value_of_b = num_rec(b, d as u64);
 
     get_cop_helper(value_of_b, &tre, cop,1, d)
@@ -198,7 +312,7 @@ fn get_value_of_node(tre: &Tree) -> Option<[u8; 16]> {
     match tre {
         Leaf(Some(v)) => Some(*v),
         Node(node) => match &**node {
-            Tree_node { value: Some(v), left: Some(_), right: Some(_) } => {
+            Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
                 Some(*v)
             }
             _ => unreachable!()

@@ -1,150 +1,16 @@
 use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{add_round_key, setup_rcon_table, R};
 use crate::utils::types::{S_ke, State};
+use crate::utils::types::{k_0, k_1, ret_size_exp_bwd, ret_size_exp_fwd, ret_value, s_enc, tau_0, S_ke, State};
 use crate::protocols::aes::{key_expansion, mix_columns, nk, shift_rows, sub_bytes};
 use crate::utils::galois_field::gf128_pow;
-use crate::utils::math::{xor_arrays};
+use crate::utils::helper_methods_cstrnts::{byte_combine, byte_to_bits, words_to_blocks};
+use crate::utils::math::{transform_byte_array_to_state, xor_arrays};
 use crate::utils::types::{lambda, Word};
-
-trait ret_value {
-    type Elem: Clone;
-    const dummy_value : Self::Elem;
-    const value_of_one : Self::Elem;
-    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
-    fn get_element(&self, x : usize) -> Self::Elem;
-    fn push_value(self, x : Self::Elem) -> Self;
-    fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
-    fn set_element(&mut self, index : usize, value : &Self::Elem);
-    fn new_with_size(size: usize, value: Self::Elem) -> Self;
-    fn len(&self) -> usize;
-    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
-}
-impl ret_value for Vec<[u8;16]> {
-    type Elem = [u8;16];
-    const dummy_value : Self::Elem = [0;16];
-    const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
-        &self[x..y]
-    }
-    fn get_element(&self, x : usize) -> [u8;16] {
-        self[x]
-    }
-    fn push_value(mut self, x: [u8;16]) -> Self {
-        self.push(x);
-        self
-    }
-    fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
-        xor_arrays(x, y)
-    }
-
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
-        let mut res: Vec<[u8;16]> = vec![];
-        for i in 0..8 {
-            let value_to_push = Self::xor_array(&x[i], &y[i]);
-            res.push(value_to_push);
-        }
-        res
-    }
-
-    fn set_element(&mut self, index : usize, value : &Self::Elem) {
-        self[index] = *value;
-    }
-    fn new_with_size(size: usize, value: Self::Elem) -> Self {
-        vec![value; size]
-    }
-    fn len(&self) -> usize{
-        self.len()
-    }
-
-    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
-        gf128_mul(&x, &alpha_val)
-    }
-}
-
-impl ret_value for Vec<u8> {
-    type Elem = u8;
-    const dummy_value : Self::Elem = 0;
-    const value_of_one : Self::Elem = 1;
-    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
-        &self[x..y]
-    }
-    fn get_element(&self, x : usize) -> u8 {
-        self[x]
-    }
-    fn push_value(mut self, x: u8) -> Self {
-        self.push(x);
-        self
-    }
-    fn xor_array(x : &u8, y : &u8) -> u8{
-        x ^ y
-    }
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
-        let mut res: Vec<u8> = vec![];
-        for i in 0..8 {
-            let value_to_push = Self::xor_array(&x[i], &y[i]);
-            res.push(value_to_push);
-        }
-        res
-    }
-
-    fn set_element(&mut self, index : usize, value : &Self::Elem) {
-        self[index] = *value;
-    }
-    fn new_with_size(size: usize, value: Self::Elem) -> Self {
-        vec![value; size]
-    }
-    fn len(&self) -> usize{
-        self.len()
-    }
-
-    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
-        if x == 1 {
-            alpha_val
-        } else {
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-        }
-    }
-}
-
-const ret_size_exp_fwd : usize = lambda*(R+1);
-const ret_size_exp_bwd : usize = 8 * S_ke;
-
-const s_enc : usize = 16 * R;
 
 
 // pk, is a tuple with a in message and out that is 128 * (\lambda / 128)
-pub fn faest_aes_extend_witness(k :[u8;16], pk : (State,State)) -> Vec<u8>{
-    let (in_aes, out_aes) = pk;
-    let k_overline = key_expansion(k);
-    let mut witness : Vec<Word> = k_overline[0..nk].to_vec();
 
-    let mut ik = nk;
-
-    let ske = ((-(lambda as i128)/8) + 56 + 28*((lambda as i128) / 256))/4;
-
-    for j in 0..ske{
-
-        witness.push(k_overline[ik]);
-
-        ik = if lambda == 192 { ik+6 } else { ik+4 };
-    }
-    let Beta = lambda / 128;
-    for b in 0..Beta{
-        let mut state_new = in_aes;
-        add_round_key(&mut state_new, k_overline[0..4].try_into().unwrap());
-        for j in 1..R{
-            sub_bytes(&mut state_new);
-            shift_rows(&mut state_new);
-            for i in 0..nk{
-                witness.push(state_new[i]);
-            }
-            mix_columns(&mut state_new);
-            add_round_key(&mut state_new, k_overline[4*j..4*j+4].try_into().unwrap());
-        }
-    }
-    words_to_blocks(witness).into_iter().flat_map(|arr| arr).collect()
-}
 // m = 1 for mtag=0 and mkey=0
 // m = lambda for mtag=1 and mkey=0
 // m = lambda for mtag=0 and mkey=lambda
@@ -215,7 +81,8 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
                     else {if mkey
                         {&Delta}
                         else {&<T as ret_value>::value_of_one}};
-                x_tilde.set_element(i, r);
+                let existing = x_tilde.get_element(i);
+                x_tilde.set_element(i, &<T as ret_value>::xor_array(&existing, &r));
                 rcon_value = rcon_value >> 1;
             }
         }
@@ -223,9 +90,9 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
         let mut y_tilde : T = <T as ret_value>::new_with_size(8, T::dummy_value);
         for i in 0..8{
             // all three parameters
-            let parameter_a = x_tilde.get_element(((i-1) as i32).rem_euclid(8) as usize);
-            let parameter_b = x_tilde.get_element(((i-3) as i32).rem_euclid(8) as usize);
-            let parameter_c = x_tilde.get_element(((i-6) as i32).rem_euclid(8) as usize);
+            let parameter_a = x_tilde.get_element(((i+7) as i32).rem_euclid(8) as usize); // should be same for usize as -1
+            let parameter_b = x_tilde.get_element(((i+5) as i32).rem_euclid(8) as usize); // should be same for usize as -3
+            let parameter_c = x_tilde.get_element(((i+2) as i32).rem_euclid(8) as usize); // should be same for usize as -6
 
             let middle_result = <T as ret_value>::xor_array(&parameter_a, &parameter_b);
             let final_result = <T as ret_value>::xor_array(&middle_result, &parameter_c);
@@ -262,7 +129,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
 }
 
 pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> ([[u8;16]; s_enc], [[u8;16]; s_enc], [u8; 1408],[[u8;16]; 1408] ) {
-    if !mkey {
+    if mkey {
         panic!("invalid tags")
     }
     let k = faest_aes_key_exp_fwd::<Vec<u8>>(1, w.clone(), false, false, [0;16]);
@@ -284,12 +151,12 @@ pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> (
         let mut v_w_hat : [[u8;16];4] = [[0;16];4];
 
         for r in 0..4 {
-            let mut r_mark = r;
-            if do_rot_word {r_mark = ((r+3) as i64).rem_euclid(4) as usize}
-            k_hat[r_mark] = byte_combine(k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-            v_k_hat[r_mark] = byte_combine(v_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-            w_hat[r] = byte_combine(w_tilde[(32*j+8*r)..(32*j+8*r+8)].to_vec());
-            v_w_hat[r] = byte_combine(v_w[(32*j+8*r)..(32*j+8*4+8)].to_vec())
+            let rotated = if do_rot_word { (r + 1) % 4 } else { r };
+
+            k_hat[r]   = byte_combine(k  [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
+            v_k_hat[r] = byte_combine(v_k[(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
+            w_hat[r]   = byte_combine(w_tilde[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
+            v_w_hat[r] = byte_combine(v_w   [(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
         }
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
@@ -309,7 +176,7 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bo
         panic!("invalid tags")
     }
     let q_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, q.clone(), false, true, Delta);
-    let q_w_hat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
+    let q_w_flat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
 
     let mut B : [[u8;16];s_enc] = [[0;16];s_enc];
 
@@ -317,56 +184,20 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bo
     let mut do_rot_word = true;
     for j in 0..(S_ke/4) {
         let mut q_hat_k : [[u8;16];4] = [[0;16];4];
-        let mut q_w_hat : [[u8;16];4] = [[0;16];4];
+        let mut q_hat_w : [[u8;16];4] = [[0;16];4];
         for r in 0..4 {
-            let mut r_mark = r;
-            if do_rot_word {r_mark = ((r+3) as i64).rem_euclid(4) as usize}
-            q_hat_k[r_mark] = byte_combine(q_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-            q_w_hat[r_mark] = byte_combine(q_w_hat[(32*j+8*r)..(32*j+8*r+8)].to_vec());
+            let rotated = if do_rot_word { (r + 1) % 4 } else { r };
+
+            q_hat_k[r] = byte_combine(q_k    [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
+            q_hat_w[r] = byte_combine(q_w_flat[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
         }
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
-            B[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_w_hat[r]), &gf128_mul(&Delta, &Delta));
+            B[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }
     (B, q_k)
 }
 
-
-fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
-    x.chunks(4)
-        .map(|chunk| {
-            let mut block = [0u8; 16];
-            for (i, word) in chunk.iter().enumerate() {
-                block[i * 4..(i + 1) * 4].copy_from_slice(word);
-            }
-            block
-        })
-        .collect()
-}
-
-fn byte_combine<T : ret_value>(x : T) -> [u8;16] {
-    if x.len() % 8 != 0 {
-        panic!("invalid byte length")
-    }
-    let mut res : [u8;16] = [0;16];
-    for i in 0..8 {
-        let alpha_pow_val = alpha_pow(i);
-        res = <Vec<[u8;16]> as ret_value>::xor_array(&res, &<T as ret_value>::multiply_with_alpha(x.get_element(i as usize), alpha_pow_val));
-    }
-    res
-}
-
-fn alpha_pow(i : i32) -> [u8;16] {
-    if i == 0 {
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    } else if i == 1 {
-        alpha
-    } else {
-        gf128_pow(&alpha, i)
-    }
-}
-
-const alpha : [u8;16] = [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1, 0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05];
 

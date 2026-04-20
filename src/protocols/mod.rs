@@ -1,4 +1,6 @@
 pub mod aes;
 pub mod fs_vole;
-mod faest_aes_zk;
-pub mod lpzk;
+pub mod faest_key_exp_cstrnts;
+pub mod faest_key_enc_cstrnts;
+pub mod faest_aes_extended_witness;
+

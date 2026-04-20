@@ -28,6 +28,8 @@ pub trait ret_value {
     type Elem: Clone;
     const dummy_value : Self::Elem;
     const value_of_one : Self::Elem;
+    const value_of_two : Self::Elem;
+    const value_of_three : Self::Elem;
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
     fn get_element(&self, x : usize) -> Self::Elem;
     fn push_value(self, x : Self::Elem) -> Self;
@@ -37,11 +39,14 @@ pub trait ret_value {
     fn new_with_size(size: usize, value: Self::Elem) -> Self;
     fn len(&self) -> usize;
     fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
+    fn turn_array_to_T(x : &[Self::Elem]) -> Self;
 }
 impl ret_value for Vec<[u8;16]> {
     type Elem = [u8;16];
     const dummy_value : Self::Elem = [0;16];
     const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    const value_of_two : Self::Elem = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    const value_of_three : Self::Elem = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
         &self[x..y]
     }
@@ -78,12 +83,17 @@ impl ret_value for Vec<[u8;16]> {
     fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
         gf128_mul(&x, &alpha_val)
     }
+    fn turn_array_to_T(x : &[Self::Elem]) -> Vec<Self::Elem> {
+        x.to_vec()
+    }
 }
 
 impl ret_value for Vec<u8> {
     type Elem = u8;
     const dummy_value : Self::Elem = 0;
     const value_of_one : Self::Elem = 1;
+    const value_of_two: Self::Elem = 2;
+    const value_of_three : Self::Elem = 3;
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
         &self[x..y]
     }
@@ -124,6 +134,9 @@ impl ret_value for Vec<u8> {
         } else {
             alpha_val
         }
+    }
+    fn turn_array_to_T(x : &[Self::Elem]) -> Vec<Self::Elem> {
+        x.to_vec()
     }
 }
 

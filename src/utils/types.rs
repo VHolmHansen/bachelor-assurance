@@ -1,5 +1,3 @@
-use std::thread::current;
-use crate::utils::galois_field;
 use crate::utils::preliminary_helper_methods::num_rec;
 use crate::utils::prg::prg;
 use crate::utils::types::Tree::{Leaf, Node};
@@ -7,8 +5,10 @@ use crate::utils::types::Tree::{Leaf, Node};
 pub type Word = [u8; 4];
 pub type Matrix<T> = Vec<Vec<T>>;
 
-const nk: usize = 4;            // code dup
-const nst: usize = 4;           // code dup
+pub type ArrayMatrix<T, const N: usize, const M: usize> = [[T; M]; N];
+
+pub const nk: usize = 4;            // code dup
+pub const nst: usize = 4;           // code dup
 pub const lambda: usize = 128;
 pub const ell : usize = (1600 + 2*128 + 16)/8;
 pub const tau : usize = 11;
@@ -82,6 +82,7 @@ pub fn get_all_leaf_nodes(tree: &Tree) -> Vec<[u8; 16]> {
     leaves
 }
 
+#[hax_lib::exclude]
 pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
     fn get_cop_helper(b: u64, tre: &Tree, mut acc: Vec<[u8; 16]>, level : i128, height_of_tree : i128) -> Vec<[u8; 16]> {
         let is_left;
@@ -94,10 +95,10 @@ pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
         // might have made a mistake therefore !
         if is_left {
             match tre {
-                Leaf(Some(v)) => { acc},
+                Leaf(Some(_)) => { acc},
                 Node(node) => {
                     match &**node {
-                        Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
+                        Tree_node { value: Some(_), left: Some(ln), right: Some(rn) } => {
                             acc.push(get_value_of_node(rn).unwrap());
                             get_cop_helper(b, ln, acc, level + 1, height_of_tree)
                         }
@@ -108,10 +109,10 @@ pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
             }
         } else {
             match tre {
-                Leaf(Some(v)) => { acc},
+                Leaf(Some(_)) => { acc},
                 Node(node) => {
                     match &**node {
-                        Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
+                        Tree_node { value: Some(_), left: Some(ln), right: Some(rn) } => {
                             acc.push(get_value_of_node(ln).unwrap());
                             get_cop_helper(b, rn, acc, level + 1, height_of_tree)
                         }
@@ -123,7 +124,7 @@ pub fn get_cop(b: Vec<u8>, tre: Tree, d : i128) -> Vec<[u8; 16]> {
         }
     }
     let cop: Vec<[u8; 16]> = Vec::with_capacity(b.len());
-    let length_of_b = b.len() as u64;
+    let _ = b.len() as u64; //unused length_of_b
     let value_of_b = num_rec(b, d as u64);
 
     get_cop_helper(value_of_b, &tre, cop,1, d)
@@ -197,7 +198,7 @@ fn get_value_of_node(tre: &Tree) -> Option<[u8; 16]> {
     match tre {
         Leaf(Some(v)) => Some(*v),
         Node(node) => match &**node {
-            Tree_node { value: Some(v), left: Some(ln), right: Some(rn) } => {
+            Tree_node { value: Some(v), left: Some(_), right: Some(_) } => {
                 Some(*v)
             }
             _ => unreachable!()

@@ -39,7 +39,6 @@ pub fn main() {
     new_verifier.check_relation();
 }
 
-//#[hax_lib::ensures(|result| result[2] - result[1] * result[0] == 0)]
 #[include]
 #[requires(x < field().p
                     && y < field().p
@@ -63,8 +62,10 @@ fn generate_prover(x: Int, y: Int, z: Int, b1: Int, b2: Int, b3: Int, b4: Int) -
     let b1b2 = field().multiplication(b1, b2);
     let inverseb4 = field().additive_inverse(b4);
 
-    let vec1 = vec![x, y, z, field().addition(xb2yb1, inverseb3), 0.to_int()];
-    let vec2 = vec![b1, b2, b3, b4, field().addition(b1b2, inverseb4)];
+    //let vec1 = vec![x, y, z, field().addition(xb2yb1, inverseb3), 0.to_int()];
+    //let vec2 = vec![b1, b2, b3, b4, field().addition(b1b2, inverseb4)];
+    let vec1 = Vec::from([x, y, z, field().addition(xb2yb1, inverseb3), 0.to_int()]);
+    let vec2 = Vec::from([b1, b2, b3, b4, field().addition(b1b2, inverseb4)]);
 
     Prover {
         a: vec1,

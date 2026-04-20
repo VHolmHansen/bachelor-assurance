@@ -47,18 +47,6 @@ pub fn multiplication(x: i128, y: i128) -> i128 {
 }
 */
 
-fn main() {
-    let array_test = [
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
-    ];
-
-    let res_state = transform_byte_array_to_state(&array_test);
-
-    println!("{:?}", res_state);
-
-    println!("{:?}", transform_state_to_array(&res_state));
-}
-
 pub fn convert_byte_array_to_int(bytes: &[u8]) -> Int {
     let mut result = 0.to_int();
     let mut multiplier = 1.to_int();

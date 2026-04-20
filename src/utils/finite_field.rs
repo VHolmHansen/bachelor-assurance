@@ -1,6 +1,4 @@
-use std::ops::Add;
-use crate::utils::math;
-use hax_lib::{assume, Int, ToProp};
+use hax_lib::{Int};
 use hax_lib::int::*;
 use crate::utils::types::Matrix;
 
@@ -78,7 +76,7 @@ impl Field {
             }
         }
 
-        let (gcd, x, _) = egcd(x.rem_euclid(self.p), self.p);
+        let (_, x, _) = egcd(x.rem_euclid(self.p), self.p);
         //assert_eq!(gcd, 1.to_int());
 
         x.rem_euclid(self.p)
@@ -182,7 +180,7 @@ impl MatrixStruct {
         for i in 0..rows {
             for j in 0..columns {
                 for k in 0..k {
-                    res[i][j] = self.field.addition(res[i][j], (self.field.multiplication(a[i][k], b[k][j])));
+                    res[i][j] = self.field.addition(res[i][j], self.field.multiplication(a[i][k], b[k][j]));
                 }
             }
         }

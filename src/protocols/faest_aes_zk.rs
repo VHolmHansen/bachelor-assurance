@@ -1,9 +1,9 @@
 use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{add_round_key, setup_rcon_table, R};
-use crate::utils::types::{k_0, k_1, tau_0, S_ke, State};
+use crate::utils::types::{S_ke, State};
 use crate::protocols::aes::{key_expansion, mix_columns, nk, shift_rows, sub_bytes};
 use crate::utils::galois_field::gf128_pow;
-use crate::utils::math::{transform_byte_array_to_state, xor_arrays};
+use crate::utils::math::{xor_arrays};
 use crate::utils::types::{lambda, Word};
 
 trait ret_value {
@@ -132,7 +132,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State,State)) -> Vec<u8>{
     let Beta = lambda / 128;
     for b in 0..Beta{
         let mut state_new = in_aes;
-        add_round_key(&mut state_new, k_overline[0..4].to_vec());
+        add_round_key(&mut state_new, k_overline[0..4].try_into().unwrap());
         for j in 1..R{
             sub_bytes(&mut state_new);
             shift_rows(&mut state_new);
@@ -140,7 +140,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State,State)) -> Vec<u8>{
                 witness.push(state_new[i]);
             }
             mix_columns(&mut state_new);
-            add_round_key(&mut state_new, k_overline[4*j..4*j+4].to_vec());
+            add_round_key(&mut state_new, k_overline[4*j..4*j+4].try_into().unwrap());
         }
     }
     words_to_blocks(witness).into_iter().flat_map(|arr| arr).collect()
@@ -206,7 +206,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
 
         // The if statement
         if !mtag && rmvRcon && (c == 0) {
-            let rcon_table = setup_rcon_table(10);
+            let rcon_table = setup_rcon_table();
             let mut rcon_value = rcon_table[i_rcon];
             i_rcon += 1;
             for i in 0..8{

@@ -1,6 +1,5 @@
 use crate::utils::hash_functions::{h_0, h_1};
-use crate::utils::prg::{prg};
-use crate::utils::preliminary_helper_methods::{num_rec,get_complement_of_b,get_b};
+use crate::utils::preliminary_helper_methods::{num_rec};
 use crate::utils::types::{construct_tree, get_all_leaf_nodes, Tree, get_cop, get_leaves_from_cop_and_b};
 
 // n_d should be 128

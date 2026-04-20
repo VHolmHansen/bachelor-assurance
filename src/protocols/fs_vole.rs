@@ -1,6 +1,5 @@
 
-use crate::utils::finite_field::new;
-use crate::utils::hash_functions::{h_1, h_1_for_non_specific_size};
+use crate::utils::hash_functions::{h_1_for_non_specific_size};
 use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::num_rec;
 use crate::utils::types::{ell, k_0, k_1, tau, tau_0, Tree};
@@ -72,6 +71,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], Vec<(Tree, Vec
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
+#[hax_lib::exclude]
 pub fn chall_dec(chall : [u8;16], i : usize) -> Vec<u8>{
     if i > tau || i < 0 {
         panic!("i is not in right index");
@@ -98,6 +98,7 @@ pub fn chall_dec(chall : [u8;16], i : usize) -> Vec<u8>{
     bits
 }
 
+#[hax_lib::exclude]
 pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: Vec< (Vec<[u8; 16]>,[u8; 32])>, iv : [u8;16]) -> ([u8;56], Vec<Vec<[u8;234]>>){
     let mut commitments : Vec<[u8; 56]> = vec![];
     let mut big_q:  Vec<Vec<[u8; 234]>> =  vec![vec![];tau];
@@ -118,7 +119,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: Vec< (Vec<[u8; 16]>,[u8; 
             sd_updated_verifier[j] = seeds[(j as u64 ^ delta) as usize]
         }
 
-        let (u_mark, q) = convert_to_VOLE(sd_updated_verifier, iv);
+        let (_, q) = convert_to_VOLE(sd_updated_verifier, iv); // u_mark unused
 
         commitments.push(com);
         big_q[i] = q;

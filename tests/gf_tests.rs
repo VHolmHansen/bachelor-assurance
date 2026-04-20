@@ -6,10 +6,10 @@ mod tests {
     
      #[test]
          fn test_gf28_matrix_multiplication_identity() {
-             let A: Matrix<u8> = vec![vec![1, 0, 0, 0],
-                                      vec![0, 1, 0, 0],
-                                      vec![0, 0, 1, 0],
-                                      vec![0, 0, 0, 1]];
+             let A: ArrayMatrix<u8, nk, nst> = [[1, 0, 0, 0],
+                                      [0, 1, 0, 0],
+                                      [0, 0, 1, 0],
+                                      [0, 0, 0, 1]];
      
              let B: State = [[2, 3, 1, 1],
                  [1, 2, 3, 1],
@@ -28,10 +28,10 @@ mod tests {
      
      #[test]
      fn test_gf28_matrix_mul_with_inverse() {
-         let a: Matrix<u8> = vec![vec![9, 0, 0, 0],
-         vec![0, 27, 0, 0],
-         vec![0, 0, 42, 0],
-         vec![0, 0, 0, 3]];
+         let a: ArrayMatrix<u8, nk, nst> = [[9, 0, 0, 0],
+         [0, 27, 0, 0],
+         [0, 0, 42, 0],
+         [0, 0, 0, 3]];
  
          let b: State = [[gf28_inverse(9), 0, 0, 0],
          [0, gf28_inverse(27), 0, 0],
@@ -50,10 +50,10 @@ mod tests {
     
     #[test]    
     fn test_gf28_full_matrix_mul_with_inverse() {    
-        let a: Matrix<u8> = vec![vec![9, 3, 9, 7],
-                                 vec![4, 27, 13, 6],
-                                 vec![87, 31, 42, 2],
-                                 vec![1, 54, 29, 3]];
+        let a: ArrayMatrix<u8, nk, nst> = [[9, 3, 9, 7],
+                                 [4, 27, 13, 6],
+                                 [87, 31, 42, 2],
+                                 [1, 54, 29, 3]];
 
         let b: State = [[gf28_inverse(9), gf28_inverse(4), gf28_inverse(87), gf28_inverse(1)],
             [gf28_inverse(3), gf28_inverse(27), gf28_inverse(31), gf28_inverse(54)],
@@ -88,7 +88,7 @@ mod tests {
     
          */    
     
-        let A: Matrix<u8> = vec![vec![1, 2, 3, 4],vec![5, 6, 7, 8]];    
+        let A: ArrayMatrix<u8, 2, nst> = [[1, 2, 3, 4],[5, 6, 7, 8]];    
     
         let expected: Matrix<u8> = vec![vec![30, 96, 187, 130], vec![71, 39, 244, 93]];
 

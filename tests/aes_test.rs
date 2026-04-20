@@ -177,7 +177,7 @@ mod tests {
         let mut plaintext: State = [[50, 67, 246, 168], [136, 90, 48, 141],
             [49, 49, 152, 162], [224, 55, 7, 52]];
 
-        let key: Vec<Word> = vec![[43, 126, 21, 22], [40, 174, 210, 166],
+        let key: [Word; 4] = [[43, 126, 21, 22], [40, 174, 210, 166],
                                        [171, 247, 21, 136], [9, 207, 79, 60]];
 
         let expected: State = [[25, 107, 93, 161], [246, 244, 199, 66], [36, 227, 141, 237], [246, 145, 143, 8]];
@@ -195,14 +195,14 @@ mod tests {
         let mut plaintext2: State = [[50, 67, 246, 168], [136, 90, 48, 141],
             [49, 49, 152, 162], [224, 55, 7, 52]];
 
-        let key: Vec<Word> = vec![[43, 126, 21, 22], [40, 174, 210, 166],
+        let key: [Word; 4] = [[43, 126, 21, 22], [40, 174, 210, 166],
                                        [171, 247, 21, 136], [9, 207, 79, 60]];
 
         aes::add_round_key(&mut plaintext2, key.clone());
         aes::add_round_key(&mut plaintext2, key);
         assert_eq!(plaintext2, plaintext1);
 
-        let zero_key: Vec<Word> = vec![[0u8; 4]; 4];
+        let zero_key: [[u8; 4]; 4] = [[0u8; 4]; 4];
         aes::add_round_key(&mut plaintext2, zero_key);
         assert_eq!(plaintext2, plaintext1);
 

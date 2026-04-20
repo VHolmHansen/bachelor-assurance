@@ -1,4 +1,4 @@
-use crate::utils::types::{State, Word, Matrix};
+use crate::utils::types::{State, Matrix, ArrayMatrix};
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
                     && a >= 0
@@ -62,7 +62,7 @@ pub fn gf28_inverse(a: u8) -> u8 {
                     && b[0].len() > 0)]
 #[hax_lib::ensures(|result| result.len() == a.len()
                     && result[0].len() == b.len())]
-pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
+pub fn gf28_matrix_multiplication<const N: usize, const M: usize>(a: ArrayMatrix<u8, N, M>, b: State) -> Matrix<u8> {
     assert!(a.len() > 0);
     let rows = a.len();
     let columns = b[0].len();
@@ -135,7 +135,7 @@ pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
 
                      */
                 });
-                let old_len = res.len();
+                //let old_len = res.len();
                 hax_lib::assert!(i < res.len() && j < res[i].len());
 
                 hax_lib::assert!(i < a.len() && k < a[i].len() && k < b.len() && j < b[k].len());
@@ -169,7 +169,8 @@ pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     }
 
     // reduce modulo P128 = x^128 + x^7 + x^2 + x + 1
-    for i in (128..256).rev() {
+    let mut i = 255;
+    while i > 127 {
         if get_bit(&result, i) == 1 {
             // x^i = x^(i-128) * (x^7 + x^2 + x + 1)
             flip_bit(&mut result, i - 128 + 7);
@@ -177,15 +178,16 @@ pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
             flip_bit(&mut result, i - 128 + 1);
             flip_bit(&mut result, i - 128);
         }
+        i -= 1;
     }
 
     // return lower 128 bits
     result[0..16].try_into().unwrap()
 }
 
-pub fn gf128_pow(mut base: &[u8;16], pow_of: i32) -> [u8;16] {
+pub fn gf128_pow(base: &[u8;16], pow_of: i32) -> [u8;16] {
     let mut res = base.clone();
-    for i in 2..pow_of {
+    for _ in 2..pow_of {
         res = gf128_mul(&res, base);
     }
     res

@@ -128,7 +128,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
 }
 
 pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> ([[u8;16]; s_enc], [[u8;16]; s_enc], [u8; 1408],[[u8;16]; 1408] ) {
-    if !mkey {
+    if mkey {
         panic!("invalid tags")
     }
     let k = faest_aes_key_exp_fwd::<Vec<u8>>(1, w.clone(), false, false, [0;16]);
@@ -150,12 +150,12 @@ pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> (
         let mut v_w_hat : [[u8;16];4] = [[0;16];4];
 
         for r in 0..4 {
-            let mut r_mark = r;
-            if do_rot_word {r_mark = ((r+3) as i64).rem_euclid(4) as usize}
-            k_hat[r_mark] = byte_combine(k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-            v_k_hat[r_mark] = byte_combine(v_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-            w_hat[r] = byte_combine(w_tilde[(32*j+8*r)..(32*j+8*r+8)].to_vec());
-            v_w_hat[r] = byte_combine(v_w[(32*j+8*r)..(32*j+8*4+8)].to_vec())
+            let rotated = if do_rot_word { (r + 1) % 4 } else { r };
+
+            k_hat[r]   = byte_combine(k  [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
+            v_k_hat[r] = byte_combine(v_k[(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
+            w_hat[r]   = byte_combine(w_tilde[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
+            v_w_hat[r] = byte_combine(v_w   [(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
         }
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
@@ -175,7 +175,7 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bo
         panic!("invalid tags")
     }
     let q_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, q.clone(), false, true, Delta);
-    let q_w_hat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
+    let q_w_flat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
 
     let mut B : [[u8;16];s_enc] = [[0;16];s_enc];
 
@@ -183,16 +183,16 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bo
     let mut do_rot_word = true;
     for j in 0..(S_ke/4) {
         let mut q_hat_k : [[u8;16];4] = [[0;16];4];
-        let mut q_w_hat : [[u8;16];4] = [[0;16];4];
+        let mut q_hat_w : [[u8;16];4] = [[0;16];4];
         for r in 0..4 {
-            let mut r_mark = r;
-            if do_rot_word {r_mark = ((r+3) as i64).rem_euclid(4) as usize}
-            q_hat_k[r_mark] = byte_combine(q_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-            q_w_hat[r_mark] = byte_combine(q_w_hat[(32*j+8*r)..(32*j+8*r+8)].to_vec());
+            let rotated = if do_rot_word { (r + 1) % 4 } else { r };
+
+            q_hat_k[r] = byte_combine(q_k    [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
+            q_hat_w[r] = byte_combine(q_w_flat[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
         }
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
-            B[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_w_hat[r]), &gf128_mul(&Delta, &Delta));
+            B[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }

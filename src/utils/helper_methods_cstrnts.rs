@@ -13,21 +13,27 @@ pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
         .collect()
 }
 
-pub fn byte_combine<T : ret_value>(x : T) -> [u8;16] {
+pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
     if x.len() % 8 != 0 {
         panic!("invalid byte length")
     }
-    let mut res : [u8;16] = [0;16];
+    let mut res: [u8; 16] = [0; 16];
     for i in 0..8 {
         let alpha_pow_val = alpha_pow(i);
-        res = <Vec<[u8;16]> as ret_value>::xor_array(&res, &<T as ret_value>::multiply_with_alpha(x.get_element(i as usize), alpha_pow_val));
+        let elem = x.get_element(i as usize);
+
+        // multiply_with_alpha must behave as:
+        // - if elem is a scalar bit (0 or 1): return alpha_pow_val if bit=1, else [0;16]
+        // - if elem is a field element [u8;16]: return gf128_mul(elem, alpha_pow_val)
+        let contribution = <T as ret_value>::multiply_with_alpha(elem, alpha_pow_val);
+        res = <Vec<[u8; 16]> as ret_value>::xor_array(&res, &contribution);
     }
     res
 }
 
 pub fn alpha_pow(i : i32) -> [u8;16] {
     if i == 0 {
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     } else if i == 1 {
         alpha
     } else {

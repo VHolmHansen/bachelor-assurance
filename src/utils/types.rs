@@ -19,6 +19,7 @@ pub const k_0 : usize = 12;
 pub const k_1 : usize = 11;
 pub const tau_0 : usize = 7;
 pub const tau_1 : usize = 4;
+pub const l_ke : usize = lambda+8*S_ke;
 pub type State = [[u8; nst]; nk];
 
 pub const S_ke : usize = (56-(lambda as i128/8)+28 * (lambda as i128/256)) as usize;
@@ -115,11 +116,13 @@ impl ret_value for Vec<u8> {
         self.len()
     }
 
-    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
-        if x == 1 {
-            alpha_val
+    fn multiply_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
+        // x is a scalar bit (0 or 1)
+        // result is either 0 or alpha_val
+        if x == 0 {
+            [0u8; 16]
         } else {
-            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            alpha_val
         }
     }
 }

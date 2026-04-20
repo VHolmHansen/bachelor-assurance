@@ -28,8 +28,8 @@ pub fn faest_aes_enc_fwd<T : ret_value>(m : usize, x: T, x_k : T, in_out : Vec<u
         }
         let x_k_slice = x_k.get_slice(8*i,8*i+8);
 
-        let parameter_1 = byte_combine(x_in[0..8]);
+        /*let parameter_1 = byte_combine(x_in[0..8]);
         let parameter_2 = byte_combine(x_k_slice);
-
+        */
     }
 }

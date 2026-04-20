@@ -3,10 +3,12 @@ mod tests {
     use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion, nk};
     use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
     use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{faest_aes_key_exp_bkwd, faest_aes_key_exp_fwd};
-    use Bachelor_Assurance::utils::galois_field::{gf28_inverse, gf28_multiply};
+    use Bachelor_Assurance::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
+    use Bachelor_Assurance::utils::galois_field::{gf128_mul, gf28_inverse, gf28_multiply};
     use Bachelor_Assurance::utils::helper_methods_cstrnts::bits_to_byte;
-    use Bachelor_Assurance::utils::math::transform_byte_array_to_state;
-    use Bachelor_Assurance::utils::types::{lambda, S_ke};
+    use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
+    use Bachelor_Assurance::utils::types::{ell, k_0, k_1, lambda, tau, tau_0, S_ke};
+    use Bachelor_Assurance::utils::vector_commit::vec_open;
 
     #[test]
     fn test_extend_witness(){
@@ -124,5 +126,28 @@ mod tests {
         }
 
     }
+
+
+    fn flatten_vole_columns(big_v: &Vec<Vec<[u8; ell]>>) -> Vec<Vec<u8>> {
+        // Each row of the final V matrix is lambda bits wide
+        // big_v[i][j] contributes k_b bits to column block i
+        let num_rows = ell * 8; // ell bytes = lambda bits per row? adjust to your ell
+        let mut result: Vec<Vec<u8>> = vec![vec![]; num_rows];
+
+        for i in 0..tau {
+            let k_b = if i < tau_0 { k_0 } else { k_1 };
+            // big_v[i] has k_b entries, each is ell bytes = one "column" of bits
+            for j in 0..k_b {
+                for row in 0..num_rows {
+                    let byte_idx = row / 8;
+                    let bit_idx = row % 8;
+                    let bit = (big_v[i][j][byte_idx] >> bit_idx) & 1;
+                    result[row].push(bit);
+                }
+            }
+        }
+        result
+    }
+
 
 }

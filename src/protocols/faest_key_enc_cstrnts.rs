@@ -46,7 +46,7 @@ pub fn faest_aes_enc_fwd<T : ret_value>(m : usize, x: T, x_k : T, in_out : Vec<u
             for r in 0..4 {
                 let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
                 x_hat[r] = byte_combine(get_slice_of_x);
-                let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_x+8*r, i_x+8*r+8));
+                let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
                 x_hat_k[r] = byte_combine(get_slice_of_x_k);
             }
             let mut one = vec![<Vec<[u8;16]> as ret_value>::dummy_value;8];
@@ -100,7 +100,7 @@ pub fn faest_aes_enc_bkwd<T : ret_value>(m : usize, x : T, x_k : T, in_out : Vec
     for j in 0..R{
         for c in 0..4{
             for r in 0..4{
-                let ird = 128*j+ 32 * (c-r % 4) + 8*r;
+                let ird = 128*j + 32 * ((c as isize - (r as isize)).rem_euclid(4)) as usize + 8*r;
                 let mut x_tilde : [<T as ret_value>::Elem;8] = [<T as ret_value>::dummy_value; 8];
                 if j < R-1{
                     for idx in 0..8{
@@ -108,12 +108,12 @@ pub fn faest_aes_enc_bkwd<T : ret_value>(m : usize, x : T, x_k : T, in_out : Vec
                     }
                 } else {
                     let mut x_out : [<T as ret_value>::Elem;8] = [<T as ret_value>::dummy_value;8];
-                    for i in 1..8{
+                    for i in 0..8{
                         if mtag { // do nothing
                         } else if mkey {
-                            x_out[j] = if in_out[8*i+j] == 1 {Delta.clone()} else {<T as ret_value>::dummy_value};
+                            x_out[i] = if in_out[ird - 128*j + i] == 1 {Delta.clone()} else {<T as ret_value>::dummy_value};
                         } else {
-                            x_out[j] = if in_out[8*i+j] == 1 {<T as ret_value>::value_of_one} else {<T as ret_value>::dummy_value};
+                            x_out[i] = if in_out[ird - 128*j + i] == 1 {<T as ret_value>::value_of_one} else {<T as ret_value>::dummy_value};
                         }
                     }
                     for idx in 0..8{

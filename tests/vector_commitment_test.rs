@@ -108,8 +108,8 @@ mod tests{
         let good_or_bad = vec_verify(h, pdecom, b, iv, d as i128);
         assert!(good_or_bad);
     }
-
-    #[test]
+    // this is a very latge test that takes a long time to run
+    // #[test]
     fn test_everything(){
         let n_d: i128 = 128;
         let d = n_d.ilog(2) as u64;

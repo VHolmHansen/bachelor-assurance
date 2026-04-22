@@ -1,6 +1,7 @@
 use crate::utils::galois_field::gf128_pow;
 use crate::utils::types::Word;
-use crate::utils::types::{k_0, k_1, ret_size_exp_bwd, ret_size_exp_fwd, ret_value, s_enc, tau_0, S_ke, State};
+use crate::utils::types::{ret_value};
+use crate::utils::constants::{alpha};
 pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
     x.chunks(4)
         .map(|chunk| {
@@ -11,6 +12,24 @@ pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
             block
         })
         .collect()
+}
+// M is N/4
+// TODO: make pub when integrating
+fn array_words_to_blocks<const N: usize, const M: usize>(x: [Word; N]) -> [[u8; 16]; M]
+    //where [(); N / 4]: Sized
+{
+    let mut a: [[u8; 16]; M] = [[0u8; 16]; M];
+    for i in 0..M {
+        let mut acc: usize = 0;
+        for j in 0..4 {
+            for k in 0..4 { // word len
+                let word = x[i * 4 + j][k];
+                a[i][acc] = word;
+                acc += 1
+            }
+        }
+    }
+    a
 }
 
 pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
@@ -41,7 +60,7 @@ pub fn alpha_pow(i : i32) -> [u8;16] {
     }
 }
 
-pub const alpha : [u8;16] = [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1, 0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05];
+
 
 pub fn byte_to_bits(byte: u8) -> [u8; 8] {
     let mut bits = [0u8; 8];

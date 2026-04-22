@@ -1,11 +1,12 @@
-
-use crate::utils::finite_field::new;
-use crate::utils::hash_functions::{h_1, h_1_for_non_specific_size};
+#![allow(non_snake_case)]
+use crate::utils::hash_functions::{h_1_for_non_specific_size};
 use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::num_rec;
-use crate::utils::types::{ell, k_0, k_1, tau, tau_0, Tree};
+use crate::utils::types::{Tree};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
 use crate::utils::vector_commit::{vec_commit,vec_reconstruct};
+use crate::utils::constants::{ell, k_0, k_1, tau, tau_0};
+
 
 pub fn convert_to_VOLE(sds: Vec<[u8;16]>, iv: [u8; 16]) -> ([u8; ell],Vec<[u8; ell]>) {
     // the r structure:
@@ -118,7 +119,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: Vec< (Vec<[u8; 16]>,[u8; 
             sd_updated_verifier[j] = seeds[(j as u64 ^ delta) as usize]
         }
 
-        let (u_mark, q) = convert_to_VOLE(sd_updated_verifier, iv);
+        let (_u_mark, q) = convert_to_VOLE(sd_updated_verifier, iv);
 
         commitments.push(com);
         big_q[i] = q;

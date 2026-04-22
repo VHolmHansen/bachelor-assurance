@@ -1,18 +1,12 @@
 
-use hax_lib::{loop_invariant, Int, ToInt};
 use libcrux::drbg::{Drbg, RngCore};
 use crate::utils::{math, galois_field};
 use crate::utils::finite_field::{Field};
 use crate::utils::types::{Matrix, State, Word};
-
-
-pub const nk: usize = 4;            // code dup
-pub const nst: usize = 4;           // code dup
-pub const R: usize = nk + 6; // max(nk, nst) + 6
-
+use crate::utils::constants::{nk, nst, R};
 
 #[hax_lib::exclude]
-pub fn main(field: Field) {
+pub fn main(_field: Field) {
     let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
         Ok(drbg) => drbg,
         Err(e) => panic!("{}", e)
@@ -20,7 +14,7 @@ pub fn main(field: Field) {
 
     let mut key = [0; 16];
     rand_gen.fill_bytes(&mut key);
-    let expanded_key = key_expansion(key);
+    let _expanded_key = key_expansion(key);
 
     // dummy state
     let mut state: State = [[0; nst]; nk];
@@ -87,7 +81,7 @@ pub fn setup_rcon_table(n: usize) -> Vec<u8> {
 
     let mut value = 0x01;
 
-    for i in 0..10 {
+    for _ in 0..10 {
         rcon.push(value);
         value = galois_field::gf28_multiply(value, 0x02)
     }

@@ -1,6 +1,5 @@
 use libcrux::digest;
-
-use crate::utils::types::{ell, lambda, tau};
+use crate::utils::constants::{ell, tau, lambda};
 use crate::utils::math;
 use crate::protocols::aes;
 

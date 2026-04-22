@@ -1,11 +1,9 @@
+#![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 use crate::utils::galois_field::gf128_mul;
-use crate::protocols::aes::{add_round_key, setup_rcon_table, R};
-use crate::utils::types::{k_0, k_1, ret_size_exp_bwd, ret_size_exp_fwd, ret_value, s_enc, tau_0, S_ke, State};
-use crate::protocols::aes::{key_expansion, mix_columns, nk, shift_rows, sub_bytes};
-use crate::utils::galois_field::gf128_pow;
-use crate::utils::helper_methods_cstrnts::{byte_combine, byte_to_bits, words_to_blocks};
-use crate::utils::math::{transform_byte_array_to_state, xor_arrays};
-use crate::utils::types::{lambda, Word};
+use crate::protocols::aes::{setup_rcon_table};
+use crate::utils::types::{ret_value};
+use crate::utils::helper_methods_cstrnts::{byte_combine};
+use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, s_enc, S_ke, nk, lambda, R};
 
 
 // pk, is a tuple with a in message and out that is 128 * (\lambda / 128)
@@ -13,7 +11,7 @@ use crate::utils::types::{lambda, Word};
 // m = 1 for mtag=0 and mkey=0
 // m = lambda for mtag=1 and mkey=0
 // m = lambda for mtag=0 and mkey=lambda
-pub fn faest_aes_key_exp_fwd<T : ret_value>(m : usize, x: T, mtag : bool, mkey : bool, Delta : [u8;16]) -> [<T as ret_value>::Elem;ret_size_exp_fwd] {
+pub fn faest_aes_key_exp_fwd<T : ret_value>(_m : usize, x: T, mtag : bool, mkey : bool, _Delta : [u8;16]) -> [<T as ret_value>::Elem;ret_size_exp_fwd] {
     if mtag && mkey{
         panic!("invalid tags")
     }
@@ -44,7 +42,7 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(m : usize, x: T, mtag : bool, mkey :
 
 
 // x_k is the size of
-pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [<T as ret_value>::Elem;ret_size_exp_bwd] {
+pub fn faest_aes_key_exp_bkwd<T : ret_value>(_m : usize, x: T, x_k : T, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [<T as ret_value>::Elem;ret_size_exp_bwd] {
     if mtag && mkey{
         panic!("invalid tags")
     }
@@ -57,7 +55,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
     let mut i_rcon = 0;
 
     // helper value
-    let one_f2m : &[u8;16] = &[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    let _one_f2m : &[u8;16] = &[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
 
     // return value
     let mut y : [<T as ret_value>::Elem;ret_size_exp_bwd] = [<T as ret_value>::dummy_value;ret_size_exp_bwd];
@@ -127,7 +125,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(m : usize, x: T, x_k : T, mtag: boo
 
 }
 
-pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> ([[u8;16]; s_enc], [[u8;16]; s_enc], [u8; 1408],[[u8;16]; 1408] ) {
+pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> ([[u8;16]; S_ke], [[u8;16]; S_ke], [u8; 1408],[[u8;16]; 1408] ) {
     if mkey {
         panic!("invalid tags")
     }
@@ -140,8 +138,8 @@ pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> (
 
     let mut do_rot_word = true;
 
-    let mut A_0 : [[u8;16]; s_enc] = [[0;16];s_enc];
-    let mut A_1 : [[u8;16]; s_enc] = [[0;16];s_enc];
+    let mut A_0 : [[u8;16]; S_ke] = [[0;16];S_ke];
+    let mut A_1 : [[u8;16]; S_ke] = [[0;16];S_ke];
 
     for j in 0..(S_ke/4){
         let mut k_hat : [[u8;16];4] = [[0;16];4];
@@ -157,6 +155,7 @@ pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> (
             w_hat[r]   = byte_combine(w_tilde[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
             v_w_hat[r] = byte_combine(v_w   [(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
         }
+
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
             A_0[4*j+r] = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
@@ -167,17 +166,16 @@ pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> (
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }
     (A_0, A_1, k, v_k)
-
 }
 
-pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bool) -> ([[u8;16];s_enc], [[u8;16];1408]){
-    if mkey {
+pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bool) -> ([[u8;16];S_ke], [[u8;16];1408]){
+    if !mkey {
         panic!("invalid tags")
     }
     let q_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, q.clone(), false, true, Delta);
     let q_w_flat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
 
-    let mut B : [[u8;16];s_enc] = [[0;16];s_enc];
+    let mut B : [[u8;16];S_ke] = [[0;16];S_ke];
 
     let mut i_wd = 32 * (nk-1);
     let mut do_rot_word = true;
@@ -190,6 +188,7 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bo
             q_hat_k[r] = byte_combine(q_k    [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
             q_hat_w[r] = byte_combine(q_w_flat[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
         }
+
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
             B[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));

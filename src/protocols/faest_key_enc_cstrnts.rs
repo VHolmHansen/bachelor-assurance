@@ -1,8 +1,9 @@
-use crate::protocols::aes::R;
+#![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::helper_methods_cstrnts::byte_combine;
 use crate::utils::math::xor_arrays;
-use crate::utils::types::{ret_value, s_enc};
+use crate::utils::types::{ret_value};
+use crate::utils::constants::{l_enc, lambda, s_enc, R};
 
 // m is size of elements
 // x is the extended witness, vole tags or vole keys
@@ -13,7 +14,16 @@ use crate::utils::types::{ret_value, s_enc};
 // Delta, global vole key if mkey = 1 else none
 // in_out should be size 128, where each u8 in it corresponds to one bit
 // should never be called with mtag=1 and mkey= 1
-pub fn faest_aes_enc_fwd<T : ret_value>(m : usize, x: T, x_k : T, in_out : Vec<u8>, mtag : bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [[u8;16]; s_enc]{
+pub fn faest_aes_enc_fwd<T : ret_value>(
+        _m : usize,
+        x: T,
+        x_k : T,
+        in_out : Vec<u8>,
+        mtag : bool,
+        mkey : bool,
+        Delta : <T as ret_value>::Elem
+) -> [[u8;16]; s_enc]
+{
     if mtag && mkey {
         panic!("called with wrong values")
     }
@@ -95,7 +105,15 @@ pub fn faest_aes_enc_fwd<T : ret_value>(m : usize, x: T, x_k : T, in_out : Vec<u
 }
 // delta is here a T value, that is only for simplifiuying implementation, delta should always be a [u8;16], and when this function is called with T = u8
 // then, it should also have mkey == 0, and therefore will never be set equal to delta
-pub fn faest_aes_enc_bkwd<T : ret_value>(m : usize, x : T, x_k : T, in_out : Vec<u8>, mtag : bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [[u8;16];160]{
+pub fn faest_aes_enc_bkwd<T : ret_value>(
+        _m : usize, x : T,
+        x_k : T,
+        in_out : Vec<u8>,
+        mtag : bool,
+        mkey : bool,
+        Delta : <T as ret_value>::Elem
+) -> [[u8;16];160]
+{
     let mut y : [<Vec<[u8;16]> as ret_value>::Elem;s_enc] = [<Vec<[u8;16]> as ret_value>::dummy_value;s_enc];
     for j in 0..R{
         for c in 0..4{
@@ -142,5 +160,64 @@ pub fn faest_aes_enc_bkwd<T : ret_value>(m : usize, x : T, x_k : T, in_out : Vec
         }
     }
     y
+}
 
+pub fn faest_aes_enc_cstrnts_prover(
+            _m : usize,
+            in_of_in_and_out : Vec<u8>,
+            out_of_in_and_out : Vec<u8>,
+            w : Vec<u8>,
+            v : [[u8;16]; l_enc],
+            k : [u8;128*(R+1)],
+            v_k : [[u8;16];128*(R+1)],
+            mkey : bool,
+) -> ([[u8;16];160],[[u8;16];160])
+{
+    if mkey {
+        panic!("mkey should be false");
+    }
+    let s = faest_aes_enc_fwd(1, w.clone(), k.to_vec(), in_of_in_and_out.clone(), false, false, 0);
+    let v_s = faest_aes_enc_fwd(lambda, v.to_vec(), v_k.to_vec(), in_of_in_and_out.clone(), true, false, [0;16]);
+    let s_overline = faest_aes_enc_bkwd(1, w.clone(), k.to_vec(), out_of_in_and_out.clone(), false, false, 0);
+    let v_s_overline = faest_aes_enc_bkwd(lambda, v.to_vec(), v_k.to_vec(), out_of_in_and_out.clone(), true, false, [0;16]);
+    let mut A_0 : [[u8;16];s_enc] = [[0;16];s_enc];
+    let mut A_1 : [[u8;16];s_enc] = [[0;16];s_enc];
+    for j in 0..s_enc {
+        A_0[j] = gf128_mul(&v_s[j], &v_s_overline[j]);
+        let s_v_s_add = xor_arrays(&s[j], &v_s[j]);
+        let s_overline_v_s_overline_add = xor_arrays(&s_overline[j], &v_s_overline[j]);
+        let prod = gf128_mul(&s_v_s_add, &s_overline_v_s_overline_add);
+        // subtract 1_{F_{2^8}} and A0,j — in GF(2^128), subtraction is XOR
+        let one_f28: [u8; 16] = {
+            let mut arr = [0u8; 16];
+            arr[0] = 0x01;
+            arr
+        };
+        A_1[j] = xor_arrays(&xor_arrays(&prod, &one_f28), &A_0[j]);
+    }
+    (A_0, A_1)
+}
+pub fn faest_aes_enc_cstrnts_verifier(
+                _m : usize,
+                in_of_in_and_out : Vec<u8>,
+                out_of_in_and_out : Vec<u8>,
+                q : [[u8;16];l_enc],
+                q_k : [[u8;16];128*(R+1)],
+                delta : [u8;16],
+                mkey : bool
+) -> [[u8;16];s_enc]
+{
+    if !mkey {
+        panic!("mkey should not be false");
+    }
+    let q_s = faest_aes_enc_fwd(lambda, q.to_vec(), q_k.to_vec(), in_of_in_and_out.clone(), false, true, delta);
+    let q_s_overline = faest_aes_enc_bkwd(lambda, q.to_vec(), q_k.to_vec(), out_of_in_and_out.clone(), false, true, delta);
+
+    let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
+    for j in 0..s_enc {
+        let q_product = gf128_mul(&q_s[j], &q_s_overline[j]);
+        let delta_product = gf128_mul(&delta, &delta);
+        B[j] = xor_arrays(&q_product, &delta_product);
+    }
+    B
 }

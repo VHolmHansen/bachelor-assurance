@@ -1,4 +1,4 @@
-use crate::utils::types::{State, Word, Matrix};
+use crate::utils::types::{State, Matrix};
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
                     && a >= 0
@@ -135,7 +135,7 @@ pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
 
                      */
                 });
-                let old_len = res.len();
+                //let old_len = res.len();
                 hax_lib::assert!(i < res.len() && j < res[i].len());
 
                 hax_lib::assert!(i < a.len() && k < a[i].len() && k < b.len() && j < b[k].len());

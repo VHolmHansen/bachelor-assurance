@@ -1,13 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion, nk};
+    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
     use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
     use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{faest_aes_key_exp_bkwd, faest_aes_key_exp_fwd};
     use Bachelor_Assurance::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
     use Bachelor_Assurance::utils::galois_field::{gf128_mul, gf28_inverse, gf28_multiply};
     use Bachelor_Assurance::utils::helper_methods_cstrnts::bits_to_byte;
     use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
-    use Bachelor_Assurance::utils::types::{ell, k_0, k_1, lambda, tau, tau_0, S_ke};
+    use Bachelor_Assurance::utils::constants::{nk, ell, k_0, k_1, lambda, tau, tau_0, S_ke};
     use Bachelor_Assurance::utils::vector_commit::vec_open;
 
     #[test]

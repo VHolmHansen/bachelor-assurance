@@ -4,7 +4,7 @@ mod tests {
     use Bachelor_Assurance::protocols::fs_vole::{chall_dec, convert_to_VOLE, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
     use Bachelor_Assurance::utils::math::xor_arrays;
     use Bachelor_Assurance::utils::preliminary_helper_methods::num_rec;
-    use Bachelor_Assurance::utils::types::{k_0, k_1, tau, tau_0};
+    use Bachelor_Assurance::utils::constants::{k_0, k_1, tau, tau_0};
 
     #[test]
     fn test_convert_to_vole_for_0(){

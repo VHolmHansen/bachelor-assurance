@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod tests{
-    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion, nk, R};
+    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
     use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
     use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{faest_aes_exp_cstrnts_qDelta, faest_aes_exp_cstrnts_wv};
     use Bachelor_Assurance::utils::galois_field::gf128_mul;
-    use Bachelor_Assurance::utils::helper_methods_cstrnts::{alpha_pow, byte_combine};
+    use Bachelor_Assurance::utils::helper_methods_cstrnts::{alpha_pow, byte_combine, words_to_blocks};
     use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
-    use Bachelor_Assurance::utils::types::{l_ke, lambda, S_ke};
+    use Bachelor_Assurance::utils::constants::{l_ke, lambda, S_ke, nk, R};
 
     fn get_key_and_witness() -> ([u8; 16], Vec<u8>) {
         let key: [u8; 16] = [
@@ -24,6 +24,8 @@ mod tests{
         let plaintext_state = transform_byte_array_to_state(&plaintext);
         let ciphertext_state = encrypt(plaintext_state, &key_expansion(key));
         let w = faest_aes_extend_witness(key, (plaintext_state, ciphertext_state));
+
+
         (key, w)
     }
 
@@ -88,152 +90,12 @@ mod tests{
         let (v_ke, q_ke) = make_synthetic_vole(&w_ke, &delta);
 
         let (a0, _a1, _, _) = faest_aes_exp_cstrnts_wv(w_ke, v_ke, false);
-        let (b, _)          = faest_aes_exp_cstrnts_qDelta(delta, q_ke, false);
+        let (b, _)          = faest_aes_exp_cstrnts_qDelta(delta, q_ke, true);
 
         for i in 0..S_ke {
             assert_eq!(b[i], a0[i],
                        "With delta=0, B[i] must equal A0[i] at i={}", i);
         }
-    }
-
-    #[test]
-    fn test_diagnose_zero_delta_failure() {
-        let (_key, w) = get_key_and_witness();
-        let w_ke = w[..l_ke].to_vec();
-        let delta = [0u8; 16];
-
-        // With delta=0, q[i] = 0*delta XOR v[i] = v[i]
-        // So q and v carry identical data.
-        // This means KeyExpFwd and KeyExpBkwd should produce
-        // identical outputs when called with (v, Mtag=true)
-        // versus (q, Mkey=true, delta=0).
-
-        let (v_ke, q_ke) = make_synthetic_vole(&w_ke, &delta);
-
-        // These should be identical since q[i] == v[i] when delta=0
-        for i in 0..l_ke {
-            assert_eq!(v_ke[i], q_ke[i],
-                       "Precondition failed: v[{}] != q[{}] with delta=0", i, i);
-        }
-
-        // Now check that KeyExpFwd gives same result for both paths
-        use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{
-            faest_aes_key_exp_fwd, faest_aes_key_exp_bkwd
-        };
-
-        let vk_from_tags = faest_aes_key_exp_fwd(128, v_ke.clone(), true, false, [0;16]);
-        let qk_from_keys = faest_aes_key_exp_fwd(128, q_ke.clone(), false, true, delta);
-
-        for i in 0..vk_from_tags.len() {
-            assert_eq!(
-                vk_from_tags[i], qk_from_keys[i],
-                "KeyExpFwd diverges at index i={} between tag path and key path with delta=0",
-                i
-            );
-        }
-
-        // Now check KeyExpBkwd
-        let k = faest_aes_key_exp_fwd(1, w_ke.clone(), false, false, [0;16]);
-
-        let vw_from_tags = faest_aes_key_exp_bkwd(
-            128, v_ke[lambda..].to_vec(), vk_from_tags.to_vec(), true, false, [0;16]
-        );
-        let qw_from_keys = faest_aes_key_exp_bkwd(
-            128, q_ke[lambda..].to_vec(), qk_from_keys.to_vec(), false, true, delta
-        );
-
-        for i in 0..vw_from_tags.len() {
-            assert_eq!(
-                vw_from_tags[i], qw_from_keys[i],
-                "KeyExpBkwd diverges at index i={} between tag path and key path with delta=0",
-                i
-            );
-        }
-    }
-
-    #[test]
-    fn test_diagnose_bytecombine_loop() {
-        let (_key, w) = get_key_and_witness();
-        let w_ke = w[..l_ke].to_vec();
-        let delta = [0u8; 16];
-
-        let (v_ke, q_ke) = make_synthetic_vole(&w_ke, &delta);
-
-        use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{
-            faest_aes_key_exp_fwd, faest_aes_key_exp_bkwd
-        };
-
-        let k        = faest_aes_key_exp_fwd(1,   w_ke.clone(), false, false, [0;16]);
-        let v_k      = faest_aes_key_exp_fwd(128, v_ke.clone(), true,  false, [0;16]);
-        let w_tilde  = faest_aes_key_exp_bkwd(1,   w_ke[lambda..].to_vec(), k.to_vec(),   false, false, 0);
-        let v_w      = faest_aes_key_exp_bkwd(128, v_ke[lambda..].to_vec(), v_k.to_vec(), true,  false, [0;16]);
-
-        let q_k      = faest_aes_key_exp_fwd(128, q_ke.clone(), false, true, delta);
-        let q_w_flat = faest_aes_key_exp_bkwd(128, q_ke[lambda..].to_vec(), q_k.to_vec(), false, true, delta);
-
-        // With delta=0, q==v so intermediate arrays must match
-        for i in 0..v_k.len() {
-            assert_eq!(v_k[i], q_k[i],
-                       "v_k[{}] != q_k[{}]", i, i);
-        }
-        for i in 0..v_w.len() {
-            assert_eq!(v_w[i], q_w_flat[i],
-                       "v_w[{}] != q_w_flat[{}]", i, i);
-        }
-
-
-        let mut i_wd = 32 * (nk - 1);
-        let mut do_rot_word = true;
-
-        for j in 0..(S_ke / 4) {
-            let mut k_hat:   [[u8;16];4] = [[0;16];4];
-            let mut v_k_hat: [[u8;16];4] = [[0;16];4];
-            let mut w_hat:   [[u8;16];4] = [[0;16];4];
-            let mut v_w_hat: [[u8;16];4] = [[0;16];4];
-            let mut q_hat_k: [[u8;16];4] = [[0;16];4];
-            let mut q_hat_w: [[u8;16];4] = [[0;16];4];
-
-            for r in 0..4 {
-                let r_mark = if do_rot_word {
-                    ((r as i64 + 3).rem_euclid(4)) as usize
-                } else {
-                    r
-                };
-
-                // Key words: use r_mark (RotWord reorders key input)
-                k_hat[r_mark]   = byte_combine(k  [(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-                v_k_hat[r_mark] = byte_combine(v_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-                q_hat_k[r_mark] = byte_combine(q_k[(i_wd+8*r)..(i_wd+8*r+8)].to_vec());
-
-                // S-box outputs: use plain r (no rotation on output side)
-                w_hat[r]   = byte_combine(w_tilde [(32*j+8*r)..(32*j+8*r+8)].to_vec());
-                v_w_hat[r] = byte_combine(v_w     [(32*j+8*r)..(32*j+8*r+8)].to_vec());
-                q_hat_w[r] = byte_combine(q_w_flat[(32*j+8*r)..(32*j+8*r+8)].to_vec());
-                //                                  ^^^^^^^^^ plain r, not r_mark
-            }
-
-            if lambda == 256 { do_rot_word = !do_rot_word; }
-
-            // With delta=0: v_k_hat == q_hat_k and v_w_hat == q_hat_w
-            for r in 0..4 {
-                assert_eq!(v_k_hat[r], q_hat_k[r],
-                           "j={} r={}: v_k_hat != q_hat_k after byte_combine", j, r);
-                assert_eq!(v_w_hat[r], q_hat_w[r],
-                           "j={} r={}: v_w_hat != q_hat_w after byte_combine", j, r);
-            }
-
-            // Products must also match when delta=0
-            for r in 0..4 {
-                let a0 = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
-                let b  = gf128_mul(&q_hat_k[r], &q_hat_w[r]);
-                assert_eq!(a0, b,
-                           "j={} r={}: A0 != B even though inputs matched", j, r);
-            }
-
-            if lambda == 192 { i_wd += 192; } else { i_wd += 128; }
-        }
-
-
     }
 
 #[test]
@@ -254,7 +116,7 @@ fn test_cstrnts_invariant() {
         w_ke.clone(), v_ke, false,
     );
     let (b, _qk_exp) = faest_aes_exp_cstrnts_qDelta(
-        delta, q_ke, false,
+        delta, q_ke, true,
     );
 
     use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;

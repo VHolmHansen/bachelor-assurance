@@ -5,7 +5,8 @@ mod tests{
     use Bachelor_Assurance::utils::galois_field::gf128_mul;
     use Bachelor_Assurance::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
     use Bachelor_Assurance::utils::math::transform_byte_array_to_state;
-    use Bachelor_Assurance::utils::types::{s_enc, State};
+    use Bachelor_Assurance::utils::types::{State};
+    use Bachelor_Assurance::utils::constants::{s_enc};
 
     #[test]
     fn test_aes_enc_fwd_bkwd() {
@@ -67,7 +68,7 @@ mod tests{
         }
         x_flat
     }
-    pub fn turn_states_to_bits(x : State) -> Vec<u8> {
+    fn turn_states_to_bits(x : State) -> Vec<u8> {
         let mut res = vec![];
         for word in x {
             for byte in word {

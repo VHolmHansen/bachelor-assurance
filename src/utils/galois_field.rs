@@ -204,3 +204,35 @@ fn get_bit(a: &[u8], i: usize) -> u8 {
 fn flip_bit(a: &mut [u8], i: usize) {
     a[i / 8] ^= 1 << (i % 8);
 }
+
+pub fn gf64_add(a: &[u8;8], b: &[u8;8]) -> [u8;8] {
+    let mut result = [0u8;8];
+    for i in 0..8 {
+        result[i] = a[i] ^ b[i];
+    }
+    result
+}
+
+pub fn gf64_mul(a: &[u8;8], b: &[u8;8]) -> [u8;8] {
+    // same carry-less multiplication as gf128 but 64 bits wide
+    // reduction modulo x^64 + x^4 + x^3 + x + 1
+    let mut result = 0u64;
+    let mut a_val = u64::from_le_bytes(*a);
+    let mut b_val = u64::from_le_bytes(*b);
+
+    // carry-less multiply
+    for _ in 0..64 {
+        if b_val & 1 == 1 {
+            result ^= a_val;
+        }
+        let carry = (a_val >> 63) & 1;
+        a_val <<= 1;
+        if carry == 1 {
+            // reduce: x^64 = x^4 + x^3 + x + 1
+            a_val ^= 0x1b;
+        }
+        b_val >>= 1;
+    }
+
+    result.to_le_bytes()
+}

@@ -24,3 +24,5 @@ pub const S_ke : usize = (56-(lambda as i128/8)+28 * (lambda as i128/256)) as us
 pub const alpha : [u8;16] = [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1, 0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05];
 
 pub const beta : usize = 1; // er 1 for 128 er 2 for 192 og 256
+
+pub const big_b : usize = 16;

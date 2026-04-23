@@ -43,7 +43,7 @@ pub fn u_to_bits(u: &[u8; 234]) -> Vec<u8> {
 }
 
 
-pub fn expand_bits(input: [u8; 56]) -> [u8; 448] {
+pub fn expand_bits_56(input: [u8; 56]) -> [u8; 448] {
     let mut output = [0u8; 448];
     for (i, byte) in input.iter().enumerate() {
         for bit in 0..8 {
@@ -52,6 +52,21 @@ pub fn expand_bits(input: [u8; 56]) -> [u8; 448] {
         }
     }
     output
+}
+
+pub fn bytes_to_bits(bytes: &[u8]) -> Vec<u8> {
+    let mut bits = vec![];
+    for &byte in bytes {
+        for i in 0..8 {
+            bits.push((byte >> i) & 1);
+        }
+    }
+    bits
+}
+
+pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
+    let bits = bytes_to_bits(chall_3);
+    bits.try_into().unwrap()
 }
 
 // turn pk and sk into states:

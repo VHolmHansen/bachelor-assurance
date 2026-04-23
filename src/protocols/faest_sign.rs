@@ -6,7 +6,7 @@ use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit};
 use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits};
-use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits, u_to_bits, vole_hash, vole_to_row_major};
+use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_bits, vole_hash, vole_to_row_major};
 use crate::utils::math::transform_byte_array_to_state;
 use crate::utils::vector_commit::vec_open;
 
@@ -70,7 +70,7 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u
     let V_arr: [[u8; lambda]; ell_bit_size + lambda] = v_rows.try_into().unwrap();
 
 
-    let (a_tilde, b_tilde) = faest_aes_prove(extended_witness.try_into().unwrap(), u_arr, V_arr, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits(chall_2));
+    let (a_tilde, b_tilde) = faest_aes_prove(extended_witness.try_into().unwrap(), u_arr, V_arr, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
 
     let chall_3 = h_2_3(chall_2, a_tilde, b_tilde);
 

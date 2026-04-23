@@ -115,3 +115,4 @@ pub fn h_2_3(chall_2 : [u8;56], a_tilde : [u8;16], b_tilde : [u8;16]) -> [u8;16]
 
     digest::shake128::<16>(&input)
 }
+

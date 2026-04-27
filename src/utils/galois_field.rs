@@ -236,3 +236,18 @@ pub fn gf64_mul(a: &[u8;8], b: &[u8;8]) -> [u8;8] {
 
     result.to_le_bytes()
 }
+
+
+pub fn field_pow_64(base: &[u8; 8], exp: usize) -> [u8; 8] {
+    if exp == 0 {
+        let mut one = [0u8; 8];
+        one[0] = 1;
+        return one;
+    }
+    let mut result = [0u8; 8];
+    result[0] = 1;
+    for _ in 0..exp {
+        result = gf64_mul(&result, base);
+    }
+    result
+}

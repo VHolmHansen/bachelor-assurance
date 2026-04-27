@@ -24,7 +24,7 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u
 
     // få u tilde
     let u_x_0 = &u_bytes[0..216];
-    let u_x_1 = &u_bytes[0..216];
+    let u_x_1 = &u_bytes[216..234];
     let u_tilde = vole_hash(&chall_1, u_x_0, u_x_1);
 
     // få v_tilde
@@ -47,6 +47,8 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u
     // u_bytes og v_bytes skal pakkes om til bits, siden det er sådan de bliver brugt senere
     let u_bits: Vec<u8> = u_to_bits(&u_bytes);
     let u_bits = u_bits[..ell_bit_size + lambda].to_vec();
+    
+
     let v_rows: Vec<[u8; lambda]> = vole_to_row_major(&v_bytes);
 
 
@@ -58,10 +60,9 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness = faest_aes_extend_witness(sk, (pt_state, ct_state));
 
-    let mut d : Vec<u8> = vec![];
+    let mut d: Vec<u8> = vec![];
     for i in 0..ell_bit_size {
-        let val = <Vec<u8> as ret_value>::xor_array(&extended_witness[i],&u_bits[i]);
-        d.push(val);
+        d.push(extended_witness[i] ^ u_bits[i]);
     }
 
     let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
@@ -71,6 +72,10 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u
 
 
     let (a_tilde, b_tilde) = faest_aes_prove(extended_witness.try_into().unwrap(), u_arr, V_arr, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
+
+    println!("chall_2 sign: {:?}", chall_2);
+    println!("a_tilde sign: {:?}", a_tilde);
+    println!("b_tilde sign: {:?}", b_tilde);
 
     let chall_3 = h_2_3(chall_2, a_tilde, b_tilde);
 

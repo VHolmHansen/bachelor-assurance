@@ -70,16 +70,14 @@ pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
 }
 
 // turn pk and sk into states:
-pub fn bits_to_state(text : Vec<u8>) -> State{
+pub fn bits_to_state(text: Vec<u8>) -> State {
     let mut state = [[0u8; 4]; 4];
-
     for (i, chunk) in text.chunks(8).enumerate() {
         let byte = bits_to_byte(chunk);
         let col = i / 4;
         let row = i % 4;
-        state[row][col] = byte;
+        state[col][row] = byte;  // ← swap col and row here
     }
-
     state
 }
 

@@ -24,7 +24,6 @@ pub fn faest_aes_prove(
         .collect();
 
 
-
     let in_of_in_and_out = pk.0;
     let out_of_in_and_out = pk.1;
 
@@ -69,6 +68,7 @@ pub fn faest_aes_prove(
     for i in 0..lambda {
         new_u[i] = to_field(&[u[ell_bit_size+i]], 1)[0];
     }
+    
 
     let mut alpha = [0u8; 16];
     alpha[0] = 0x02; // bit 1 set = x^1
@@ -91,7 +91,7 @@ pub fn faest_aes_prove(
 
     let alpha_tilde = zk_hash(&chall, &a_1, &u_star);
     let beta_tilde = zk_hash(&chall, &a_0, &v_star);
-
+    
 
     (alpha_tilde, beta_tilde)
 }
@@ -105,15 +105,33 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     // linje 5
     // Det her skal forstås som en reconstruction af det Q (en matrix), som er blevet sendt rundt på et tidligere tidspunkt
     let mut Q_mut = Q.clone();
-    // Correct - for each row, XOR the entire row with delta if d[row]=1
+
+
+    // Before correction - spot check row 0 and row 1
+    println!("=== d-correction check ===");
+    println!("d[0]={}, d[1]={}", d[0], d[1]);
+    println!("Q_mut row 0 before correction, first 8: {:?}", &Q_mut[0][..8]);
+    println!("Q_mut row 1 before correction, first 8: {:?}", &Q_mut[1][..8]);
+    println!("chall_3 raw bytes first 8: {:?}", &chall_3[..8]);
+    println!("chall_3 as bits first 8: {:?}",
+             (0..8).map(|col| (chall_3[col/8] >> (col%8)) & 1).collect::<Vec<u8>>());
+
+    // FIXED correction - XOR the bit at position col, not the byte
     for row in 0..ell_bit_size {
         if d[row] == 1 {
             for col in 0..lambda {
-                Q_mut[row][col] ^= chall_3[col];
+                Q_mut[row][col] ^= chall_3[col]; // chall_3[col] is already a bit (0 or 1)
             }
         }
     }
 
+    // After correction
+    println!("Q_mut row 0 after correction, first 8: {:?}", &Q_mut[0][..8]);
+    println!("Q_mut row 1 after correction, first 8: {:?}", &Q_mut[1][..8]);
+    println!("delta as field element: {:?}",
+             &crate::utils::helper_methods_prove_verify::to_field(&chall_3, lambda)[0][..8]);
+
+    // After correction - row 0 should now equal v[0] from sign since d[0]=w[0] XOR u[0]
     let q: Vec<[u8;16]> = (0..ell_bit_size+lambda)
         .map(|row| {
             to_field(&Q_mut[row], lambda)[0]
@@ -163,6 +181,8 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     let a_tilde_times_delta = gf128_mul(&a_tilde, &delta);
     let q_tilde_minus_a_tilde_times_delta = xor_arrays(&q_tilde, &a_tilde_times_delta);
 
+
+ 
 
 
     q_tilde_minus_a_tilde_times_delta

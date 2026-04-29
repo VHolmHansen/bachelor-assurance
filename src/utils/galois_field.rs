@@ -1,4 +1,4 @@
-use crate::utils::types::{State, Word, Matrix};
+use crate::utils::types::{State, Matrix};
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
                     && a >= 0
@@ -135,7 +135,7 @@ pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
 
                      */
                 });
-                let old_len = res.len();
+                //let old_len = res.len();
                 hax_lib::assert!(i < res.len() && j < res[i].len());
 
                 hax_lib::assert!(i < a.len() && k < a[i].len() && k < b.len() && j < b[k].len());
@@ -151,4 +151,103 @@ pub fn gf28_matrix_multiplication(a: Matrix<u8>, b: State) -> Matrix<u8> {
     }
 
     res
+}
+
+pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
+    // carry-less multiplication of two 128-bit polynomials
+    // result is 256 bits before reduction
+    let mut result = [0u8; 32];
+
+    for i in 0..128 {
+        if get_bit(a, i) == 1 {
+            for j in 0..128 {
+                if get_bit(b, j) == 1 {
+                    flip_bit(&mut result, i + j);
+                }
+            }
+        }
+    }
+
+    // reduce modulo P128 = x^128 + x^7 + x^2 + x + 1
+    for i in (128..256).rev() {
+        if get_bit(&result, i) == 1 {
+            // x^i = x^(i-128) * (x^7 + x^2 + x + 1)
+            flip_bit(&mut result, i - 128 + 7);
+            flip_bit(&mut result, i - 128 + 2);
+            flip_bit(&mut result, i - 128 + 1);
+            flip_bit(&mut result, i - 128);
+        }
+    }
+
+    // return lower 128 bits
+    result[0..16].try_into().unwrap()
+}
+
+pub fn gf128_pow(base: &[u8; 16], pow_of: i32) -> [u8; 16] {
+    if pow_of == 0 {
+        return [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+    }
+    if pow_of == 1 {
+        return *base;
+    }
+    let mut res = *base;
+    for _ in 2..=pow_of {
+        res = gf128_mul(&res, base);
+    }
+    res
+}
+
+fn get_bit(a: &[u8], i: usize) -> u8 {
+    (a[i / 8] >> (i % 8)) & 1
+}
+
+fn flip_bit(a: &mut [u8], i: usize) {
+    a[i / 8] ^= 1 << (i % 8);
+}
+
+pub fn gf64_add(a: &[u8;8], b: &[u8;8]) -> [u8;8] {
+    let mut result = [0u8;8];
+    for i in 0..8 {
+        result[i] = a[i] ^ b[i];
+    }
+    result
+}
+
+pub fn gf64_mul(a: &[u8;8], b: &[u8;8]) -> [u8;8] {
+    // same carry-less multiplication as gf128 but 64 bits wide
+    // reduction modulo x^64 + x^4 + x^3 + x + 1
+    let mut result = 0u64;
+    let mut a_val = u64::from_le_bytes(*a);
+    let mut b_val = u64::from_le_bytes(*b);
+
+    // carry-less multiply
+    for _ in 0..64 {
+        if b_val & 1 == 1 {
+            result ^= a_val;
+        }
+        let carry = (a_val >> 63) & 1;
+        a_val <<= 1;
+        if carry == 1 {
+            // reduce: x^64 = x^4 + x^3 + x + 1
+            a_val ^= 0x1b;
+        }
+        b_val >>= 1;
+    }
+
+    result.to_le_bytes()
+}
+
+
+pub fn field_pow_64(base: &[u8; 8], exp: usize) -> [u8; 8] {
+    if exp == 0 {
+        let mut one = [0u8; 8];
+        one[0] = 1;
+        return one;
+    }
+    let mut result = [0u8; 8];
+    result[0] = 1;
+    for _ in 0..exp {
+        result = gf64_mul(&result, base);
+    }
+    result
 }

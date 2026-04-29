@@ -1,18 +1,12 @@
 
-use hax_lib::{loop_invariant, Int, ToInt};
 use libcrux::drbg::{Drbg, RngCore};
 use crate::utils::{math, galois_field};
 use crate::utils::finite_field::{Field};
 use crate::utils::types::{Matrix, State, Word};
-
-
-pub const nk: usize = 4;            // code dup
-pub const nst: usize = 4;           // code dup
-const R: usize = nk + 6; // max(nk, nst) + 6
-
+use crate::utils::constants::{nk, nst, R};
 
 #[hax_lib::exclude]
-pub fn main(field: Field) {
+pub fn main(_field: Field) {
     let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
         Ok(drbg) => drbg,
         Err(e) => panic!("{}", e)
@@ -20,7 +14,7 @@ pub fn main(field: Field) {
 
     let mut key = [0; 16];
     rand_gen.fill_bytes(&mut key);
-    let expanded_key = key_expansion(key);
+    let _expanded_key = key_expansion(key);
 
     // dummy state
     let mut state: State = [[0; nst]; nk];
@@ -82,12 +76,12 @@ pub fn key_expansion(key: [u8; 16]) -> Vec<Word> {
 }
 
 #[hax_lib::exclude]
-fn setup_rcon_table(n: usize) -> Vec<u8> {
+pub fn setup_rcon_table(n: usize) -> Vec<u8> {
     let mut rcon: Vec<u8> = Vec::with_capacity(n);
 
     let mut value = 0x01;
 
-    for i in 0..10 {
+    for _ in 0..10 {
         rcon.push(value);
         value = galois_field::gf28_multiply(value, 0x02)
     }
@@ -95,7 +89,7 @@ fn setup_rcon_table(n: usize) -> Vec<u8> {
 }
 
 #[hax_lib::exclude]
-fn sub_bytes(state: &mut State) {
+pub fn sub_bytes(state: &mut State) {
     for i in 0..nk {
         for j in 0..nst {
             state[i][j] = s_box(state[i][j]);
@@ -113,7 +107,7 @@ fn s_box(b: u8) -> u8{
 pub fn add_round_key(state: &mut State, keys: Vec<Word>) {
     for row in 0..4 {
         for c in 0..4 {
-            state[row][c] = state[row][c] ^ keys[c][row];
+            state[c][row] = state[c][row] ^ keys[c][row];
         }
     }
 }
@@ -123,11 +117,11 @@ pub fn add_round_key(state: &mut State, keys: Vec<Word>) {
                     && state[0].len() == nst)]
 #[hax_lib::ensures(|state| state.len() == nk
                     && state[0].len() == nst)]
-pub fn shift_rows(state: &mut State){
+pub fn shift_rows(state: &mut State) {
     let temp_state = state.clone();
-    for i in 1..nk {
-        for j in 0..nst {
-            state[i][j] = temp_state[i][(j + i).rem_euclid(nst)] ;
+    for row in 1..4 {
+        for col in 0..4 {
+            state[col][row] = temp_state[(col + row).rem_euclid(4)][row];
         }
     }
 }
@@ -142,10 +136,14 @@ pub fn mix_columns(state: &mut State) {
                              vec![1, 1, 2, 3],
                              vec![3, 1, 1, 2]];
 
-    let temp_state = galois_field::gf28_matrix_multiplication(a, *state);
-    for row in 0..4 {
-        for c in 0..4 {
-            state[row][c] = temp_state[row][c];
+    for col in 0..4 {
+        let column = [state[col][0], state[col][1], state[col][2], state[col][3]];
+        for row in 0..4 {
+            state[col][row] =
+                galois_field::gf28_multiply(a[row][0], column[0]) ^
+                    galois_field::gf28_multiply(a[row][1], column[1]) ^
+                    galois_field::gf28_multiply(a[row][2], column[2]) ^
+                    galois_field::gf28_multiply(a[row][3], column[3]);
         }
     }
 }

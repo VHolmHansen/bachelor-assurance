@@ -1,6 +1,5 @@
 use libcrux::digest;
-
-use crate::utils::types::{ell, lambda, tau};
+use crate::utils::constants::{ell, tau, lambda};
 use crate::utils::math;
 use crate::protocols::aes;
 
@@ -8,7 +7,6 @@ use crate::protocols::aes;
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
 pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
     let num_blocks = (output.len() + 15) / 16; // ceiling division
-    let mut output = Vec::with_capacity(num_blocks * 16);
 
     let iv_int = u128::from_le_bytes(iv);
 
@@ -23,7 +21,8 @@ pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
         let start = i * 16;
 
         if i == num_blocks - 1 {
-            output[start..].copy_from_slice(&block_arr[..output.len() - start]);
+            let length_of_output = output.len();
+            output[start..].copy_from_slice(&block_arr[..length_of_output - start]);
         } else {
             output[start..start + 16].copy_from_slice(&block_arr);
         }

@@ -4,10 +4,10 @@ use crate::utils::types::Matrix;
 use crate::utils::math;
 
 fn main() {
-    let l = 10; // dimension m
+    let _l = 10; // dimension m
     let r = 20;
     let tau = 30;
-    let r_tau = r * tau; // dimension n
+    let _r_tau = r * tau; // dimension n
 }
 
 fn get_challenge() -> Int {

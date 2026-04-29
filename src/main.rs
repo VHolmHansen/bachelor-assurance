@@ -8,9 +8,6 @@ mod prover;
 
 #[hax_lib::exclude]
 fn main() {
-    //mpc::main();
-    //lpzk::main();
-    let field = finite_field::new(257.to_int());
-    aes::main(field);
+    utils::ggm_tree::main();
 }
 

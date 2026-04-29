@@ -14,7 +14,7 @@ use crate::utils::constants::s_enc;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::math::transform_byte_array_to_state;
 
-pub fn faest_key_gen() -> ([u8;16],(Vec<u8>,Vec<u8>))
+pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 {
     let mut rng = rand::rng();
     loop {
@@ -43,7 +43,7 @@ pub fn faest_key_gen() -> ([u8;16],(Vec<u8>,Vec<u8>))
 
 
         // first fwd
-        let fwd_key = faest_aes_key_exp_fwd(1, w.clone(), false, false, [0;16]);
+        let fwd_key = faest_aes_key_exp_fwd(1, w.to_vec(), false, false, [0;16]);
         let bwd_key = faest_aes_key_exp_bkwd(1, w[lambda..].to_vec(), fwd_key.to_vec(), false, false, 0);
         let mut valid = true;
 
@@ -74,10 +74,10 @@ pub fn faest_key_gen() -> ([u8;16],(Vec<u8>,Vec<u8>))
             continue;
         }
         // second fwd
-        let enc_fwd = faest_aes_enc_fwd(1, w_enc.clone(), expanded_key_flat.clone(), plain_text_flat.clone(), false,false, 0);
+        let enc_fwd = faest_aes_enc_fwd(1, w_enc.clone(), expanded_key_flat.clone(), plain_text_flat.to_vec(), false,false, 0);
         let enc_bwd = faest_aes_enc_bkwd(
             1, w_enc.clone(), expanded_key_flat.clone(),
-            cipher_text_flat.clone(), false, false, 0
+            cipher_text_flat.to_vec(), false, false, 0
         );
         let one = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0u8];
         let zero = [0u8;16];
@@ -103,23 +103,27 @@ pub fn faest_key_gen() -> ([u8;16],(Vec<u8>,Vec<u8>))
     }
 }
 
-fn blocks_to_u8(x : [u8;16]) -> Vec<u8>{
-    let mut x_flat = vec![];
+fn blocks_to_u8(x : [u8;16]) -> [u8;128]{
+    let mut x_flat = [0; 128];
+    let mut word_index = 0;
     for byte in x {
         let bits = byte_to_bits(byte);
         for bit in bits {
-            x_flat.push(bit);
+            x_flat[word_index] = bit;
+            word_index += 1;
         }
     }
     x_flat
 }
-fn turn_states_to_bits(x : State) -> Vec<u8> {
-    let mut res = vec![];
+fn turn_states_to_bits(x : State) -> [u8; lambda] {
+    let mut res = [0; lambda];
+    let mut word_index = 0;
     for word in x {
         for byte in word {
             let bits = byte_to_bits(byte);
             for bit in bits {
-                res.push(bit);
+                res[word_index] = bit;
+                word_index += 1;
             }
         }
     }

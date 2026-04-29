@@ -53,7 +53,7 @@ fn array_h_1_for_non_specific_size<const dummy_n: usize>(coms: [u8; dummy_n]) ->
 }
 */
 
-pub fn h_1_for_sign(pk : ((Vec<u8>,Vec<u8>)), msg : &[u8]) -> [u8;32]{
+pub fn h_1_for_sign(pk : (([u8;128],[u8;128])), msg : &[u8]) -> [u8;32]{
     // Concatenate plaintext, ciphertext, and message
     let mut input: Vec<u8> = Vec::with_capacity(16 + pk.0.len() + pk.1.len() + msg.len());
 

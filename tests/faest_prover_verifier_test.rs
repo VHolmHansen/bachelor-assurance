@@ -258,7 +258,7 @@ mod tests{
 
             // Pass full w
             let k_exp = faest_aes_key_exp_fwd::<Vec<u8>>(
-                1, w.clone(), false, false, [0u8;16]
+                1, w.clone().to_vec(), false, false, [0u8;16]
             );
 
             let mut valid = true;
@@ -280,7 +280,7 @@ mod tests{
 
             if valid {
                 println!("Found valid FAEST key: {:02x?}", key_candidate);
-                return (key_candidate, plaintext, w);
+                return (key_candidate, plaintext, w.to_vec());
             }
 
             // Increment key

@@ -26,7 +26,7 @@ mod tests{
         let w = faest_aes_extend_witness(key, (plaintext_state, ciphertext_state));
 
 
-        (key, w)
+        (key, w.to_vec())
     }
 
     fn make_synthetic_vole(

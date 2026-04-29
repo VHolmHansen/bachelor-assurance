@@ -5,7 +5,7 @@ use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
 use crate::utils::helper_methods_prove_verify::to_field;
 
-pub fn faest_verify(msg : &[u8], pk : (Vec<u8>, Vec<u8>), sig : (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(Vec<[u8; 16]>, [u8; 32])>, [u8; 16], [u8; 16])) -> bool{
+pub fn faest_verify(msg : &[u8], pk : ([u8;lambda], [u8;lambda]), sig : (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(Vec<[u8; 16]>, [u8; 32])>, [u8; 16], [u8; 16])) -> bool{
     let c_bytes = sig.0;
     let u_tilde = sig.1;
     let d = sig.2;
@@ -83,10 +83,7 @@ pub fn faest_verify(msg : &[u8], pk : (Vec<u8>, Vec<u8>), sig : (Vec<[u8; 234]>,
     );
 
     let chall_3_mark = h_2_3(chall_2, a_tilde, b_tilde);
-
-    println!("chall_2 verify: {:?}", chall_2);
-    println!("a_tilde verify: {:?}", a_tilde);
-    println!("b_tilde verify: {:?}", b_tilde);
+    
 
     chall_3 == chall_3_mark
 

@@ -53,8 +53,11 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], Vec<(Tree, Vec
     let mut commitments : Vec<[u8; 56]> = vec![];
     // iterate over r's
     for i in 0..tau{
-        let b = if i < tau_0 { k_0 } else { k_1 };
-        let (h, decoms, seeds) = vec_commit(vec_of_rs[i], iv, b as i128);
+        let (h, decoms, seeds) = if i < tau_0 {
+            vec_commit(vec_of_rs[i], iv, k_0 as i128)
+        } else {
+            vec_commit(vec_of_rs[i], iv, k_1 as i128)
+        };
         let (u,v) = convert_to_VOLE(seeds, iv);
         big_v[i] = v;
         big_u.push(u);

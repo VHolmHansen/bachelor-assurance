@@ -106,17 +106,8 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     // Det her skal forstås som en reconstruction af det Q (en matrix), som er blevet sendt rundt på et tidligere tidspunkt
     let mut Q_mut = Q.clone();
 
-
-    // Before correction - spot check row 0 and row 1
-    println!("=== d-correction check ===");
-    println!("d[0]={}, d[1]={}", d[0], d[1]);
-    println!("Q_mut row 0 before correction, first 8: {:?}", &Q_mut[0][..8]);
-    println!("Q_mut row 1 before correction, first 8: {:?}", &Q_mut[1][..8]);
-    println!("chall_3 raw bytes first 8: {:?}", &chall_3[..8]);
-    println!("chall_3 as bits first 8: {:?}",
-             (0..8).map(|col| (chall_3[col/8] >> (col%8)) & 1).collect::<Vec<u8>>());
-
-    // FIXED correction - XOR the bit at position col, not the byte
+    
+    
     for row in 0..ell_bit_size {
         if d[row] == 1 {
             for col in 0..lambda {
@@ -124,12 +115,7 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
             }
         }
     }
-
-    // After correction
-    println!("Q_mut row 0 after correction, first 8: {:?}", &Q_mut[0][..8]);
-    println!("Q_mut row 1 after correction, first 8: {:?}", &Q_mut[1][..8]);
-    println!("delta as field element: {:?}",
-             &crate::utils::helper_methods_prove_verify::to_field(&chall_3, lambda)[0][..8]);
+    
 
     // After correction - row 0 should now equal v[0] from sign since d[0]=w[0] XOR u[0]
     let q: Vec<[u8;16]> = (0..ell_bit_size+lambda)

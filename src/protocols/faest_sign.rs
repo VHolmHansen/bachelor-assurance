@@ -10,7 +10,7 @@ use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_
 use crate::utils::math::transform_byte_array_to_state;
 use crate::utils::vector_commit::vec_open;
 
-pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(Vec<[u8; 16]>, [u8; 32])>, [u8; 16], [u8; 16]){
+pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(Vec<[u8; 16]>, [u8; 32])>, [u8; 16], [u8; 16]){
     let mut rng = rand::rng();
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
@@ -54,8 +54,8 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u
 
 
     // plaintext til state
-    let pt_state = bits_to_state(pk.clone().0);
-    let ct_state = bits_to_state(pk.clone().1);
+    let pt_state = bits_to_state(pk.clone().0.to_vec());
+    let ct_state = bits_to_state(pk.clone().1.to_vec());
 
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness = faest_aes_extend_witness(sk, (pt_state, ct_state));
@@ -72,10 +72,7 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : (Vec<u8>, Vec<u8>)) -> (Vec<[u
 
 
     let (a_tilde, b_tilde) = faest_aes_prove(extended_witness.try_into().unwrap(), u_arr, V_arr, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
-
-    println!("chall_2 sign: {:?}", chall_2);
-    println!("a_tilde sign: {:?}", a_tilde);
-    println!("b_tilde sign: {:?}", b_tilde);
+    
 
     let chall_3 = h_2_3(chall_2, a_tilde, b_tilde);
 

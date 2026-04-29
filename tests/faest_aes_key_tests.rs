@@ -93,7 +93,7 @@ mod tests {
 
         let w = faest_aes_extend_witness(key, (plaintext_state, ciphertext_state));
 
-        let fwd = faest_aes_key_exp_fwd(1, w.clone(), false, false, [0;16]);
+        let fwd = faest_aes_key_exp_fwd(1, w.clone().to_vec(), false, false, [0;16]);
         let bwd = faest_aes_key_exp_bkwd(1, w[lambda..].to_vec(), fwd.to_vec(), false, false, 0);
 
         let word4_byte0 = bits_to_byte(&fwd[4*32..4*32+8]);

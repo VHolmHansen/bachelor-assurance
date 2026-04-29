@@ -2,17 +2,19 @@
 use crate::protocols::aes::{add_round_key, key_expansion, mix_columns, shift_rows, sub_bytes};
 use crate::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
 use crate::utils::types::{State};
-use crate::utils::constants::{lambda, S_ke, nk, R};
+use crate::utils::constants::{lambda, S_ke, nk, R, ell_bit_size};
 
-pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> Vec<u8>{
+pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit_size]{
     let (in_aes, _out_aes) = pk;
     let k_overline = key_expansion(k);
     let bytes_from_k_overline : Vec<u8> = words_to_blocks(k_overline.clone()[0..nk].to_vec()).into_iter().flat_map(|arr| arr).collect();
-    let mut witness : Vec<u8> = vec![];
+    let mut witness : [u8;ell_bit_size] = [0;ell_bit_size];
+    let mut index = 0;
     for b in bytes_from_k_overline{
         let bits = byte_to_bits(b);
         for bit in bits {
-            witness.push(bit);
+            witness[index] = bit;
+            index += 1;
         }
     }
 
@@ -24,7 +26,8 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> Vec<u8>{
         for byte in &k_overline_for_loops[ik*4..(ik+1)*4] {
             let bits = byte_to_bits(*byte);
             for bit in bits {
-                witness.push(bit);
+                witness[index] = bit;
+                index += 1;
             }
         }
 
@@ -42,7 +45,8 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> Vec<u8>{
                 for row in 0..4 {
                     let bits = byte_to_bits(state_new[col][row]);
                     for bit in bits{
-                        witness.push(bit);
+                        witness[index] = bit;
+                        index += 1;
                     }
                 }
             }

@@ -180,10 +180,6 @@ pub fn faest_aes_enc_cstrnts_prover(
     let v_s = faest_aes_enc_fwd(lambda, v.to_vec(), v_k.to_vec(), in_of_in_and_out.clone(), true, false, [0;16]);
     let s_overline = faest_aes_enc_bkwd(1, w.clone(), k.to_vec(), out_of_in_and_out.clone(), false, false, 0);
     let v_s_overline = faest_aes_enc_bkwd(lambda, v.to_vec(), v_k.to_vec(), out_of_in_and_out.clone(), true, false, [0;16]);
-    println!("prover s[1]:           {:?}", &s[1][..4]);
-    println!("prover v_s[1]:         {:?}", &v_s[1][..4]);
-    println!("prover s_overline[1]:  {:?}", &s_overline[1][..4]);
-    println!("prover v_s_overline[1]:{:?}", &v_s_overline[1][..4]);
     let mut A_0 : [[u8;16];s_enc] = [[0;16];s_enc];
     let mut A_1 : [[u8;16];s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
@@ -216,8 +212,6 @@ pub fn faest_aes_enc_cstrnts_verifier(
     }
     let q_s = faest_aes_enc_fwd(lambda, q.to_vec(), q_k.to_vec(), in_of_in_and_out.clone(), false, true, delta);
     let q_s_overline = faest_aes_enc_bkwd(lambda, q.to_vec(), q_k.to_vec(), out_of_in_and_out.clone(), false, true, delta);
-    println!("verifier q_s[1]:          {:?}", &q_s[1][..4]);
-    println!("verifier q_s_overline[1]: {:?}", &q_s_overline[1][..4]);
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
         let q_product = gf128_mul(&q_s[j], &q_s_overline[j]);

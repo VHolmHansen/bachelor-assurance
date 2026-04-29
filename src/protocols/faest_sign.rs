@@ -1,9 +1,9 @@
 use rand::RngExt;
-use crate::utils::types::sizeds_array;
-use crate::utils::vector_commit::{vec_commit, vec_open_k0, vec_open_k1};
+use crate::utils::types::sized_array_for_cop;
+use crate::utils::vector_commit::{vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
-use crate::utils::types::{ret_value, sized_array, Tree};
+use crate::utils::types::{ret_value, sized_array_16, Tree};
 use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit};
 use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
@@ -12,7 +12,7 @@ use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_
 use crate::utils::math::transform_byte_array_to_state;
 
 
-pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sizeds_array, [u8; 32])>, [u8; 16], [u8; 16]) {
+pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16]) {
     let mut rng = rand::rng();
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
@@ -79,7 +79,7 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
     let chall_3 = h_2_3(chall_2, a_tilde, b_tilde);
 
     // pdecoms
-    let mut pdecoms : Vec<(sizeds_array,[u8; 32])> = vec![];
+    let mut pdecoms : Vec<(sized_array_for_cop, [u8; 32])> = vec![];
     for i in 0..tau {
         let s_i = chall_dec(chall_3, i);
 

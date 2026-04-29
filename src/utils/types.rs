@@ -4,19 +4,25 @@ use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::num_rec;
 use crate::utils::prg::prg;
 use crate::utils::types::Tree::{Leaf, Node};
-use crate::utils::constants::{nst, nk, k_0, k_1};
+use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow};
 
 pub type Word = [u8; 4];
 pub type Matrix<T> = Vec<Vec<T>>;
 
 pub type State = [[u8; nst]; nk];
-pub type sized_array<const size: usize> = [[u8;16];size];
+pub type sized_array_16<const size: usize> = [[u8;16];size];
+pub type sized_array_32<const size: usize> = [[u8;32];size];
 pub type sized_option_array<const size: usize> = [Option<[u8;16]>;size];
 
 #[derive(Clone)]
-pub enum sizeds_array {
-    sized_array_1(sized_array<k_0>),
-    sized_array_2(sized_array<k_1>)
+pub enum sized_array_for_cop {
+    sized_array_1(sized_array_16<k_0>),
+    sized_array_2(sized_array_16<k_1>)
+}
+#[derive(Clone)]
+pub enum sized_array_for_coms {
+    sized_array_1(sized_array_32<k_0_pow>),
+    sized_array_2(sized_array_32<k_1_pow>)
 }
 
 pub trait ret_value {

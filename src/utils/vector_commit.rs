@@ -2,7 +2,7 @@ use crate::utils::constants::{k_0,k_1};
 use crate::utils::ggm_tree::{get_cop, get_leaves_from_cop_and_b, get_leaves_node_from_root};
 use crate::utils::hash_functions::{h_0, h_1};
 use crate::utils::preliminary_helper_methods::{num_rec};
-use crate::utils::types::{sized_array, sizeds_array, Tree};
+use crate::utils::types::{sized_array_16, sized_array_for_cop, Tree};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
@@ -15,9 +15,12 @@ pub fn vec_commit<const size : usize>(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u
         sds.push(sd);
         coms.push(com);
     }
-    
+
     let h = h_1(&coms);
-    let decom = (r, iv, coms);
+    let decom = (r, iv, coms.clone());
+
+    println!("length of coms: {:?}", coms.len());
+    println!("length of sds: {:?}", sds.len());
 
     (h, decom, sds)
 }
@@ -48,22 +51,22 @@ fn array_vec_commit<const dummy_n: usize, const dummy_m: usize>(r: [u8; 16], iv:
 // for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
 // there must be a smarter way to this that to get the bits
-pub fn vec_open_k0(decom: ([u8;16], [u8;16], Vec<[u8; 32]>), b: Vec<u8>, d: i128) -> (sizeds_array, [u8; 32]){
+pub fn vec_open_k0(decom: ([u8;16], [u8;16], Vec<[u8; 32]>), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
     let coms = decom.2;
     let cop = get_cop::<k_0>(r, iv, num_rec(b.clone(), d as u64), d);
-    let cop_to_return = sizeds_array::sized_array_1(cop);
-    let pdecom:(sizeds_array,[u8; 32]) = (cop_to_return, coms[num_rec(b, d as u64) as usize]);
+    let cop_to_return = sized_array_for_cop::sized_array_1(cop);
+    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, coms[num_rec(b, d as u64) as usize]);
     pdecom
 }
-pub fn vec_open_k1(decom: ([u8;16], [u8;16], Vec<[u8; 32]>), b: Vec<u8>, d: i128) -> (sizeds_array, [u8; 32]){
+pub fn vec_open_k1(decom: ([u8;16], [u8;16], Vec<[u8; 32]>), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
     let coms = decom.2;
     let cop = get_cop::<k_1>(r, iv, num_rec(b.clone(), d as u64), d);
-    let cop_to_return = sizeds_array::sized_array_2(cop);
-    let pdecom:(sizeds_array,[u8; 32]) = (cop_to_return, coms[num_rec(b, d as u64) as usize]);
+    let cop_to_return = sized_array_for_cop::sized_array_2(cop);
+    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, coms[num_rec(b, d as u64) as usize]);
     pdecom
 }
 /*
@@ -80,23 +83,23 @@ fn array_vec_open<const dummy_n: usize, const dummy_m: usize, const dummy_o: usi
 // we want to know using the pdecom, to reconstruct all the committed seeds, except the j* one
 // we should still be able to check if we have the right values, using the commitments, and the saved commitment for jstar
 // i have no idea if this works
-pub fn vec_reconstruct_k0(pdecom: (sizeds_array, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
+pub fn vec_reconstruct_k0(pdecom: (sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
     let cop = match pdecom.0 {
-        sizeds_array::sized_array_1(arr) => arr,
+        sized_array_for_cop::sized_array_1(arr) => arr,
         _ => panic!("expected k0 array")
     };
     vec_reconstruct_inner::<k_0, {2_usize.pow(k_0 as u32)}>(cop, pdecom.1, b, iv, d)
 }
 
-pub fn vec_reconstruct_k1(pdecom: (sizeds_array, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
+pub fn vec_reconstruct_k1(pdecom: (sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
     let cop = match pdecom.0 {
-        sizeds_array::sized_array_2(arr) => arr,
+        sized_array_for_cop::sized_array_2(arr) => arr,
         _ => panic!("expected k1 array")
     };
     vec_reconstruct_inner::<k_1, {2_usize.pow(k_1 as u32)}>(cop, pdecom.1, b, iv, d)
 }
 
-fn vec_reconstruct_inner<const size: usize, const size_pow: usize>(cop: sized_array<size>, com_star: [u8; 32], b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
+fn vec_reconstruct_inner<const size: usize, const size_pow: usize>(cop: sized_array_16<size>, com_star: [u8; 32], b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
     let mut sds: Vec<[u8; 16]> = vec![];
     let mut coms: Vec<[u8; 32]> = vec![];
 
@@ -161,7 +164,7 @@ fn array_vec_reconstruct<const dummy_n: usize, const dummy_m: usize, const dummy
 // vec_verify should help us do some testing, basically it takes the hash of the commitments from
 // commit, then it reconstruct using the pdecom, from vec_open to the commitments, and checks that those
 // two hashes are teh same
-pub fn vec_verify<const size : usize>(h: [u8; 56], pdecom: (sizeds_array, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d : i128) -> bool{
+pub fn vec_verify<const size : usize>(h: [u8; 56], pdecom: (sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d : i128) -> bool{
     let (rec_com, _rec_sd) = if size == k_0 {vec_reconstruct_k0(pdecom, b, iv, d)} else {vec_reconstruct_k1(pdecom, b, iv, d)};
     if rec_com == h {
         true

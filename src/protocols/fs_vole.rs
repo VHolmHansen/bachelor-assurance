@@ -1,6 +1,6 @@
 #![allow(non_snake_case)]
 
-use crate::utils::types::sizeds_array;
+use crate::utils::types::sized_array_for_cop;
 use crate::utils::hash_functions::{h_1_for_non_specific_size};
 use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::num_rec;
@@ -214,7 +214,7 @@ fn array_chall_dec<const dummy_n: usize>(chall : [u8;16], i : usize) -> [u8; dum
 }
  */
 
-pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms:Vec<(sizeds_array, [u8; 32])>, iv : [u8;16]) -> ([u8;56], Vec<Vec<[u8;234]>>){
+pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms:Vec<(sized_array_for_cop, [u8; 32])>, iv : [u8;16]) -> ([u8;56], Vec<Vec<[u8;234]>>){
     let mut commitments : Vec<[u8; 56]> = vec![];
     let mut big_q:  Vec<Vec<[u8; 234]>> =  vec![vec![];tau];
 

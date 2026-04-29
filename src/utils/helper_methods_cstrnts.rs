@@ -50,6 +50,26 @@ pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
     res
 }
 
+/*
+pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
+    if x.len() % 8 != 0 {
+        panic!("invalid byte length")
+    }
+    let mut res: [u8; 16] = [0; 16];
+    for i in 0..8 {
+        let alpha_pow_val = alpha_pow(i);
+        let elem = x.get_element(i as usize);
+        const n: usize = dummy
+        // multiply_with_alpha must behave as:
+        // - if elem is a scalar bit (0 or 1): return alpha_pow_val if bit=1, else [0;16]
+        // - if elem is a field element [u8;16]: return gf128_mul(elem, alpha_pow_val)
+        let contribution = <T as ret_value>::multiply_with_alpha(elem, alpha_pow_val);
+        res = [[u8; 16]; dummy] as ret_value>::xor_array(&res, &contribution);   //TODO: DONT USE DUMMY
+    }
+    res
+}
+ */
+
 pub fn alpha_pow(i : i32) -> [u8;16] {
     if i == 0 {
         [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]

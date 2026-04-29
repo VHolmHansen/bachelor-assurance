@@ -7,7 +7,9 @@ pub const ell : usize = (1600 + 2*128 + 16)/8;
 pub const ell_bit_size : usize = 1600;
 pub const tau : usize = 11;
 pub const k_0 : usize = 12;
+pub const k_0_pow : usize = 4096;
 pub const k_1 : usize = 11;
+pub const k_1_pow : usize = 2048;
 pub const tau_0 : usize = 7;
 pub const tau_1 : usize = 4;
 pub const l_ke : usize = lambda +8* S_ke;
@@ -26,3 +28,16 @@ pub const alpha : [u8;16] = [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1, 0x1
 pub const beta : usize = 1; // er 1 for 128 er 2 for 192 og 256
 
 pub const big_b : usize = 16;
+
+pub const one : usize = 1;
+pub const two : usize = 2;
+pub const four : usize = 4;
+pub const eight : usize = 8;
+pub const sixteen : usize = 16;
+pub const thirtytwo : usize = 32;
+pub const sixtyfour : usize = 64;
+pub const onehundredandtwentyeight : usize = 128;
+pub const twohundredandfiftysix : usize = 256;
+pub const fivehundredandtwelve : usize = 512;
+pub const onethousandandtwentyfour : usize = 1024;
+pub const twothousandsandfortyeight : usize = 2048;

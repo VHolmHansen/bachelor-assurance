@@ -25,6 +25,29 @@ pub fn to_field(x: &[u8], k: usize) -> Vec<[u8; 16]> {
     result
 }
 
+/*
+fn array_to_field<const dummy_n: usize>(x: &[u8], k: usize) -> [[u8; 16]; dummy_n]> {
+    assert!(x.len() % k == 0, "input length must be multiple of k");
+    let n = x.len() / k;        //TODO: rewrite to use that dummy_n = n
+    let mut result = [[0u8; 16]; n];
+
+    for i in 0..n {
+        let mut field_elem = [0u8; 16];
+        for j in 0..k {
+            let bit = x[i * k + j];
+            if bit == 1 {
+                // Set the j-th bit in the field element (little-endian)
+                let byte_idx = j / 8;
+                let bit_idx = j % 8;
+                field_elem[byte_idx] |= 1 << bit_idx;
+            }
+        }
+        result[i] = field_elem;
+    }
+    result
+}
+ */
+
 // burde være omvendt af den ovenstående funktion
 pub fn to_bits(x: &[[u8; 16]], k: usize) -> Vec<u8> {
     let mut result = Vec::new();
@@ -40,6 +63,23 @@ pub fn to_bits(x: &[[u8; 16]], k: usize) -> Vec<u8> {
 
     result
 }
+
+/*
+fn array_to_bits<const size: usize>(x: &[[u8; 16]], size: usize) -> [u8; size] {
+    let mut result = [0u8; size];       // TODO: beware initial zeroes
+
+    for field_elem in x {
+        for j in 0..size {
+            let byte_idx = j / 8;
+            let bit_idx = j % 8;
+            let bit = (field_elem[byte_idx] >> bit_idx) & 1;
+            result[j] = bit;
+        }
+    }
+
+    result
+}
+ */
 
 // funktion brugt af prove og verify
 pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {

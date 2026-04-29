@@ -7,7 +7,6 @@ mod tests {
     use Bachelor_Assurance::utils::hash_functions::{h_1_for_sign, h_2_3, h_3};
     use Bachelor_Assurance::utils::helper_methods_for_sign::chall3_to_bits;
     use Bachelor_Assurance::utils::types::Tree;
-    use Bachelor_Assurance::utils::vector_commit::vec_open;
 
     #[test]
     fn sign_verify_test() {

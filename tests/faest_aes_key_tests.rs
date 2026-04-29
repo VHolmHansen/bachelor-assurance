@@ -8,7 +8,7 @@ mod tests {
     use Bachelor_Assurance::utils::helper_methods_cstrnts::bits_to_byte;
     use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
     use Bachelor_Assurance::utils::constants::{nk, ell, k_0, k_1, lambda, tau, tau_0, S_ke};
-    use Bachelor_Assurance::utils::vector_commit::vec_open;
+    
 
     #[test]
     fn test_extend_witness(){

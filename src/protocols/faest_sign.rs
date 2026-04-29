@@ -1,16 +1,18 @@
 use rand::RngExt;
+use crate::utils::types::sizeds_array;
+use crate::utils::vector_commit::{vec_commit, vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
-use crate::utils::types::{ret_value, Tree};
+use crate::utils::types::{ret_value, sized_array, Tree};
 use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit};
 use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits};
 use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_bits, vole_hash, vole_to_row_major};
 use crate::utils::math::transform_byte_array_to_state;
-use crate::utils::vector_commit::vec_open;
 
-pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(Vec<[u8; 16]>, [u8; 32])>, [u8; 16], [u8; 16]){
+
+pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sizeds_array, [u8; 32])>, [u8; 16], [u8; 16]) {
     let mut rng = rand::rng();
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
@@ -18,7 +20,7 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
 
     let (r, iv) : ([u8;16], [u8;16])= h_3(sk, my, rho);
 
-    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], Vec<(Tree, Vec<[u8;32]>)>, Vec<[u8;234]>, [u8; 234], Vec<Vec<[u8; 234]>>)= FAEST_VOLE_commit(r, iv);
+    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], Vec<([u8;16], [u8;16], Vec<[u8;32]>)>, Vec<[u8;234]>, [u8; 234], Vec<Vec<[u8; 234]>>)= FAEST_VOLE_commit(r, iv);
 
     let chall_1 : [u8;88] = h_2_1(my, h_com, c_bytes.clone(), iv);
 
@@ -77,10 +79,16 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
     let chall_3 = h_2_3(chall_2, a_tilde, b_tilde);
 
     // pdecoms
-    let mut pdecoms : Vec<(Vec<[u8; 16]>,[u8; 32])> = vec![];
+    let mut pdecoms : Vec<(sizeds_array,[u8; 32])> = vec![];
     for i in 0..tau {
         let s_i = chall_dec(chall_3, i);
-        let pdecom = vec_open(decoms[i].clone(), s_i.clone(), s_i.len() as i128); // tænker det skal være s_i.len() er lidt i tvivl
+
+        let pdecom = if s_i.len() == k_0 {
+            vec_open_k0(decoms[i].clone(), s_i.clone(), s_i.len() as i128)
+        } else {
+            vec_open_k1(decoms[i].clone(), s_i.clone(), s_i.len() as i128)
+        };
+
         pdecoms.push(pdecom);
     }
     let signature = (c_bytes, u_tilde, d, a_tilde, pdecoms, chall_3, iv);

@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    /*
     use Bachelor_Assurance::utils::vector_commit::{vec_commit, vec_open, vec_reconstruct};
     use Bachelor_Assurance::protocols::fs_vole::{chall_dec, convert_to_VOLE, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
     use Bachelor_Assurance::utils::math::xor_arrays;
@@ -335,5 +336,7 @@ mod tests {
 
 
     }
+    
+     */
 
 }

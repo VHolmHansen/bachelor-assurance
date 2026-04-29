@@ -11,6 +11,13 @@ pub type Matrix<T> = Vec<Vec<T>>;
 
 pub type State = [[u8; nst]; nk];
 pub type sized_array<const size: usize> = [[u8;16];size];
+pub type sized_option_array<const size: usize> = [Option<[u8;16]>;size];
+
+#[derive(Clone)]
+pub enum sizeds_array {
+    sized_array_1(sized_array<k_0>),
+    sized_array_2(sized_array<k_1>)
+}
 
 pub trait ret_value {
     type Elem: Clone;
@@ -128,7 +135,115 @@ impl ret_value for Vec<u8> {
     }
 }
 
+/*
+impl<const N: usize> ret_value for [[u8;16]; N] {
+    type Elem = [u8;16];
+    const dummy_value : Self::Elem = [0;16];
+    const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    const value_of_two : Self::Elem = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    const value_of_three : Self::Elem = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
+    }
+    fn get_element(&self, x : usize) -> [u8;16] {
+        self[x]
+    }
+    /*  TODO: This will not work for arrays, indexing method instead? use set_element instead
+    fn push_value(mut self, x: [u8;16]) -> Self {
 
+        self[self.len()] = x;
+        self
+    }
+    */
+    fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
+        xor_arrays(x, y)
+    }
+
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
+        let mut res: [[u8;16]; 8] = [[0u8; 16]; 8];
+        for i in 0..8 {
+            let value_to_push = Self::xor_array(&x[i], &y[i]);
+            res[i] = (value_to_push);
+        }
+        res
+    }
+
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        [value; size]
+    }
+    fn len(&self) -> usize{
+        self.len()
+    }
+    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
+        gf128_mul(&x, &alpha_val)
+    }
+    /*  deprecated
+    fn turn_array_to_T(x : &[Self::Elem]) -> Vec<Self::Elem> {
+        x.to_vec()
+    }
+    */
+}
+
+
+impl<const N: usize> ret_value for [u8; N] {
+    type Elem = u8;
+    const dummy_value : Self::Elem = 0;
+    const value_of_one : Self::Elem = 1;
+    const value_of_two: Self::Elem = 2;
+    const value_of_three : Self::Elem = 3;
+    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+        &self[x..y]
+    }
+    fn get_element(&self, x : usize) -> u8 {
+        self[x]
+    }
+    /* TODO: This will not work for arrays, indexing method instead? use set_element instead
+    fn push_value(mut self, x: u8) -> Self {
+        self.push(x);
+        self
+    }
+    */
+    fn xor_array(x : &u8, y : &u8) -> u8{
+        x ^ y
+    }
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
+        let mut res: [u8; 8] = [0u8; 8];
+        for i in 0..8 {
+            let value_to_push = Self::xor_array(&x[i], &y[i]);
+            res[i] = value_to_push;
+        }
+        res
+    }
+
+    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+        self[index] = *value;
+    }
+    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+        [value; size]
+    }
+    fn len(&self) -> usize{
+        self.len()
+    }
+
+    fn multiply_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
+        // x is a scalar bit (0 or 1)
+        // result is either 0 or alpha_val
+        if x == 0 {
+            [0u8; 16]
+        } else {
+            alpha_val
+        }
+    }
+    /*  deprecated
+    fn turn_array_to_T(x : &[Self::Elem]) -> Vec<Self::Elem> {
+        x.to_vec()
+    }
+    */
+}
+ */
 
 #[derive(Clone, Debug)]
 pub enum Tree {

@@ -2,11 +2,6 @@ mod tests {
     use Bachelor_Assurance::protocols::faest_key_gen::faest_key_gen;
     use Bachelor_Assurance::protocols::faest_sign::faest_sign;
     use Bachelor_Assurance::protocols::faest_verify::faest_verify;
-    use Bachelor_Assurance::protocols::fs_vole::{FAEST_VOLE_commit, chall_dec};
-    use Bachelor_Assurance::utils::constants::tau;
-    use Bachelor_Assurance::utils::hash_functions::{h_1_for_sign, h_2_3, h_3};
-    use Bachelor_Assurance::utils::helper_methods_for_sign::chall3_to_bits;
-    use Bachelor_Assurance::utils::types::Tree;
     use stacker;
 
     #[test]
@@ -39,7 +34,7 @@ mod tests {
     }
     #[test]
     fn sign_verify_test_random_key() {
-        let builder = std::thread::Builder::new().stack_size(3 * 1024 * 1024); // 64MB
+        let builder = std::thread::Builder::new().stack_size(8 * 1024 * 1024+768*1024); // 64MB
         let handler = builder.spawn(|| {
             let (key, pk) = faest_key_gen();
             let msg: &[u8] = b"hello world";

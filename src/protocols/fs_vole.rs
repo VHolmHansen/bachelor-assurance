@@ -6,10 +6,9 @@ use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
 use crate::utils::hash_functions::{h_1_for_non_specific_size};
 use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::num_rec;
-use crate::utils::types::{Tree};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
 use crate::utils::vector_commit::{vec_commit_k0, vec_commit_k1, vec_reconstruct_k0, vec_reconstruct_k1};
-use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow, twothousandsandfortyeight};
+use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow};
 
 
 pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16]) -> ([u8; ell], sized_array_234<d>) {
@@ -40,7 +39,7 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
     let zero_v = [0;ell];
     let mut v: [[u8;ell]; d] = [zero_v; d];
     for j in 0..d {
-        let i_range : usize = sds.len() / 2_i32.pow((j + 1) as u32) as usize;
+        let i_range : usize = sds.len() >> (j + 1); // prev: sds.len() / 2_i32.pow(j + 1)
         for i in 0..i_range {
             if let (Some(r1), Some(r2)) = (r[j][2*i], r[j][2*i+1]) {
                 v[j] = xor_arrays(&v[j], &r2);
@@ -55,15 +54,16 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
 }
 
 
-pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], Vec<([u8;16], [u8;16], sized_array_for_coms)>, Vec<[u8;234]>, [u8; 234], [sized_array_for_q_v;tau]) {
+pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau], [u8; 234], [sized_array_for_q_v;tau]) {
+    println!("sign start - remaining stack: {:?}", stacker::remaining_stack());
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's
     let vec_of_rs: Vec<[u8;16]> = new_r.chunks_exact(16).map(|chunk| chunk.try_into().unwrap()).collect();
     // big V
     let mut big_v:  [sized_array_for_q_v;tau] = [sized_array_1([[0u8;234];k_0]);tau];
-    let mut big_u: Vec<[u8;234]> = vec![];
-    let mut all_decoms : Vec<([u8;16], [u8;16], sized_array_for_coms)> = vec![];
-    let mut commitments : Vec<[u8; 56]> = vec![];
+    let mut big_u: [[u8;234];tau] = [[0;234];tau];
+    let mut all_decoms : [([u8;16], [u8;16], sized_array_for_coms);tau] = [([0;16], [0;16], sized_array_for_coms::sized_array_1([[0u8;32];k_0_pow]));tau];
+    let mut commitments : [[u8; 56];tau] = [[0;56];tau];
     // iterate over r's
     for i in 0..tau{
         let (h, decoms, u, v) = if i < tau_0 {
@@ -77,18 +77,25 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], Vec<([u8;16], 
         };
 
         big_v[i] = v;
-        big_u.push(u);
-        all_decoms.push(decoms);
-        commitments.push(h);
+        big_u[i] = u;
+        all_decoms[i] = decoms;
+        commitments[i] = h;
     }
     let u_0 = big_u[0];
 
-    let mut big_c: Vec<[u8;234]> = vec![];
+    let mut big_c: [[u8;234]; tau] = [[0u8; 234]; tau];   //TODO: beware initial zeroes & verify length & is dummy_a = tau?
     for i in 0..tau{
-        big_c.push(xor_arrays(&u_0, &big_u[i]));
+        big_c[i] = xor_arrays(&u_0, &big_u[i]);
     }
-    let coms_flat : Vec<u8> = commitments.into_iter().flatten().collect();
-    let hash = h_1_for_non_specific_size(coms_flat);
+
+    let mut coms_flat = [0u8; 56 * tau];
+    for i in 0..tau {
+        for j in 0..56 {
+            coms_flat[i * 56 + j] = commitments[i][j];
+        }
+    }
+
+    let hash = h_1_for_non_specific_size(&coms_flat);
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
@@ -234,8 +241,13 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &Vec<(sized_array_for_cop
         commitments.push(com);
         big_q[i] = q;
     }
-    let coms_flat : Vec<u8> = commitments.into_iter().flatten().collect();
-    let hash = h_1_for_non_specific_size(coms_flat);
+    let mut coms_flat = [0u8; 56 * tau];
+    for i in 0..tau {
+        for j in 0..56 {
+            coms_flat[i * 56 + j] = commitments[i][j];
+        }
+    }
+    let hash = h_1_for_non_specific_size(&coms_flat);
     (hash, big_q)
 }
 

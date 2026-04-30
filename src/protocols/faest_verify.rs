@@ -8,7 +8,7 @@ use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
 use crate::utils::helper_methods_prove_verify::to_field;
 
-pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &(Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16])) -> bool{
+pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &([[u8;234];tau], Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16])) -> bool{
     let c_bytes = &sig.0;
     let u_tilde = &sig.1;
     let d = &sig.2;
@@ -20,7 +20,7 @@ pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &(Vec<[
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
     let (h_com, q_mark) = FAEST_VOLE_reconstruct(*chall_3, &pdcoms, *iv);
 
-    let chall_1 = h_2_1(my, h_com, c_bytes.clone(), *iv);
+    let chall_1 = h_2_1(my, h_com, c_bytes, *iv);
 
     // fixing q:
     let mut q_corrected: Vec<Vec<[u8; ell]>> = q_mark.iter().map(|v| match v {
@@ -69,7 +69,7 @@ pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &(Vec<[
     let q_e_flat: Vec<u8> = q_e_xored.iter().flatten().copied().collect();
 
     // h_v value
-    let h_v = h_1_for_non_specific_size(q_e_flat);
+    let h_v = h_1_for_non_specific_size(&*q_e_flat);
 
     // chall 2
     let chall_2 = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());

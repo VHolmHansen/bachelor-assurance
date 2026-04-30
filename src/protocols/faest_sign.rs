@@ -5,23 +5,24 @@ use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
 use crate::utils::types::{ret_value, sized_array_16, Tree};
 use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit};
-use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
+use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0, tau_1};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits};
 use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_bits, vole_hash, vole_to_row_major};
 use crate::utils::math::transform_byte_array_to_state;
 
 
-pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16]) {
+pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> ([[u8;234];tau], Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16]) {
+    println!("sign start - remaining stack: {:?}", stacker::remaining_stack());
     let mut rng = rand::rng();
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
     let rho: [u8; 16] = rng.random();
 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho);
-    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], Vec<([u8;16], [u8;16], sized_array_for_coms)>, Vec<[u8;234]>, [u8; 234], [sized_array_for_q_v; 11])= FAEST_VOLE_commit(r, iv);
-
-    let chall_1 : [u8;88] = h_2_1(my, h_com, c_bytes.clone(), iv);
+    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
+    println!("sign after vole_commit - remaining stack: {:?}", stacker::remaining_stack());
+    let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
 
     // få u tilde
     let u_x_0 = &u_bytes[0..216];
@@ -34,7 +35,8 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     }).collect();
 
     // få v_tilde
-    let mut v_tilde : Vec<[u8; 18]> = vec![];
+    let mut v_tilde : [[u8; 18];tau_0*k_0+tau_1*k_1] = [[0u8; 18]; tau_0*k_0+tau_1*k_1];       // len : ( tau_0 * k_0 + tau_1*k_1 )
+    let mut index = 0;
     for i in 0..tau {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
@@ -43,12 +45,21 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
             let x1_col = &col[216..234];
             let col_hash = vole_hash(&chall_1, x0_col, x1_col);
             let col_hash_arr: [u8; 18] = col_hash.try_into().unwrap();
-            v_tilde.push(col_hash_arr);
+            v_tilde[index] = col_hash_arr;
+            index += 1;
         }
     }
 
     // man skla have hashed h_V
-    let h_v = h_1_for_non_specific_size(v_tilde.into_iter().flatten().collect());
+
+    let mut h_v_val = [0u8; 18 * (tau_0*k_0+tau_1*k_1)];
+    for i in 0..(tau_0*k_0+tau_1*k_1) {
+        for j in 0..(18) {
+            h_v_val[i * 18 + j] = v_tilde[i][j];
+        }
+    }
+
+    let h_v = h_1_for_non_specific_size(&h_v_val);
 
     // u_bytes og v_bytes skal pakkes om til bits, siden det er sådan de bliver brugt senere
     let u_bits: Vec<u8> = u_to_bits(&u_bytes);

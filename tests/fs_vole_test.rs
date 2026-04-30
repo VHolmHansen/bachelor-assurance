@@ -1,24 +1,23 @@
 #[cfg(test)]
 mod tests {
-    /*
-    use Bachelor_Assurance::utils::vector_commit::{vec_commit, vec_open, vec_reconstruct};
+
     use Bachelor_Assurance::protocols::fs_vole::{chall_dec, convert_to_VOLE, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
     use Bachelor_Assurance::utils::math::xor_arrays;
     use Bachelor_Assurance::utils::preliminary_helper_methods::num_rec;
     use Bachelor_Assurance::utils::constants::{k_0, k_1, tau, tau_0};
+    use Bachelor_Assurance::utils::vector_commit::{vec_commit_k0, vec_open_k0, vec_reconstruct_k0};
 
+    /*
     #[test]
     fn test_convert_to_vole_for_0(){
-        let n_d : i128 = 128;
-        let d = n_d.ilog(2) as u64;
-        let delta : Vec<u8> = vec![0,0,0,0,0,0,0];
+        let delta : Vec<u8> = vec![0,0,0,0,0,0,0,0,0,0,0];
         let r : [u8; 16] = [0x03, 0x04, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x2c, 0x0d, 0x0e, 0x0f];
         let iv : [u8; 16] = [0xff, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x00];
 
-        let (h_prover, decom, sds_prover) = vec_commit(r, iv, d as i128);
-        let pdecom = vec_open(decom, delta.clone(), d as i128);
-        let (h_verifier, sds_verifier) = vec_reconstruct(pdecom, delta.clone(), iv, d as i128);
-        let b = num_rec(delta, d) as u8;
+        let (h_prover, decom, sds_prover) = vec_commit_k0(r, iv, d as i128);
+        let pdecom = vec_open_k0(&decom, delta.clone(), d as i128);
+        let (h_verifier, sds_verifier) = vec_reconstruct_k0(&pdecom, delta.clone(), iv, d as i128);
+        let b = num_rec(delta, delta.len() as usize) as u8;
 
 
         let (u, v) = convert_to_VOLE(sds_prover, iv);
@@ -45,6 +44,9 @@ mod tests {
 
         assert_eq!(q, q_from_prover);
     }
+
+     */
+    /*
     #[test]
     fn test_convert_to_vole_for_1(){
         let n_d : i128 = 128;

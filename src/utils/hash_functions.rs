@@ -37,7 +37,7 @@ fn array_h_1<const dummy_n: usize>(coms: &[[u8; 32]; dummy_n]) -> [u8; 56] {
 }
 */
 
-pub fn h_1_for_non_specific_size(coms: Vec<u8>) -> [u8; 56] {
+pub fn h_1_for_non_specific_size(coms: &[u8]) -> [u8; 56] {
     let mut input: Vec<u8> = vec![0u8; coms.len() + 16];
     input.extend_from_slice(&coms);
     digest::shake128::<56>(&mut input)
@@ -80,7 +80,7 @@ pub fn h_3(sk : [u8;16], my : [u8;32], rho : [u8;16]) -> ([u8;16], [u8;16]){
     (r, iv)
 }
 
-pub fn h_2_1(my : [u8;32], hcom : [u8;56], cs : Vec<[u8;234]>, iv : [u8;16]) -> [u8;88]{
+pub fn h_2_1(my : [u8;32], hcom : [u8;56], cs : &[[u8;234]], iv : [u8;16]) -> [u8;88]{
     let cs_flat: Vec<u8> = cs.iter().flat_map(|c| c.iter().copied()).collect();
 
     let mut input: Vec<u8> = Vec::with_capacity(16 + 32 + 56 + cs_flat.len() + 16);

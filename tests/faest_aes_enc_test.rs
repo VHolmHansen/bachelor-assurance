@@ -44,8 +44,8 @@ mod tests{
 
         let w_enc: Vec<u8> = w[448..1600].to_vec();
 
-        let fwd = faest_aes_enc_fwd(1, w_enc.clone(), expanded_key_flat.clone(), plain_text_flat.clone(), false,false, 0);
-        let bwd = faest_aes_enc_bkwd(1, w_enc.clone(), expanded_key_flat.clone(), cipher_text_flat.clone(), false,false, 0);
+        let fwd = faest_aes_enc_fwd(1, &w_enc, &expanded_key_flat, &plain_text_flat, false,false, 0);
+        let bwd = faest_aes_enc_bkwd(1, &w_enc, &expanded_key_flat, &cipher_text_flat, false,false, 0);
 
         for i in 0..s_enc {
             if fwd[i] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] || bwd[i] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {

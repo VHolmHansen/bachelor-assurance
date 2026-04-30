@@ -2,9 +2,9 @@ use crate::utils::prg::prg;
 use crate::utils::constants::{k_0, k_1, twothousandsandfortyeight,onethousandandtwentyfour, fivehundredandtwelve, twohundredandfiftysix, onehundredandtwentyeight, sixtyfour, thirtytwo, sixteen, eight, four, two, one};
 use crate::utils::types::{sized_array_16, sized_option_array};
 
-pub fn get_leaves_node_from_root<const size_pow: usize>(r: [u8; 16], iv: [u8; 16], d: i128) -> sized_array_16<size_pow>{
+pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 16], d: i128) -> sized_array_16<size_pow>{
     let mut leaves = [[0u8;16]; size_pow];
-    leaves[0] = r;
+    leaves[0] = *r;
     for i in 1..(d + 1) {
         let current_leaves = leaves;
         for j in 0..(2_i32.pow(i as u32) >> 1) {
@@ -103,7 +103,7 @@ pub fn get_if_left(level : i128, index : i128) -> bool{
     }
 }
 
-pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop : sized_array_16<size>, iv : [u8;16], b: u64) -> sized_option_array<size_pow> {
+pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop : &sized_array_16<size>, iv : [u8;16], b: u64) -> sized_option_array<size_pow> {
     let mut leaves = [None; size_pow];
     let mut current_start = 0;
     let mut current_end = size_pow;
@@ -327,11 +327,11 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
 
 pub fn main(){
     const pow_of_k_1 : usize = 2048;
-    let leaeves1 = get_leaves_node_from_root::<pow_of_k_1>([1;16], [0;16], k_1 as i128);
+    let leaeves1 = get_leaves_node_from_root::<pow_of_k_1>(&[1;16], [0;16], k_1 as i128);
 
     let cop = get_cop::<k_1>([1;16], [0;16], 2047, k_1 as i128);
 
-    let leaves = get_leaves_from_cop_and_b::<k_1,pow_of_k_1>(cop, [0;16], 2047);
+    let leaves = get_leaves_from_cop_and_b::<k_1,pow_of_k_1>(&cop, [0;16], 2047);
 
 
     for i in 0..2048{

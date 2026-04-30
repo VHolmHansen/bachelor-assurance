@@ -165,10 +165,10 @@ mod tests {
 
         let b = faest_aes_enc_cstrnts_verifier(
             lambda,
-            plaintext,
-            ciphertext,
-            q_enc_arr,
-            q_k,
+            &plaintext,
+            &ciphertext,
+            &q_enc_arr,
+            &q_k,
             delta,
             true,
         );
@@ -216,10 +216,10 @@ mod tests {
 
         let b = faest_aes_enc_cstrnts_verifier(
             lambda,
-            plaintext.clone(),
-            ciphertext.clone(),
-            q_enc_arr,
-            q_k,
+            &plaintext.clone(),
+            &ciphertext.clone(),
+            &q_enc_arr,
+            &q_k,
             delta,
             true,
         );
@@ -228,9 +228,9 @@ mod tests {
 
         let s = faest_aes_enc_fwd::<Vec<u8>>(
             1,
-            witness.clone(),
-            k.to_vec(),
-            plaintext.clone(),
+            &witness,
+            &k.to_vec(),
+            &plaintext,
             false,
             false,
             0,
@@ -341,10 +341,10 @@ mod tests {
 
         let b = faest_aes_enc_cstrnts_verifier(
             lambda,
-            plain_text_flat.clone(),
-            cipher_text_flat.clone(),
-            q_enc_arr,
-            q_k,
+            &plain_text_flat,
+            &cipher_text_flat,
+            &q_enc_arr,
+            &q_k,
             delta,
             true,
         );
@@ -353,9 +353,9 @@ mod tests {
 
         let s = faest_aes_enc_fwd::<Vec<u8>>(
             1,
-            w_enc.clone(),
-            k.to_vec(),
-            plain_text_flat.clone(),
+            &w_enc,
+            &k.to_vec(),
+            &plain_text_flat,
             false,
             false,
             0,

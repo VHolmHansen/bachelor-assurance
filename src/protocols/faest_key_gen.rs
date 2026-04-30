@@ -74,10 +74,10 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
             continue;
         }
         // second fwd
-        let enc_fwd = faest_aes_enc_fwd(1, w_enc.clone(), expanded_key_flat.clone(), plain_text_flat.to_vec(), false,false, 0);
+        let enc_fwd = faest_aes_enc_fwd(1, &w_enc, &expanded_key_flat, &plain_text_flat.to_vec(), false,false, 0);
         let enc_bwd = faest_aes_enc_bkwd(
-            1, w_enc.clone(), expanded_key_flat.clone(),
-            cipher_text_flat.to_vec(), false, false, 0
+            1, &w_enc, &expanded_key_flat,
+            &cipher_text_flat.to_vec(), false, false, 0
         );
         let one = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0u8];
         let zero = [0u8;16];

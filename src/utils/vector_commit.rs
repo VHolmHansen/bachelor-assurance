@@ -1,125 +1,138 @@
-use crate::utils::constants::{k_0,k_1};
+use crate::utils::constants::{k_0,k_1,k_0_pow,k_1_pow};
 use crate::utils::ggm_tree::{get_cop, get_leaves_from_cop_and_b, get_leaves_node_from_root};
 use crate::utils::hash_functions::{h_0, h_1};
 use crate::utils::preliminary_helper_methods::{num_rec};
-use crate::utils::types::{sized_array_16, sized_array_for_cop, Tree};
+use crate::utils::types::{sized_array_16, sized_array_32, sized_array_for_cop, Tree, sized_array_for_coms, sized_array_for_sds, sized_option_array};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
-pub fn vec_commit<const size : usize>(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16], [u8;16], Vec<[u8; 32]>), Vec<[u8; 16]>){
-    let leaves = get_leaves_node_from_root::<size>(r, iv, d);
-    let mut sds: Vec<[u8; 16]> = vec![];
-    let mut coms: Vec<[u8; 32]> = vec![];
-    for ks in leaves{
-        let (sd, com) = h_0(ks, iv);
-        sds.push(sd);
-        coms.push(com);
+pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+    let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, d);
+    let mut sds: [[u8; 16];k_0_pow] = [[0;16];k_0_pow];
+    let mut coms: [[u8; 32];k_0_pow] = [[0;32];k_0_pow];
+    for i in 0..k_0_pow{        // leaves.len
+        let (sd, com) = h_0(leaves[i], iv);
+        sds[i] = sd;
+        coms[i] = com;
     }
 
     let h = h_1(&coms);
-    let decom = (r, iv, coms.clone());
 
-    println!("length of coms: {:?}", coms.len());
-    println!("length of sds: {:?}", sds.len());
+    let coms_to_return = sized_array_for_coms::sized_array_1(coms);
+    let sds_to_return = sized_array_for_sds::sized_array_1(sds);
+    let decom = (r, iv, coms_to_return);
 
-    (h, decom, sds)
+    (h, decom, sds_to_return)
 }
-/*
-fn array_vec_commit<const dummy_n: usize, const dummy_m: usize>(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], (Tree, [[u8; 32]; dummy_n]), [[u8; 16]; dummy_m]) {
-    let k_tree = Tree::construct_tree(r, iv, d);
-    let leaves = Tree::get_all_leaf_nodes(&k_tree).as_array().unwrap(); //TODO: function needs to be converted to return array
-    let mut sds: [[u8; 16]; dummy_m] = [[0u8; 16]; dummy_m];
-    let mut coms: [[u8; 32]; dummy_n] = [[0u8; 32]; dummy_n];
-
+pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+    let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, d);
+    let mut sds: [[u8; 16];k_1_pow] = [[0;16];k_1_pow];
+    let mut coms: [[u8; 32];k_1_pow] = [[0;32];k_1_pow];
     let mut i = 0;
-    for ks in leaves{
-        let (sd, com) = h_0(*ks, iv);
-        sds[acc] = sd;
-        coms[acc] = com;
-        i += 1;
+    for i in 0..k_1_pow{        // leaves.len
+        let (sd, com) = h_0(leaves[i], iv);
+        sds[i] = sd;
+        coms[i] = com;
     }
 
-    let h = h_1(&coms.to_vec());    // TODO: NO VEC when integrating
-    let decom = (k_tree, coms);
+    let h = h_1(&coms);
+    let coms_to_return = sized_array_for_coms::sized_array_2(coms);
+    let sds_to_return = sized_array_for_sds::sized_array_2(sds);
+    let decom = (r, iv, coms_to_return);
 
-    (h, decom, sds)
+
+    (h, decom, sds_to_return)
 }
-
- */
 
 // the indexing structure, needs to be some kind of bytes, im very confusing of what it should be
 // for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
 // there must be a smarter way to this that to get the bits
-pub fn vec_open_k0(decom: ([u8;16], [u8;16], Vec<[u8; 32]>), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
+pub fn vec_open_k0(decom: &([u8;16], [u8;16], sized_array_for_coms), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
-    let coms = decom.2;
+    let coms = &decom.2;
     let cop = get_cop::<k_0>(r, iv, num_rec(b.clone(), d as u64), d);
     let cop_to_return = sized_array_for_cop::sized_array_1(cop);
-    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, coms[num_rec(b, d as u64) as usize]);
+
+    let com_value: [u8; 32] = match &coms {
+        sized_array_for_coms::sized_array_1(inner) => inner[num_rec(b, d as u64) as usize],
+        sized_array_for_coms::sized_array_2(inner) => inner[num_rec(b, d as u64) as usize],
+    };
+
+    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);
     pdecom
 }
-pub fn vec_open_k1(decom: ([u8;16], [u8;16], Vec<[u8; 32]>), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
+pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
-    let coms = decom.2;
+    let coms = &decom.2;
     let cop = get_cop::<k_1>(r, iv, num_rec(b.clone(), d as u64), d);
     let cop_to_return = sized_array_for_cop::sized_array_2(cop);
-    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, coms[num_rec(b, d as u64) as usize]);
-    pdecom
-}
-/*
-fn array_vec_open<const dummy_n: usize, const dummy_m: usize, const dummy_o: usize>(decom: (Tree, [[u8; 32]; dummy_n]), b: [u8; dummy_m], d: i128) -> ([[u8; 16]; dummy_o],[u8; 32]){
-    let k = decom.0;
-    let coms = decom.1;
-    let cop = Tree::get_cop(b.clone().to_vec(), k, d).as_array().unwrap();      //TODO: NO VEC PLEASE
-    let pdecom:([[u8; 16]; dummy_o],[u8; 32]) = (*cop, coms[num_rec(b.to_vec(), d as u64) as usize]);     //TODO VEC VEC VEC
-    pdecom
-}
 
- */
+    let com_value: [u8; 32] = match &coms {
+        sized_array_for_coms::sized_array_1(inner) => inner[num_rec(b, d as u64) as usize],
+        sized_array_for_coms::sized_array_2(inner) => inner[num_rec(b, d as u64) as usize],
+    };
+
+    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);
+    pdecom
+}
 
 // we want to know using the pdecom, to reconstruct all the committed seeds, except the j* one
 // we should still be able to check if we have the right values, using the commitments, and the saved commitment for jstar
 // i have no idea if this works
-pub fn vec_reconstruct_k0(pdecom: (sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
+pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], sized_array_for_sds) {
     let cop = match pdecom.0 {
         sized_array_for_cop::sized_array_1(arr) => arr,
         _ => panic!("expected k0 array")
     };
-    vec_reconstruct_inner::<k_0, {2_usize.pow(k_0 as u32)}>(cop, pdecom.1, b, iv, d)
+    let (h, seeds) = vec_reconstruct_inner::<k_0, k_0_pow >(&cop, pdecom.1, b, iv, d);
+
+    let seeds_to_return = sized_array_for_sds::sized_array_1(seeds);
+
+    (h, seeds_to_return)
 }
 
-pub fn vec_reconstruct_k1(pdecom: (sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
+pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], sized_array_for_sds) {
     let cop = match pdecom.0 {
         sized_array_for_cop::sized_array_2(arr) => arr,
         _ => panic!("expected k1 array")
     };
-    vec_reconstruct_inner::<k_1, {2_usize.pow(k_1 as u32)}>(cop, pdecom.1, b, iv, d)
+    let (h, seeds) = vec_reconstruct_inner::<k_1, k_1_pow>(&cop, pdecom.1, b, iv, d);
+    let seeds_to_return = sized_array_for_sds::sized_array_2(seeds);
+
+    (h, seeds_to_return)
 }
 
-fn vec_reconstruct_inner<const size: usize, const size_pow: usize>(cop: sized_array_16<size>, com_star: [u8; 32], b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], Vec<[u8; 16]>) {
-    let mut sds: Vec<[u8; 16]> = vec![];
-    let mut coms: Vec<[u8; 32]> = vec![];
+fn vec_reconstruct_inner<const size: usize, const size_pow: usize>(cop: &sized_array_16<size>, com_star: [u8; 32], b: Vec<u8>, iv: [u8; 16], d: i128) -> ([u8; 56], sized_array_16<size_pow>) {
+    let mut sds: [[u8; 16]; size_pow] = [[0u8; 16]; size_pow];
+    let mut coms: [[u8; 32]; size_pow] = [[0u8; 32]; size_pow];
 
-    let value_of_b = num_rec(b, d as u64);
-    let leaves = get_leaves_from_cop_and_b::<size, size_pow>(cop, iv, value_of_b);
 
+    // get b
+    let value_of_b = num_rec(b.to_vec(), d as u64);     // TODO: Get dat vec outta here
+    // it just works
+    let leaves : sized_option_array<size_pow> = get_leaves_from_cop_and_b(cop, iv, value_of_b);
+    let mut i = 0;
     for l in leaves {
         match l {
             Some(leaf) => {
                 let (sd, com) = h_0(leaf, iv);
-                sds.push(sd);
-                coms.push(com);
+                sds[i] = (sd);
+                coms[i] = (com);
+                i += 1;
             },
             None => {
-                coms.push(com_star);
-                sds.push([0u8; 16]);
+                coms[i] = (com_star);
+                sds[i] = ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+                i += 1;
             },
         }
     }
-    let h = h_1(&coms);
+
+
+    let h = h_1(&coms);        // TODO: Vec
     (h, sds)
 }
 
@@ -165,21 +178,10 @@ fn array_vec_reconstruct<const dummy_n: usize, const dummy_m: usize, const dummy
 // commit, then it reconstruct using the pdecom, from vec_open to the commitments, and checks that those
 // two hashes are teh same
 pub fn vec_verify<const size : usize>(h: [u8; 56], pdecom: (sized_array_for_cop, [u8; 32]), b: Vec<u8>, iv: [u8; 16], d : i128) -> bool{
-    let (rec_com, _rec_sd) = if size == k_0 {vec_reconstruct_k0(pdecom, b, iv, d)} else {vec_reconstruct_k1(pdecom, b, iv, d)};
+    let (rec_com, _rec_sd) = if size == k_0 {vec_reconstruct_k0(&pdecom, b, iv, d)} else {vec_reconstruct_k1(&pdecom, b, iv, d)};
     if rec_com == h {
         true
     } else {
         false
     }
 }
-
-/*
-fn array_vec_verify<const dummy_n: usize, const dummy_m: usize>(h: [u8; 56], pdecom: ([[u8; 16]; dummy_n],[u8; 32]), b: [u8; dummy_m], iv: [u8; 16], d : i128) -> bool{
-    let (rec_com, _rec_sd) = vec_reconstruct((pdecom.0.to_vec(), pdecom.1), b.to_vec(), iv, d);     // TODO: Vec
-    if rec_com == h {
-        true
-    } else {
-        false
-    }
-}
- */

@@ -1,104 +1,81 @@
 #![allow(non_snake_case)]
 
-use crate::utils::types::sized_array_for_cop;
+use crate::utils::types::sized_array_for_q_v::sized_array_1;
+use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_sds};
+use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
 use crate::utils::hash_functions::{h_1_for_non_specific_size};
 use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::num_rec;
 use crate::utils::types::{Tree};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
-use crate::utils::vector_commit::{vec_commit, vec_reconstruct_k0, vec_reconstruct_k1};
-use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow};
+use crate::utils::vector_commit::{vec_commit_k0, vec_commit_k1, vec_reconstruct_k0, vec_reconstruct_k1};
+use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow, twothousandsandfortyeight};
 
 
-pub fn convert_to_VOLE(sds: Vec<[u8;16]>, iv: [u8; 16]) -> ([u8; ell],Vec<[u8; ell]>) {
+pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16]) -> ([u8; ell], sized_array_234<d>) {
+    let sds: &[[u8; 16]] = match &sds {
+        sized_array_for_sds::sized_array_1(inner) => inner.as_slice(),
+        sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
+    };
+
+
     // the r structure:
-    let d = (sds.len()).ilog2();
-    let mut r : Vec<Vec<Option<[u8; ell]>>> = vec![vec![]; (d+1) as usize];
+    let mut r: Vec<Vec<Option<[u8; ell]>>> = vec![vec![None; sds.len()]; d + 1];
+
+
+    //let mut r : [[Option<[u8; ell]>; length_of_sds]; d + 1] = [[None; length_of_sds]; d + 1];  //TODO: is r[i] = sds.len() ? - derived from for loop below is r.len() = d? derived further below
     // if we are verifier
     if sds[0] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {
-        r[0].push(Some([0;ell]));
-    } else { // if we are prover
-        r[0].push(Some(prg_convert_to_vole(sds[0], iv)));
-    }
-
-    // fill r with the first row of seeds
-    for i in 1..sds.len() {
-        r[0].push(Some(prg_convert_to_vole(sds[i], iv)));
-    }
-
-    let zero_v = [0;ell];
-    let mut v: Vec<[u8;ell]> = vec![zero_v; d as usize];
-        for j in 0..d as usize {
-            let i_range : usize = sds.len() / 2_i32.pow((j + 1) as u32) as usize;
-            for i in 0..i_range {
-                if let (Some(r1), Some(r2)) = (r[j][2*i], r[j][2*i+1]) {
-                    v[j] = xor_arrays(&v[j], &r2);
-
-                    let new_r: [u8; ell] = xor_arrays(&r1, &r2);
-                    r[j+1].push(Some(new_r));
-                }
-            }
-        }
-    let u = r[d as usize][0];
-    (u.expect("Should be some"), v)
-}
-
-/*
-fn array_convert_to_VOLE<const dummy_n: usize, const dummy_m: usize>(sds: [[u8;16]; dummy_n], iv: [u8; 16]) -> ([u8; ell],[[u8; ell]; dummy_m]) {
-    // the r structure:
-    let d = (sds.len()).ilog2();
-    let mut r : [[[Option<[u8; ell]>; (d + 1) as usize]; sds.len()]; d] = [[[None; (d+1) as usize]; sds.len()]; d];  //TODO: is r[i] = sds.len() ? - derived from for loop below is r.len() = d? derived further below
-
-    // if we are verifier
-    if sds[0] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {
-        r[0][0] = Some([0;ell]);
+        r[0][0] = Some([0u8;ell]);
     } else { // if we are prover
         r[0][0] = Some(prg_convert_to_vole(sds[0], iv));
     }
 
-
     // fill r with the first row of seeds
     for i in 1..sds.len() {
-        r[0][i] = Some(prg_convert_to_vole(sds[], iv));
+        r[0][i] = Some(prg_convert_to_vole(sds[i], iv));
 
     }
 
     let zero_v = [0;ell];
-    let mut v: [[u8;ell]; d as usize]> = [zero_v; d as usize];
-        for j in 0..d as usize {
-            let i_range : usize = sds.len() / 2_i32.pow((j + 1) as u32) as usize;
-            for i in 0..i_range {
-                if let (Some(r1), Some(r2)) = (r[j][2*i], r[j][2*i+1]) {
-                    v[j] = xor_arrays(&v[j], &r2);
+    let mut v: [[u8;ell]; d] = [zero_v; d];
+    for j in 0..d {
+        let i_range : usize = sds.len() / 2_i32.pow((j + 1) as u32) as usize;
+        for i in 0..i_range {
+            if let (Some(r1), Some(r2)) = (r[j][2*i], r[j][2*i+1]) {
+                v[j] = xor_arrays(&v[j], &r2);
 
-                    let new_r: [u8; ell] = xor_arrays(&r1, &r2);
-                    r[j+1][i] = Some(new_r);
-                }
+                let new_r: [u8; ell] = xor_arrays(&r1, &r2);
+                r[j+1][i] = Some(new_r);
             }
         }
-    let u = r[d as usize][0];
+    }
+    let u = r[d][0];
     (u.expect("Should be some"), v)
 }
- */
 
 
-pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], Vec<([u8;16], [u8;16], Vec<[u8;32]>)>, Vec<[u8;234]>, [u8; 234], Vec<Vec<[u8; 234]>>) {
+pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], Vec<([u8;16], [u8;16], sized_array_for_coms)>, Vec<[u8;234]>, [u8; 234], [sized_array_for_q_v;tau]) {
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's
     let vec_of_rs: Vec<[u8;16]> = new_r.chunks_exact(16).map(|chunk| chunk.try_into().unwrap()).collect();
     // big V
-    let mut big_v:  Vec<Vec<[u8; 234]>> =  vec![vec![];tau];
+    let mut big_v:  [sized_array_for_q_v;tau] = [sized_array_1([[0u8;234];k_0]);tau];
     let mut big_u: Vec<[u8;234]> = vec![];
-    let mut all_decoms : Vec<([u8;16], [u8;16], Vec<[u8;32]>)> = vec![];
+    let mut all_decoms : Vec<([u8;16], [u8;16], sized_array_for_coms)> = vec![];
     let mut commitments : Vec<[u8; 56]> = vec![];
     // iterate over r's
     for i in 0..tau{
-        let (h, decoms, seeds) = if i < tau_0 {
-            vec_commit::<k_0_pow>(vec_of_rs[i], iv, k_0 as i128)
+        let (h, decoms, u, v) = if i < tau_0 {
+            let (h, decoms, seeds) = vec_commit_k0(vec_of_rs[i], iv, k_0 as i128);
+            let (u,v) = convert_to_VOLE::<k_0>(&seeds, iv);
+            (h, decoms, u, sized_array_for_q_v::sized_array_1(v))
         } else {
-            vec_commit::<k_1_pow>(vec_of_rs[i], iv, k_1 as i128)
+            let (h, decoms, seeds) = vec_commit_k1(vec_of_rs[i], iv, k_1 as i128);
+            let (u,v) = convert_to_VOLE::<k_1>(&seeds, iv);
+            (h, decoms, u, sized_array_for_q_v::sized_array_2(v))
         };
-        let (u,v) = convert_to_VOLE(seeds, iv);
+
         big_v[i] = v;
         big_u.push(u);
         all_decoms.push(decoms);
@@ -112,7 +89,6 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], Vec<([u8;16], 
     }
     let coms_flat : Vec<u8> = commitments.into_iter().flatten().collect();
     let hash = h_1_for_non_specific_size(coms_flat);
-
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
@@ -214,26 +190,46 @@ fn array_chall_dec<const dummy_n: usize>(chall : [u8;16], i : usize) -> [u8; dum
 }
  */
 
-pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms:Vec<(sized_array_for_cop, [u8; 32])>, iv : [u8;16]) -> ([u8;56], Vec<Vec<[u8;234]>>){
+pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &Vec<(sized_array_for_cop, [u8; 32])>, iv : [u8;16]) -> ([u8;56], [sized_array_for_q_v;tau]){
     let mut commitments : Vec<[u8; 56]> = vec![];
-    let mut big_q:  Vec<Vec<[u8; 234]>> =  vec![vec![];tau];
+    let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_1([[0u8;234];k_0]);tau];
 
     for i in 0..tau{
         let b = chall_dec(chall, i);
         let current_k = if i < tau_0 { k_0 } else {k_1};
-        let (com,seeds) = if i < tau_0 {
-            vec_reconstruct_k0(pdecoms[i].clone(), b.clone(), iv, k_0 as i128)
+        let (com,sds) = if i < tau_0 {
+            vec_reconstruct_k0(&pdecoms[i], b.clone(), iv, k_0 as i128)
         } else {
-            vec_reconstruct_k1(pdecoms[i].clone(), b.clone(), iv, k_1 as i128)
+            vec_reconstruct_k1(&pdecoms[i], b.clone(), iv, k_1 as i128)
         };
-        let N_b = seeds.len();
+        let sds: &[[u8; 16]] = match &sds {
+            sized_array_for_sds::sized_array_1(inner) => inner.as_slice(),
+            sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
+        };
+        let N_b = sds.len();
         let delta = num_rec(b.clone(), current_k as u64);
-        let mut sd_updated_verifier : Vec<[u8;16]>= vec![[0;16];N_b];
-        for j in 1..N_b {
-            sd_updated_verifier[j] = seeds[(j as u64 ^ delta) as usize]
-        }
+        let sds_for_later_use :  sized_array_for_sds = if i < tau_0 {
+            let mut sd_updated_verifier: [[u8;16];k_0_pow] = [[0;16];k_0_pow];
+            for j in 1..N_b {
+                sd_updated_verifier[j] = sds[(j as u64 ^ delta) as usize]
+            }
+            sized_array_for_sds::sized_array_1(sd_updated_verifier)
+        } else {
+            let mut sd_updated_verifier: [[u8;16];k_1_pow] = [[0;16];k_1_pow];
+            for j in 1..N_b {
+                sd_updated_verifier[j] = sds[(j as u64 ^ delta) as usize]
+            }
+            sized_array_for_sds::sized_array_2(sd_updated_verifier)
+        };
 
-        let (_u_mark, q) = convert_to_VOLE(sd_updated_verifier, iv);
+        let (_u_mark, q) = if i < tau_0 {
+            let (_u_mark, q) = convert_to_VOLE::<k_0>(&sds_for_later_use, iv);
+            (_u_mark, sized_array_for_q_v::sized_array_1(q))
+        }
+        else {
+            let (_u_mark, q) = convert_to_VOLE::<k_1>(&sds_for_later_use, iv);
+            (_u_mark, sized_array_for_q_v::sized_array_2(q))
+        };
 
         commitments.push(com);
         big_q[i] = q;

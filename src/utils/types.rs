@@ -4,7 +4,7 @@ use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::num_rec;
 use crate::utils::prg::prg;
 use crate::utils::types::Tree::{Leaf, Node};
-use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow};
+use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow, ell};
 
 pub type Word = [u8; 4];
 pub type Matrix<T> = Vec<Vec<T>>;
@@ -12,6 +12,7 @@ pub type Matrix<T> = Vec<Vec<T>>;
 pub type State = [[u8; nst]; nk];
 pub type sized_array_16<const size: usize> = [[u8;16];size];
 pub type sized_array_32<const size: usize> = [[u8;32];size];
+pub type sized_array_234<const size: usize> = [[u8;ell];size];
 pub type sized_option_array<const size: usize> = [Option<[u8;16]>;size];
 
 #[derive(Clone)]
@@ -24,6 +25,17 @@ pub enum sized_array_for_coms {
     sized_array_1(sized_array_32<k_0_pow>),
     sized_array_2(sized_array_32<k_1_pow>)
 }
+#[derive(Clone)]
+pub enum sized_array_for_sds {
+    sized_array_1(sized_array_16<k_0_pow>),
+    sized_array_2(sized_array_16<k_1_pow>)
+}
+#[derive(Clone,Copy)]
+pub enum sized_array_for_q_v{
+    sized_array_1(sized_array_234<k_0>),
+    sized_array_2(sized_array_234<k_1>)
+}
+
 
 pub trait ret_value {
     type Elem: Clone;

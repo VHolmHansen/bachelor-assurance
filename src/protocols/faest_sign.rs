@@ -1,5 +1,5 @@
 use rand::RngExt;
-use crate::utils::types::sized_array_for_cop;
+use crate::utils::types::{sized_array_for_coms, sized_array_for_cop, sized_array_for_q_v};
 use crate::utils::vector_commit::{vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
@@ -12,15 +12,14 @@ use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_
 use crate::utils::math::transform_byte_array_to_state;
 
 
-pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16]) {
+pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16]) {
     let mut rng = rand::rng();
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
     let rho: [u8; 16] = rng.random();
 
-    let (r, iv) : ([u8;16], [u8;16])= h_3(sk, my, rho);
-
-    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], Vec<([u8;16], [u8;16], Vec<[u8;32]>)>, Vec<[u8;234]>, [u8; 234], Vec<Vec<[u8; 234]>>)= FAEST_VOLE_commit(r, iv);
+    let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho);
+    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], Vec<([u8;16], [u8;16], sized_array_for_coms)>, Vec<[u8;234]>, [u8; 234], [sized_array_for_q_v; 11])= FAEST_VOLE_commit(r, iv);
 
     let chall_1 : [u8;88] = h_2_1(my, h_com, c_bytes.clone(), iv);
 
@@ -29,12 +28,17 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
     let u_x_1 = &u_bytes[216..234];
     let u_tilde = vole_hash(&chall_1, u_x_0, u_x_1);
 
+    let inners: Vec<&[[u8; ell]]> = v_bytes.iter().map(|v| match v {
+        sized_array_for_q_v::sized_array_1(inner) => inner.as_slice(),
+        sized_array_for_q_v::sized_array_2(inner) => inner.as_slice(),
+    }).collect();
+
     // få v_tilde
     let mut v_tilde : Vec<[u8; 18]> = vec![];
     for i in 0..tau {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
-            let col = &v_bytes[i][j]; // [u8; 234]
+            let col = &inners[i][j]; // [u8; 234]
             let x0_col = &col[0..216];
             let x1_col = &col[216..234];
             let col_hash = vole_hash(&chall_1, x0_col, x1_col);
@@ -49,9 +53,14 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
     // u_bytes og v_bytes skal pakkes om til bits, siden det er sådan de bliver brugt senere
     let u_bits: Vec<u8> = u_to_bits(&u_bytes);
     let u_bits = u_bits[..ell_bit_size + lambda].to_vec();
-    
 
-    let v_rows: Vec<[u8; lambda]> = vole_to_row_major(&v_bytes);
+    let v_bytes_unwrapped: Vec<Vec<[u8; ell]>> = v_bytes.iter().map(|v| match v {
+        sized_array_for_q_v::sized_array_1(inner) => inner.to_vec(),
+        sized_array_for_q_v::sized_array_2(inner) => inner.to_vec(),
+    }).collect();
+
+
+    let v_rows: Vec<[u8; lambda]> = vole_to_row_major(&v_bytes_unwrapped);
 
 
 
@@ -60,7 +69,7 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
     let ct_state = bits_to_state(pk.clone().1.to_vec());
 
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
-    let extended_witness = faest_aes_extend_witness(sk, (pt_state, ct_state));
+    let extended_witness = faest_aes_extend_witness(*sk, (pt_state, ct_state));
 
     let mut d: Vec<u8> = vec![];
     for i in 0..ell_bit_size {
@@ -74,7 +83,7 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
 
 
     let (a_tilde, b_tilde) = faest_aes_prove(extended_witness.try_into().unwrap(), u_arr, V_arr, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
-    
+
 
     let chall_3 = h_2_3(chall_2, a_tilde, b_tilde);
 
@@ -84,9 +93,9 @@ pub fn faest_sign(msg : &[u8], sk : [u8;16], pk : ([u8;lambda], [u8;lambda])) ->
         let s_i = chall_dec(chall_3, i);
 
         let pdecom = if s_i.len() == k_0 {
-            vec_open_k0(decoms[i].clone(), s_i.clone(), s_i.len() as i128)
+            vec_open_k0(&decoms[i], s_i.clone(), s_i.len() as i128)
         } else {
-            vec_open_k1(decoms[i].clone(), s_i.clone(), s_i.len() as i128)
+            vec_open_k1(&decoms[i], s_i.clone(), s_i.len() as i128)
         };
 
         pdecoms.push(pdecom);

@@ -1,3 +1,5 @@
+use crate::utils::constants::ell;
+use crate::utils::types::sized_array_for_q_v;
 use crate::utils::types::sized_array_for_cop;
 use crate::protocols::faest_prove_and_verify::faest_aes_verify;
 use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_reconstruct};
@@ -6,26 +8,30 @@ use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
 use crate::utils::helper_methods_prove_verify::to_field;
 
-pub fn faest_verify(msg : &[u8], pk : ([u8;lambda], [u8;lambda]), sig : (Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16])) -> bool{
-    let c_bytes = sig.0;
-    let u_tilde = sig.1;
-    let d = sig.2;
-    let a_tilde = sig.3;
-    let pdcoms = sig.4;
-    let chall_3 = sig.5;
-    let iv = sig.6;
+pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &(Vec<[u8; 234]>, Vec<u8>, Vec<u8>, [u8; 16], Vec<(sized_array_for_cop, [u8; 32])>, [u8; 16], [u8; 16])) -> bool{
+    let c_bytes = &sig.0;
+    let u_tilde = &sig.1;
+    let d = &sig.2;
+    let a_tilde = &sig.3;
+    let pdcoms = &sig.4;
+    let chall_3 = &sig.5;
+    let iv = &sig.6;
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
-    let (h_com, q_mark) = FAEST_VOLE_reconstruct(chall_3, pdcoms, iv);
+    let (h_com, q_mark) = FAEST_VOLE_reconstruct(*chall_3, &pdcoms, *iv);
 
-    let chall_1 = h_2_1(my, h_com, c_bytes.clone(), iv);
+    let chall_1 = h_2_1(my, h_com, c_bytes.clone(), *iv);
 
     // fixing q:
-    let mut q_corrected = q_mark.clone();
+    let mut q_corrected: Vec<Vec<[u8; ell]>> = q_mark.iter().map(|v| match v {
+        sized_array_for_q_v::sized_array_1(inner) => inner.to_vec(),
+        sized_array_for_q_v::sized_array_2(inner) => inner.to_vec(),
+    }).collect();
+
     for i in 1..tau {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         // get delta bits for this instance from chall_3
-        let delta_bits = chall_dec(chall_3, i);
+        let delta_bits = chall_dec(*chall_3, i);
         for j in 0..k_b {
             if delta_bits[j] == 1 {
                 // XOR column j of Q'i with ci
@@ -50,7 +56,7 @@ pub fn faest_verify(msg : &[u8], pk : ([u8;lambda], [u8;lambda]), sig : (Vec<[u8
     let mut col_idx = 0;
     for i in 0..tau {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
-        let delta_bits = chall_dec(chall_3, i);
+        let delta_bits = chall_dec(*chall_3, i);
         for j in 0..k_b {
             if delta_bits[j] == 1 {
                 for byte in 0..18 {
@@ -75,17 +81,17 @@ pub fn faest_verify(msg : &[u8], pk : ([u8;lambda], [u8;lambda]), sig : (Vec<[u8
 
 
     let b_tilde = faest_aes_verify(
-        d.try_into().unwrap(),
+        d.clone().try_into().unwrap(),
         q_arr,
         expand_bits_56(chall_2),
         chall3_to_bits(&chall_3),
-        a_tilde,
+        *a_tilde,
         (pk.0.try_into().unwrap(), pk.1.try_into().unwrap())
     );
 
-    let chall_3_mark = h_2_3(chall_2, a_tilde, b_tilde);
+    let chall_3_mark = h_2_3(chall_2, *a_tilde, b_tilde);
     
 
-    chall_3 == chall_3_mark
+    *chall_3 == chall_3_mark
 
 }

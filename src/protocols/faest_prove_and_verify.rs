@@ -135,10 +135,10 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
         .unwrap();
 
     let b2 = faest_aes_enc_cstrnts_verifier(
-            128, in_of_in_and_out.to_vec(),
-            out_of_in_and_out.to_vec(),
-            q_for_enc_cstrnts,
-            q_k,
+            128, &in_of_in_and_out.to_vec(),
+            &out_of_in_and_out.to_vec(),
+            &q_for_enc_cstrnts,
+            &q_k,
             delta,
             true
             );

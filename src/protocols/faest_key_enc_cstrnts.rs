@@ -16,9 +16,9 @@ use crate::utils::constants::{l_enc, lambda, s_enc, R};
 // should never be called with mtag=1 and mkey= 1
 pub fn faest_aes_enc_fwd<T : ret_value>(
         _m : usize,
-        x: T,
-        x_k : T,
-        in_out : Vec<u8>,
+        x: &T,
+        x_k : &T,
+        in_out : &Vec<u8>,
         mtag : bool,
         mkey : bool,
         Delta : <T as ret_value>::Elem
@@ -106,9 +106,9 @@ pub fn faest_aes_enc_fwd<T : ret_value>(
 // delta is here a T value, that is only for simplifiuying implementation, delta should always be a [u8;16], and when this function is called with T = u8
 // then, it should also have mkey == 0, and therefore will never be set equal to delta
 pub fn faest_aes_enc_bkwd<T : ret_value>(
-        _m : usize, x : T,
-        x_k : T,
-        in_out : Vec<u8>,
+        _m : usize, x : &T,
+        x_k : &T,
+        in_out : &Vec<u8>,
         mtag : bool,
         mkey : bool,
         Delta : <T as ret_value>::Elem
@@ -176,10 +176,10 @@ pub fn faest_aes_enc_cstrnts_prover(
     if mkey {
         panic!("mkey should be false");
     }
-    let s = faest_aes_enc_fwd(1, w.clone(), k.to_vec(), in_of_in_and_out.clone(), false, false, 0);
-    let v_s = faest_aes_enc_fwd(lambda, v.to_vec(), v_k.to_vec(), in_of_in_and_out.clone(), true, false, [0;16]);
-    let s_overline = faest_aes_enc_bkwd(1, w.clone(), k.to_vec(), out_of_in_and_out.clone(), false, false, 0);
-    let v_s_overline = faest_aes_enc_bkwd(lambda, v.to_vec(), v_k.to_vec(), out_of_in_and_out.clone(), true, false, [0;16]);
+    let s = faest_aes_enc_fwd(1, &w, &k.to_vec(), &in_of_in_and_out, false, false, 0);
+    let v_s = faest_aes_enc_fwd(lambda, &v.to_vec(), &v_k.to_vec(), &in_of_in_and_out, true, false, [0;16]);
+    let s_overline = faest_aes_enc_bkwd(1, &w, &k.to_vec(), &out_of_in_and_out, false, false, 0);
+    let v_s_overline = faest_aes_enc_bkwd(lambda, &v.to_vec(), &v_k.to_vec(), &out_of_in_and_out, true, false, [0;16]);
     let mut A_0 : [[u8;16];s_enc] = [[0;16];s_enc];
     let mut A_1 : [[u8;16];s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
@@ -199,10 +199,10 @@ pub fn faest_aes_enc_cstrnts_prover(
 }
 pub fn faest_aes_enc_cstrnts_verifier(
                 _m : usize,
-                in_of_in_and_out : Vec<u8>,
-                out_of_in_and_out : Vec<u8>,
-                q : [[u8;16];l_enc],
-                q_k : [[u8;16];128*(R+1)],
+                in_of_in_and_out : &Vec<u8>,
+                out_of_in_and_out : &Vec<u8>,
+                q : &[[u8;16];l_enc],
+                q_k : &[[u8;16];128*(R+1)],
                 delta : [u8;16],
                 mkey : bool
 ) -> [[u8;16];s_enc]
@@ -210,8 +210,8 @@ pub fn faest_aes_enc_cstrnts_verifier(
     if !mkey {
         panic!("mkey should not be false");
     }
-    let q_s = faest_aes_enc_fwd(lambda, q.to_vec(), q_k.to_vec(), in_of_in_and_out.clone(), false, true, delta);
-    let q_s_overline = faest_aes_enc_bkwd(lambda, q.to_vec(), q_k.to_vec(), out_of_in_and_out.clone(), false, true, delta);
+    let q_s = faest_aes_enc_fwd(lambda, &q.to_vec(), &q_k.to_vec(), &in_of_in_and_out, false, true, delta);
+    let q_s_overline = faest_aes_enc_bkwd(lambda, &q.to_vec(), &q_k.to_vec(), &out_of_in_and_out, false, true, delta);
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
         let q_product = gf128_mul(&q_s[j], &q_s_overline[j]);

@@ -29,7 +29,7 @@ pub fn faest_aes_prove(
     let v_tilde_exp: &[[u8;16]]  = &v[0..l_ke];
 
 
-    let (a_tilde_0_exp, a_tilde_1_exp, k, v_k) : ([[u8;16];S_ke], [[u8;16];S_ke], [u8;1408],[[u8;16];1408]) = faest_aes_exp_cstrnts_wv(w_tilde_exp.to_vec(), v_tilde_exp.to_vec(), false);
+    let (a_tilde_0_exp, a_tilde_1_exp, k, v_k) : ([[u8;16];S_ke], [[u8;16];S_ke], [u8;1408],[[u8;16];1408]) = faest_aes_exp_cstrnts_wv(w_tilde_exp, v_tilde_exp, false);
 
 
     let w_tilde_enc : &[u8] = &w[l_ke..(l_ke+l_enc)];
@@ -38,10 +38,10 @@ pub fn faest_aes_prove(
         .try_into()
         .unwrap();
 
-    let (a_tilde_0_enc, a_tilde_1_enc) = faest_aes_enc_cstrnts_prover(
-        1, in_of_in_and_out.to_vec(),
-        out_of_in_and_out.to_vec(),
-        w_tilde_enc.to_vec(),
+    let (a_tilde_0_enc, a_tilde_1_enc) : ([[u8; 16]; 160],[[u8; 16]; 160])= faest_aes_enc_cstrnts_prover(
+        1, in_of_in_and_out,
+        out_of_in_and_out,
+        w_tilde_enc,
         v_tilde_enc,
         k,
         v_k,
@@ -112,8 +112,8 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     }
 
     // til 13
-
-    let (b1, q_k) : ([[u8; 16]; S_ke], [[u8; 16]; 1408])= faest_aes_exp_cstrnts_qDelta(delta, q[0..l_ke].to_vec(), true);
+    let q_for_q_delta : [[u8;16]; l_ke] = q[0..l_ke].try_into().unwrap();
+    let (b1, q_k) : ([[u8; 16]; S_ke], [[u8; 16]; 1408])= faest_aes_exp_cstrnts_qDelta(delta, q_for_q_delta, true);
 
 
     let q_for_enc_cstrnts: [[u8;16]; l_enc] = q[l_ke..(l_ke+l_enc)]
@@ -121,8 +121,8 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
         .unwrap();
 
     let b2 : [[u8;16];160]= faest_aes_enc_cstrnts_verifier(
-            128, &in_of_in_and_out.to_vec(),
-            &out_of_in_and_out.to_vec(),
+            128, &in_of_in_and_out,
+            &out_of_in_and_out,
             &q_for_enc_cstrnts,
             &q_k,
             delta,

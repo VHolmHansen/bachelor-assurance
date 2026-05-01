@@ -3,7 +3,7 @@ use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{setup_rcon_table};
 use crate::utils::types::{ret_value};
 use crate::utils::helper_methods_cstrnts::{byte_combine};
-use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, s_enc, S_ke, nk, lambda, R};
+use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, s_enc, S_ke, nk, lambda, R, l_ke};
 
 
 // pk, is a tuple with a in message and out that is 128 * (\lambda / 128)
@@ -125,12 +125,12 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(_m : usize, x: T, x_k : T, mtag: bo
 
 }
 
-pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> ([[u8;16]; S_ke], [[u8;16]; S_ke], [u8; 1408],[[u8;16]; 1408] ) {
+pub fn faest_aes_exp_cstrnts_wv(w : &[u8], v : &[[u8; 16]], mkey : bool) -> ([[u8;16]; S_ke], [[u8;16]; S_ke], [u8; 1408], [[u8;16]; 1408] ) {
     if mkey {
         panic!("invalid tags")
     }
-    let k = faest_aes_key_exp_fwd::<Vec<u8>>(1, w.clone(), false, false, [0;16]);
-    let v_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, v.clone(), true, false, [0;16]);
+    let k = faest_aes_key_exp_fwd::<Vec<u8>>(1, w.to_vec(), false, false, [0;16]);
+    let v_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, v.to_vec(), true, false, [0;16]);
     let w_tilde: [u8;ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<u8>>(1, w[lambda..].to_vec(), k.to_vec(), false, false, 0);
     let v_w: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, v[lambda..].to_vec(), v_k.to_vec(), true, false, [0;16]);
 
@@ -168,11 +168,11 @@ pub fn faest_aes_exp_cstrnts_wv(w : Vec<u8>, v : Vec<[u8;16]>, mkey : bool) -> (
     (A_0, A_1, k, v_k)
 }
 
-pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : Vec<[u8;16]>, mkey : bool) -> ([[u8;16];S_ke], [[u8;16];1408]){
+pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey : bool) -> ([[u8;16];S_ke], [[u8;16];1408]){
     if !mkey {
         panic!("invalid tags")
     }
-    let q_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, q.clone(), false, true, Delta);
+    let q_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, q.to_vec(), false, true, Delta);
     let q_w_flat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
 
     let mut B : [[u8;16];S_ke] = [[0;16];S_ke];

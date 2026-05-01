@@ -163,23 +163,23 @@ pub fn faest_aes_enc_bkwd<T : ret_value>(
 }
 
 pub fn faest_aes_enc_cstrnts_prover(
-            _m : usize,
-            in_of_in_and_out : Vec<u8>,
-            out_of_in_and_out : Vec<u8>,
-            w : Vec<u8>,
-            v : [[u8;16]; l_enc],
-            k : [u8;128*(R+1)],
-            v_k : [[u8;16];128*(R+1)],
-            mkey : bool,
+    _m : usize,
+    in_of_in_and_out : [u8; 128],
+    out_of_in_and_out : [u8; 128],
+    w : &[u8],
+    v : [[u8;16]; l_enc],
+    k : [u8;128*(R+1)],
+    v_k : [[u8;16];128*(R+1)],
+    mkey : bool,
 ) -> ([[u8;16];160],[[u8;16];160])
 {
     if mkey {
         panic!("mkey should be false");
     }
-    let s = faest_aes_enc_fwd(1, &w, &k.to_vec(), &in_of_in_and_out, false, false, 0);
-    let v_s = faest_aes_enc_fwd(lambda, &v.to_vec(), &v_k.to_vec(), &in_of_in_and_out, true, false, [0;16]);
-    let s_overline = faest_aes_enc_bkwd(1, &w, &k.to_vec(), &out_of_in_and_out, false, false, 0);
-    let v_s_overline = faest_aes_enc_bkwd(lambda, &v.to_vec(), &v_k.to_vec(), &out_of_in_and_out, true, false, [0;16]);
+    let s = faest_aes_enc_fwd::<Vec<u8>>(1, &w.to_vec(), &k.to_vec(), &in_of_in_and_out.to_vec(), false, false, 0);
+    let v_s = faest_aes_enc_fwd::<Vec<[u8;16]>>(lambda, &v.to_vec(), &v_k.to_vec(), &in_of_in_and_out.to_vec(), true, false, [0;16]);
+    let s_overline = faest_aes_enc_bkwd::<Vec<u8>>(1, &w.to_vec(), &k.to_vec(), &out_of_in_and_out.to_vec(), false, false, 0);
+    let v_s_overline = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &v.to_vec(), &v_k.to_vec(), &out_of_in_and_out.to_vec(), true, false, [0;16]);
     let mut A_0 : [[u8;16];s_enc] = [[0;16];s_enc];
     let mut A_1 : [[u8;16];s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
@@ -198,20 +198,20 @@ pub fn faest_aes_enc_cstrnts_prover(
     (A_0, A_1)
 }
 pub fn faest_aes_enc_cstrnts_verifier(
-                _m : usize,
-                in_of_in_and_out : &Vec<u8>,
-                out_of_in_and_out : &Vec<u8>,
-                q : &[[u8;16];l_enc],
-                q_k : &[[u8;16];128*(R+1)],
-                delta : [u8;16],
-                mkey : bool
+    _m : usize,
+    in_of_in_and_out : &[u8; 128],
+    out_of_in_and_out : &[u8; 128],
+    q : &[[u8;16];l_enc],
+    q_k : &[[u8;16];128*(R+1)],
+    delta : [u8;16],
+    mkey : bool
 ) -> [[u8;16];s_enc]
 {
     if !mkey {
         panic!("mkey should not be false");
     }
-    let q_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &q.to_vec(), &q_k.to_vec(), &in_of_in_and_out, false, true, delta);
-    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd(lambda, &q.to_vec(), &q_k.to_vec(), &out_of_in_and_out, false, true, delta);
+    let q_s : [[u8;16];160] = faest_aes_enc_fwd::<Vec<[u8;16]>>(lambda, &q.to_vec(), &q_k.to_vec(), &in_of_in_and_out.to_vec(), false, true, delta);
+    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &q.to_vec(), &q_k.to_vec(), &out_of_in_and_out.to_vec(), false, true, delta);
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
         let q_product : [u8;16] = gf128_mul(&q_s[j], &q_s_overline[j]);

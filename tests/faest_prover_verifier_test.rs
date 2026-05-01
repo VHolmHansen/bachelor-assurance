@@ -97,12 +97,12 @@ mod tests{
 
 
         let (a_tilde, b_tilde) = faest_aes_prove(
-            w_arr, u_arr, V, (plain_text_flat.clone().try_into().unwrap(), cipher_text_flat.clone().try_into().unwrap()), chall_2
+            w_arr, &u_arr, &V, (plain_text_flat.clone().try_into().unwrap(), cipher_text_flat.clone().try_into().unwrap()), chall_2
         );
 
 
         let (a_tilde, b_tilde) = faest_aes_prove(
-            w_arr, u_arr, V, (plain_text_flat.clone().try_into().unwrap(), cipher_text_flat.clone().try_into().unwrap()), chall_2
+            w_arr, &u_arr, &V, (plain_text_flat.clone().try_into().unwrap(), cipher_text_flat.clone().try_into().unwrap()), chall_2
         );
 
         // ============ DIAGNOSTIC CHECKS ============

@@ -37,6 +37,27 @@ pub enum sized_array_for_q_v{
     sized_array_2(sized_array_234<k_1>)
 }
 
+impl sized_array_for_q_v {
+    pub fn get(&self, index: usize) -> &[u8; ell] {
+        match self {
+            sized_array_for_q_v::sized_array_1(arr) => &arr[index],
+            sized_array_for_q_v::sized_array_2(arr) => &arr[index],
+        }
+    }
+    pub fn set(&mut self, index: usize, value: [u8; ell]) {
+        match self {
+            sized_array_for_q_v::sized_array_1(arr) => arr[index] = value,
+            sized_array_for_q_v::sized_array_2(arr) => arr[index] = value,
+        }
+    }
+    pub fn get_all(&self) -> &[[u8; ell]] {
+        match self {
+            sized_array_for_q_v::sized_array_1(arr) => arr,
+            sized_array_for_q_v::sized_array_2(arr) => arr,
+        }
+    }
+}
+
 
 
 pub trait ret_value {

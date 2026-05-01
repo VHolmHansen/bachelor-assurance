@@ -8,11 +8,11 @@ use crate::utils::helper_methods_prove_verify::{to_field, zk_hash};
 use crate::utils::math::{field_pow, xor_arrays};
 
 pub fn faest_aes_prove(
-            w : [u8; ell_bit_size],
-            u : [u8; ell_bit_size+lambda],
-            V : [[u8; lambda]; ell_bit_size+lambda],
-            pk : ([u8;lambda], [u8;lambda]),
-            chall : [u8;3*lambda+64]) -> ([u8;16],[u8;16]
+    w : [u8; ell_bit_size],
+    u : &[u8; 1728],
+    V : &[[u8; 128]; 1728],
+    pk : ([u8;lambda], [u8;lambda]),
+    chall : [u8;3*lambda+64]) -> ([u8;16],[u8;16]
 )
 {
 

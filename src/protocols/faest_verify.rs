@@ -23,10 +23,7 @@ pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &([[u8;
     let chall_1 = h_2_1(my, h_com, c_bytes, *iv);
 
     // fixing q:
-    let mut q_corrected: Vec<Vec<[u8; ell]>> = q_mark.iter().map(|v| match v {
-        sized_array_for_q_v::sized_array_1(inner) => inner.to_vec(),
-        sized_array_for_q_v::sized_array_2(inner) => inner.to_vec(),
-    }).collect();
+    let mut q_corrected = q_mark;
 
     for i in 1..tau {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
@@ -36,7 +33,9 @@ pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &([[u8;
             if delta_bits[j] == 1 {
                 // XOR column j of Q'i with ci
                 for byte in 0..234 {
-                    q_corrected[i][j][byte] ^= c_bytes[i][byte];
+                    let mut row = *q_corrected[i].get(j);
+                    row[byte] ^= c_bytes[i][byte];
+                    q_corrected[i].set(j, row);
                 }
             }
         }
@@ -47,7 +46,7 @@ pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &([[u8;
     for i in 0..tau {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
-            let col = &q_corrected[i][j];
+            let col = q_corrected[i].get(j);
             let col_hash = vole_hash(&chall_1, &col[0..216], &col[216..234]);
             q_e_columns.push(col_hash.try_into().unwrap());
         }
@@ -75,7 +74,7 @@ pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &([[u8;
     let chall_2 = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
 
     // et lille fix til hvordan q den hænger sammen, samme check som til prove
-    let q_rows = vole_to_row_major(&q_corrected);
+    let q_rows = vole_to_row_major(q_corrected);
     let q_arr: [[u8; lambda]; ell_bit_size + lambda] = q_rows.try_into().unwrap();
 
 

@@ -8,7 +8,7 @@ use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit};
 use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0, tau_1};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits};
-use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_bits, vole_hash, vole_to_row_major};
+use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_1728_bits, vole_hash, vole_to_row_major};
 use crate::utils::math::transform_byte_array_to_state;
 
 
@@ -62,18 +62,10 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let h_v = h_1_for_non_specific_size(&h_v_val);
 
     // u_bytes og v_bytes skal pakkes om til bits, siden det er sådan de bliver brugt senere
-    let u_bits: Vec<u8> = u_to_bits(&u_bytes);
-    let u_bits = u_bits[..ell_bit_size + lambda].to_vec();
-
-    let v_bytes_unwrapped: Vec<Vec<[u8; ell]>> = v_bytes.iter().map(|v| match v {
-        sized_array_for_q_v::sized_array_1(inner) => inner.to_vec(),
-        sized_array_for_q_v::sized_array_2(inner) => inner.to_vec(),
-    }).collect();
+    let u_bits: &[u8;1728] = &u_to_1728_bits(&u_bytes);
 
 
-    let v_rows: Vec<[u8; lambda]> = vole_to_row_major(&v_bytes_unwrapped);
-
-
+    let v_rows: &[[u8; lambda];ell_bit_size+lambda] = &vole_to_row_major(v_bytes);
 
     // plaintext til state
     let pt_state = bits_to_state(pk.clone().0.to_vec());
@@ -89,11 +81,8 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
     let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
 
-    let u_arr: [u8; ell_bit_size + lambda] = u_bits.try_into().unwrap();
-    let V_arr: [[u8; lambda]; ell_bit_size + lambda] = v_rows.try_into().unwrap();
 
-
-    let (a_tilde, b_tilde) = faest_aes_prove(extended_witness.try_into().unwrap(), u_arr, V_arr, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
+    let (a_tilde, b_tilde) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
 
 
     let chall_3 = h_2_3(chall_2, a_tilde, b_tilde);

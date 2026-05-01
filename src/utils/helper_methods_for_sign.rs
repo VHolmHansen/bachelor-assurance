@@ -6,9 +6,8 @@ use crate::utils::math::xor_arrays;
 use crate::utils::types::State;
 
 // funktioner der bruges til at omdanne vores V og u, i sign til bits, skal nok slettes senere efte refactor
-pub fn vole_to_row_major(big_v: &Vec<Vec<[u8; ell]>>) -> Vec<[u8; lambda]> {
-    let l_hat = ell_bit_size + lambda; // 1728 rows
-    let mut v_rows: Vec<[u8; lambda]> = vec![[0u8; lambda]; l_hat];
+pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_bit_size+lambda] {
+    let mut v_rows: [[u8; lambda];ell_bit_size+lambda] = [[0u8; lambda]; ell_bit_size + lambda];
 
     // flatten all columns across tau instances
     // big_v[0] has k_0 columns, big_v[1..tau_0] have k_0 columns
@@ -18,10 +17,10 @@ pub fn vole_to_row_major(big_v: &Vec<Vec<[u8; ell]>>) -> Vec<[u8; lambda]> {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
             // big_v[i][j] is one column of l_hat bits packed into 234 bytes
-            for row in 0..l_hat {
+            for row in 0..(ell_bit_size+lambda) {
                 let byte_idx = row / 8;
                 let bit_idx  = row % 8;
-                v_rows[row][col] = (big_v[i][j][byte_idx] >> bit_idx) & 1;
+                v_rows[row][col] = (big_v[i].get(j)[byte_idx] >> bit_idx) & 1; // [j][byte_idx]
             }
             col += 1;
         }
@@ -32,15 +31,16 @@ pub fn vole_to_row_major(big_v: &Vec<Vec<[u8; ell]>>) -> Vec<[u8; lambda]> {
 }
 
 
-pub fn u_to_bits(u: &[u8; 234]) -> Vec<u8> {
-    let mut bits = vec![];
+pub fn u_to_1728_bits(u: &[u8; 234]) -> [u8; 1728] {
+    let mut bits = [0u8; 1872];
+    let mut idx = 0;
     for &byte in u.iter() {
         for i in 0..8 {
-            bits.push((byte >> i) & 1);
+            bits[idx] = (byte >> i) & 1;
+            idx += 1;
         }
     }
-    bits
-    // returns 1872 bits, take first ell_bit_size + lambda = 1728
+    bits[0..1728].try_into().unwrap()
 }
 
 

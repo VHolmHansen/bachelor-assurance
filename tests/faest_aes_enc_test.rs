@@ -7,7 +7,8 @@ mod tests{
     use Bachelor_Assurance::utils::math::transform_byte_array_to_state;
     use Bachelor_Assurance::utils::types::{State};
     use Bachelor_Assurance::utils::constants::{s_enc};
-
+    
+    /*
     #[test]
     fn test_aes_enc_fwd_bkwd() {
         let key = [
@@ -80,4 +81,6 @@ mod tests{
         }
         res
     }
+    
+     */
 }

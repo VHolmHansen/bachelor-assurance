@@ -13,7 +13,7 @@ pub const k_1_pow : usize = 2048;
 pub const tau_0 : usize = 7;
 pub const tau_1 : usize = 4;
 pub const l_ke : usize = lambda +8* S_ke;
-pub const l_enc : usize = 8 * (s_enc - 16);
+pub const l_enc : usize = 8 * (s_enc - 16); // den er 1152
 pub type State = [[u8; nst]; nk];
 
 pub const ret_size_exp_fwd : usize = lambda *(R +1);

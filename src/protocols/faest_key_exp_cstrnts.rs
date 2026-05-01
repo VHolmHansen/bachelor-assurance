@@ -125,7 +125,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(_m : usize, x: T, x_k : T, mtag: bo
 
 }
 
-pub fn faest_aes_exp_cstrnts_wv(w : &[u8], v : &[[u8; 16]], mkey : bool) -> ([[u8;16]; S_ke], [[u8;16]; S_ke], [u8; 1408], [[u8;16]; 1408] ) {
+pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : bool) -> ([[u8;16]; S_ke], [[u8;16]; S_ke], [u8; 1408], [[u8;16]; 1408] ) {
     if mkey {
         panic!("invalid tags")
     }

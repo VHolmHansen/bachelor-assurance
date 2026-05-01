@@ -1,8 +1,8 @@
 use crate::utils::constants::{k_0,k_1,k_0_pow,k_1_pow};
 use crate::utils::ggm_tree::{get_cop, get_leaves_from_cop_and_b, get_leaves_node_from_root};
 use crate::utils::hash_functions::{h_0, h_1};
-use crate::utils::preliminary_helper_methods::{num_rec};
-use crate::utils::types::{sized_array_16, sized_array_32, sized_array_for_cop, Tree, sized_array_for_coms, sized_array_for_sds, sized_option_array};
+use crate::utils::preliminary_helper_methods::{num_rec, num_rec_k0, num_rec_k1};
+use crate::utils::types::{sized_array_16, sized_array_32, sized_array_for_cop, sized_array_for_coms, sized_array_for_sds, sized_option_array};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
@@ -50,31 +50,31 @@ pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16],
 // for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
 // there must be a smarter way to this that to get the bits
-pub fn vec_open_k0(decom: &([u8;16], [u8;16], sized_array_for_coms), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
+pub fn vec_open_k0(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 12], d: i128) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
     let coms = &decom.2;
-    let cop = get_cop::<k_0>(r, iv, num_rec(b.clone(), d as u64), d);
+    let cop = get_cop::<k_0>(r, iv, num_rec_k0(b), d);
     let cop_to_return = sized_array_for_cop::sized_array_1(cop);
 
     let com_value: [u8; 32] = match &coms {
-        sized_array_for_coms::sized_array_1(inner) => inner[num_rec(b, d as u64) as usize],
-        sized_array_for_coms::sized_array_2(inner) => inner[num_rec(b, d as u64) as usize],
+        sized_array_for_coms::sized_array_1(inner) => inner[num_rec_k0(b) as usize],
+        sized_array_for_coms::sized_array_2(inner) => inner[num_rec(b.to_vec(), d as u64) as usize], // det her er ikke nødvendigt for kaldet, men ved ikke om det kan fjernes for compileren
     };
 
     let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);
     pdecom
 }
-pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: Vec<u8>, d: i128) -> (sized_array_for_cop, [u8; 32]){
+pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 11], d: i128) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
     let coms = &decom.2;
-    let cop = get_cop::<k_1>(r, iv, num_rec(b.clone(), d as u64), d);
+    let cop = get_cop::<k_1>(r, iv, num_rec_k1(b), d);
     let cop_to_return = sized_array_for_cop::sized_array_2(cop);
 
     let com_value: [u8; 32] = match &coms {
-        sized_array_for_coms::sized_array_1(inner) => inner[num_rec(b, d as u64) as usize],
-        sized_array_for_coms::sized_array_2(inner) => inner[num_rec(b, d as u64) as usize],
+        sized_array_for_coms::sized_array_1(inner) => inner[num_rec(b.to_vec(), d as u64) as usize], // det her er ikke nødvendigt for kaldet, men ved ikke om det kan fjernes for compileren
+        sized_array_for_coms::sized_array_2(inner) => inner[num_rec_k1(b) as usize],
     };
 
     let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);

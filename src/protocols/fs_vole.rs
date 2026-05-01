@@ -169,6 +169,35 @@ pub fn chall_dec(chall : [u8;16], i : usize) -> Vec<u8>{
     bits
 }
 
+pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
+    assert!(i < tau_0, "i must be < tau_0 for k_0 variant");
+    let lo = i * k_0;
+    let hi = (i + 1) * k_0 - 1;
+
+    let mut bits = [0u8; k_0];
+    for (idx, b) in (lo..=hi).enumerate() {
+        let byte_index = b / 8;
+        let bit_index = b % 8;
+        bits[idx] = (chall[byte_index] >> bit_index) & 1;
+    }
+    bits
+}
+
+pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
+    assert!(i >= tau_0 && i < tau, "i must be in [tau_0, tau) for k_1 variant");
+    let t = i - tau_0;
+    let lo = tau_0 * k_0 + t * k_1;
+    let hi = tau_0 * k_0 + (t + 1) * k_1 - 1;
+
+    let mut bits = [0u8; k_1];
+    for (idx, b) in (lo..=hi).enumerate() {
+        let byte_index = b / 8;
+        let bit_index = b % 8;
+        bits[idx] = (chall[byte_index] >> bit_index) & 1;
+    }
+    bits
+}
+
 /*
 fn array_chall_dec<const dummy_n: usize>(chall : [u8;16], i : usize) -> [u8; dummy_n]>{     //TODO: verify length (& streamline)
     if i > tau || i < 0 {       //TODO: unnecessary?

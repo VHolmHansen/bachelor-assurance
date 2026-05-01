@@ -3,8 +3,8 @@ use crate::utils::types::{sized_array_for_coms, sized_array_for_cop, sized_array
 use crate::utils::vector_commit::{vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
-use crate::utils::types::{ret_value, sized_array_16, Tree};
-use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit};
+use crate::utils::types::{ret_value, sized_array_16};
+use crate::protocols::fs_vole::{chall_dec, chall_dec_k0, chall_dec_k1, FAEST_VOLE_commit};
 use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0, tau_1};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits};
@@ -85,12 +85,12 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     // pdecoms
     let mut pdecoms : [(sized_array_for_cop, [u8; 32]);tau] = [(sized_array_for_cop::sized_array_1([[0u8;16];k_0]),[0u8;32]);tau];
     for i in 0..tau {
-        let s_i = chall_dec(chall_3, i);
-
-        let pdecom = if s_i.len() == k_0 {
-            vec_open_k0(&decoms[i], s_i.clone(), s_i.len() as i128)
+        let pdecom = if i < tau_0 {
+            let s_i = chall_dec_k0(chall_3, i);
+            vec_open_k0(&decoms[i], &s_i, s_i.len() as i128)
         } else {
-            vec_open_k1(&decoms[i], s_i.clone(), s_i.len() as i128)
+            let s_i = chall_dec_k1(chall_3, i);
+            vec_open_k1(&decoms[i], &s_i, s_i.len() as i128)
         };
 
         pdecoms[i] = pdecom;

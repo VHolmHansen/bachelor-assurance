@@ -197,7 +197,7 @@ fn array_chall_dec<const dummy_n: usize>(chall : [u8;16], i : usize) -> [u8; dum
 }
  */
 
-pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &Vec<(sized_array_for_cop, [u8; 32])>, iv : [u8;16]) -> ([u8;56], [sized_array_for_q_v;tau]){
+pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;56], [sized_array_for_q_v;tau]){
     let mut commitments : Vec<[u8; 56]> = vec![];
     let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_1([[0u8;234];k_0]);tau];
 

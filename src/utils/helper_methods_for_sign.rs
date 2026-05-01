@@ -1,5 +1,5 @@
 use crate::utils::types::sized_array_for_q_v;
-use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
+use crate::utils::constants::{big_b, ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
 use crate::utils::galois_field::{gf128_mul, gf64_add, gf64_mul};
 use crate::utils::helper_methods_cstrnts::bits_to_byte;
 use crate::utils::math::xor_arrays;
@@ -71,7 +71,7 @@ pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
 }
 
 // turn pk and sk into states:
-pub fn bits_to_state(text: Vec<u8>) -> State {
+pub fn bits_to_state(text: &[u8; 128]) -> State {
     let mut state = [[0u8; 4]; 4];
     for (i, chunk) in text.chunks(8).enumerate() {
         let byte = bits_to_byte(chunk);
@@ -83,7 +83,7 @@ pub fn bits_to_state(text: Vec<u8>) -> State {
 }
 
 // vole hash function:
-pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> Vec<u8> {
+pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8;18] {
     // sd is 5*lambda + 64 bits = 5*16 + 8 = 88 bytes
     // parse sd into r0,r1,r2,r3 (lambda bits each) and s (lambda bits) and t (64 bits)
     let r0: [u8;16] = sd[0..16].try_into().unwrap();
@@ -127,8 +127,7 @@ pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> Vec<u8> {
     let h3 = xor_arrays(&gf128_mul(&r2, &h0), &gf128_mul(&r3, &h1_prime));
 
     // take first lambda + B bits of (h2 | h3) and XOR with x1
-    let b = 16usize; // B = 16
-    let mut h = vec![0u8; (lambda + b) / 8]; // (128 + 16) / 8 = 18 bytes
+    let mut h = [0u8; (lambda + big_b) / 8]; // (128 + 16) / 8 = 18 bytes
     h[0..16].copy_from_slice(&h2);
     h[16..18].copy_from_slice(&h3[0..2]); // first B=16 bits of h3
 

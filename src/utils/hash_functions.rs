@@ -93,7 +93,7 @@ pub fn h_2_1(my : [u8;32], hcom : [u8;56], cs : &[[u8;234]], iv : [u8;16]) -> [u
     digest::shake128::<88>(&input)
 }
 
-pub fn h_2_2(chall_1 : [u8;88], u_tilde : Vec<u8>, h_v : [u8;56], d : Vec<u8>) -> [u8;(3*lambda+64)/8]{
+pub fn h_2_2(chall_1 : [u8;88], u_tilde : [u8; 18], h_v : [u8;56], d : [u8; 1600]) -> [u8;(3*lambda+64)/8]{
     let mut input: Vec<u8> = Vec::with_capacity(88 + u_tilde.len() + 56 + d.len());
 
     input.extend_from_slice(&chall_1);

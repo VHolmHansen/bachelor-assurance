@@ -16,7 +16,7 @@ pub type sized_array_234<const size: usize> = [[u8;ell];size];
 
 pub type sized_option_array<const size: usize> = [Option<[u8;16]>;size];
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum sized_array_for_cop {
     sized_array_1(sized_array_16<k_0>),
     sized_array_2(sized_array_16<k_1>)

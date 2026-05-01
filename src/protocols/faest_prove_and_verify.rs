@@ -17,24 +17,22 @@ pub fn faest_aes_prove(
 {
 
     // nyt v, lidt rodet, basically V|_i betyder kolonne i, og vi skal tage og sige to_field for kolonne i
-    let v: Vec<[u8;16]> = (0..ell_bit_size+lambda)
-        .map(|row| {
-            to_field(&V[row], lambda)[0]
-        })
-        .collect();
+    let mut v: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
+    for i in 0..ell_bit_size+lambda {
+        v[i] = to_field(&V[i], lambda)[0]
+    }
 
+    let in_of_in_and_out : [u8;128] = pk.0;
+    let out_of_in_and_out : [u8;128]= pk.1;
 
-    let in_of_in_and_out = pk.0;
-    let out_of_in_and_out = pk.1;
-
-    let w_tilde_exp = &w[0..l_ke];
-    let v_tilde_exp  = &v[0..l_ke];
+    let w_tilde_exp: &[u8] = &w[0..l_ke];
+    let v_tilde_exp: &[[u8;16]]  = &v[0..l_ke];
 
 
     let (a_tilde_0_exp, a_tilde_1_exp, k, v_k) : ([[u8;16];S_ke], [[u8;16];S_ke], [u8;1408],[[u8;16];1408]) = faest_aes_exp_cstrnts_wv(w_tilde_exp.to_vec(), v_tilde_exp.to_vec(), false);
 
 
-    let w_tilde_enc = &w[l_ke..(l_ke+l_enc)];
+    let w_tilde_enc : &[u8] = &w[l_ke..(l_ke+l_enc)];
     // forsøger at gøre den her til den specifikke størrelse, det er noget vi skla kigge på senere
     let v_tilde_enc: [[u8;16]; l_enc] = v[l_ke..(l_ke+l_enc)]
         .try_into()
@@ -51,18 +49,8 @@ pub fn faest_aes_prove(
     );
 
 
-    let a_0: [[u8;16]; 200] = a_tilde_0_exp.to_vec()
-        .into_iter()
-        .chain(a_tilde_0_enc.to_vec().into_iter())
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap();
-    let a_1: [[u8;16]; 200] = a_tilde_1_exp.to_vec()
-        .into_iter()
-        .chain(a_tilde_1_enc.to_vec().into_iter())
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap();
+    let a_0 : [[u8;16];200] = concat_arrays(a_tilde_0_exp, a_tilde_0_enc);
+    let a_1 : [[u8;16];200] = concat_arrays(a_tilde_1_exp, a_tilde_1_enc);
 
     let mut new_u : [[u8;16];lambda] = [[0;16];lambda];
     for i in 0..lambda {
@@ -70,27 +58,27 @@ pub fn faest_aes_prove(
     }
     
 
-    let mut alpha = [0u8; 16];
+    let mut alpha : [u8;16] = [0u8; 16];
     alpha[0] = 0x02; // bit 1 set = x^1
 
-    let mut u_star = [0u8; 16];
+    let mut u_star : [u8;16] = [0u8; 16];
     for i in 0..lambda {
-        let alpha_pow = field_pow(&alpha, i);
-        let term = gf128_mul(&new_u[i], &alpha_pow);
+        let alpha_pow : [u8;16] = field_pow(&alpha, i);
+        let term : [u8;16] = gf128_mul(&new_u[i], &alpha_pow);
         u_star = xor_arrays(&u_star, &term);
     }
 
     // v*
-    let mut v_star = [0u8; 16];
+    let mut v_star : [u8;16] = [0u8; 16];
     for i in 0..lambda {
-        let alpha_pow = field_pow(&alpha, i);
-        let term = gf128_mul(&v[ell_bit_size + i], &alpha_pow);
+        let alpha_pow : [u8;16] = field_pow(&alpha, i);
+        let term : [u8;16] = gf128_mul(&v[ell_bit_size + i], &alpha_pow);
         v_star = xor_arrays(&v_star, &term);
     }
 
 
-    let alpha_tilde = zk_hash(&chall, &a_1, &u_star);
-    let beta_tilde = zk_hash(&chall, &a_0, &v_star);
+    let alpha_tilde : [u8;16] = zk_hash(&chall, &a_1, &u_star);
+    let beta_tilde : [u8;16] = zk_hash(&chall, &a_0, &v_star);
     
 
     (alpha_tilde, beta_tilde)
@@ -98,13 +86,13 @@ pub fn faest_aes_prove(
 
 pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+lambda], chall_2 : [u8; 3*lambda+64], chall_3 : [u8;lambda], a_tilde : [u8;16],pk : ([u8;lambda], [u8;lambda])) -> [u8;16]
 {
-    let delta = to_field(&chall_3, lambda)[0];
-    let in_of_in_and_out = pk.0;
-    let out_of_in_and_out = pk.1;
+    let delta : [u8;16] = to_field(&chall_3, lambda)[0];
+    let in_of_in_and_out : [u8;128] = pk.0;
+    let out_of_in_and_out : [u8;128] = pk.1;
 
     // linje 5
     // Det her skal forstås som en reconstruction af det Q (en matrix), som er blevet sendt rundt på et tidligere tidspunkt
-    let mut Q_mut = Q.clone();
+    let mut Q_mut : [[u8; 128]; 1728] = Q.clone();
 
     
     
@@ -118,23 +106,21 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     
 
     // After correction - row 0 should now equal v[0] from sign since d[0]=w[0] XOR u[0]
-    let q: Vec<[u8;16]> = (0..ell_bit_size+lambda)
-        .map(|row| {
-            to_field(&Q_mut[row], lambda)[0]
-        })
-        .collect();
-
+    let mut q: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
+    for i in 0..ell_bit_size+lambda {
+        q[i] = to_field(&Q_mut[i], lambda)[0]
+    }
 
     // til 13
 
-    let (b1, q_k) = faest_aes_exp_cstrnts_qDelta(delta, q[0..l_ke].to_vec(), true);
+    let (b1, q_k) : ([[u8; 16]; S_ke], [[u8; 16]; 1408])= faest_aes_exp_cstrnts_qDelta(delta, q[0..l_ke].to_vec(), true);
 
 
     let q_for_enc_cstrnts: [[u8;16]; l_enc] = q[l_ke..(l_ke+l_enc)]
         .try_into()
         .unwrap();
 
-    let b2 = faest_aes_enc_cstrnts_verifier(
+    let b2 : [[u8;16];160]= faest_aes_enc_cstrnts_verifier(
             128, &in_of_in_and_out.to_vec(),
             &out_of_in_and_out.to_vec(),
             &q_for_enc_cstrnts,
@@ -144,32 +130,41 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
             );
 
 
-    let b: [[u8;16]; 200] = b1.to_vec()
-        .into_iter()
-        .chain(b2.to_vec().into_iter())
-        .collect::<Vec<_>>()
-        .try_into()
-        .unwrap();
+    let b: [[u8;16]; 200] = concat_arrays(b1, b2);
 
 
     // getting q_star like with u_star and v_star
-    let mut alpha = [0u8; 16];
+    let mut alpha : [u8;16] = [0u8; 16];
     alpha[0] = 0x02;
     let mut q_star = [0u8; 16];
     for i in 0..lambda {
-        let alpha_pow = field_pow(&alpha, i);
-        let term = gf128_mul(&q[ell_bit_size + i], &alpha_pow);
+        let alpha_pow : [u8;16] = field_pow(&alpha, i);
+        let term : [u8;16] = gf128_mul(&q[ell_bit_size + i], &alpha_pow);
         q_star = xor_arrays(&q_star, &term);
     }
 
 
-    let q_tilde = zk_hash(&chall_2, &b, &q_star);
-    let a_tilde_times_delta = gf128_mul(&a_tilde, &delta);
-    let q_tilde_minus_a_tilde_times_delta = xor_arrays(&q_tilde, &a_tilde_times_delta);
+    let q_tilde : [u8;16] = zk_hash(&chall_2, &b, &q_star);
+    let a_tilde_times_delta : [u8;16] = gf128_mul(&a_tilde, &delta);
+    let q_tilde_minus_a_tilde_times_delta : [u8;16] = xor_arrays(&q_tilde, &a_tilde_times_delta);
 
 
  
 
 
     q_tilde_minus_a_tilde_times_delta
+}
+
+fn concat_arrays(b1: [[u8; 16]; S_ke], b2: [[u8; 16]; 200 - S_ke]) -> [[u8; 16]; 200] {
+    let mut result = [[0u8; 16]; 200];
+    let mut idx = 0;
+    for i in 0..S_ke {
+        result[idx] = b1[i];
+        idx += 1;
+    }
+    for i in 0..(200 - S_ke) {
+        result[idx] = b2[i];
+        idx += 1;
+    }
+    result
 }

@@ -210,19 +210,19 @@ pub fn faest_aes_enc_cstrnts_verifier(
     if !mkey {
         panic!("mkey should not be false");
     }
-    let q_s = faest_aes_enc_fwd(lambda, &q.to_vec(), &q_k.to_vec(), &in_of_in_and_out, false, true, delta);
-    let q_s_overline = faest_aes_enc_bkwd(lambda, &q.to_vec(), &q_k.to_vec(), &out_of_in_and_out, false, true, delta);
+    let q_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &q.to_vec(), &q_k.to_vec(), &in_of_in_and_out, false, true, delta);
+    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd(lambda, &q.to_vec(), &q_k.to_vec(), &out_of_in_and_out, false, true, delta);
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
-        let q_product = gf128_mul(&q_s[j], &q_s_overline[j]);
-        let delta_product = gf128_mul(&delta, &delta);
+        let q_product : [u8;16] = gf128_mul(&q_s[j], &q_s_overline[j]);
+        let delta_product : [u8;16] = gf128_mul(&delta, &delta);
         B[j] = xor_arrays(&q_product, &delta_product);
     }
     B
 }
 
 fn gf28_mul_embedded(a: &[u8;16], b: &[u8;16]) -> [u8;16] {
-    let mut result = [0u8;16];
+    let mut result : [u8;16] = [0u8;16];
     result[0] = crate::utils::galois_field::gf28_multiply(a[0], b[0]);
     result
 }

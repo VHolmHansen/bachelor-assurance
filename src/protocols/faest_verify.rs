@@ -1,3 +1,4 @@
+use crate::utils::constants::tau_1;
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1};
 use crate::utils::constants::ell;
 use crate::utils::types::sized_array_for_q_v;
@@ -24,7 +25,7 @@ pub fn faest_verify(
     let iv : &[u8; 16]= &sig.6;
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
-    let (h_com, q_mark)  : ([u8; 56], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
+    let (h_com, q_mark) : ([u8; 56], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
 
     let chall_1 : [u8;88] = h_2_1(my, h_com, c_bytes, *iv);
 
@@ -33,24 +34,24 @@ pub fn faest_verify(
 
     for i in 1..tau {
         if i < tau_0 {
-            let delta_bits = chall_dec_k0(*chall_3, i);
+            let delta_bits : [u8;12] = chall_dec_k0(*chall_3, i);
             for j in 0..k_0 {
                 if delta_bits[j] == 1 {
                     // XOR column j of Q'i with ci
                     for byte in 0..234 {
-                        let mut row = *q_corrected[i].get(j);
+                        let mut row : [u8;234] = *q_corrected[i].get(j);
                         row[byte] ^= c_bytes[i][byte];
                         q_corrected[i].set(j, row);
                     }
                 }
             }
         } else {
-            let delta_bits = chall_dec_k1(*chall_3, i);
+            let delta_bits : [u8;11] = chall_dec_k1(*chall_3, i);
             for j in 0..k_1 {
                 if delta_bits[j] == 1 {
                     // XOR column j of Q'i with ci
                     for byte in 0..234 {
-                        let mut row = *q_corrected[i].get(j);
+                        let mut row : [u8;234] = *q_corrected[i].get(j);
                         row[byte] ^= c_bytes[i][byte];
                         q_corrected[i].set(j, row);
                     }
@@ -60,44 +61,61 @@ pub fn faest_verify(
     }
 
 
-    let mut q_e_columns: Vec<[u8;18]> = vec![];
+    let mut q_e_columns: [[u8;18];tau_0*k_0+tau_1*k_1] = [[0;18];tau_0*k_0+tau_1*k_1];
+    let mut index : usize = 0;
     for i in 0..tau {
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
-            let col = q_corrected[i].get(j);
-            let col_hash = vole_hash(&chall_1, &col[0..216], &col[216..234]);
-            q_e_columns.push(col_hash.try_into().unwrap());
+            let col : &[u8;234] = q_corrected[i].get(j);
+            let col_hash : [u8;18] = vole_hash(&chall_1, &col[0..216], &col[216..234]);
+            q_e_columns[index] = (col_hash.try_into().unwrap());
+            index += 1;
         }
     }
-    let mut q_e_xored = q_e_columns.clone();
-    let mut col_idx = 0;
+    let mut q_e_xored : [[u8;18];tau_0*k_0+tau_1*k_1] = q_e_columns.clone();
+    let mut col_idx : usize = 0;
     for i in 0..tau {
-        let k_b = if i < tau_0 { k_0 } else { k_1 };
-        let delta_bits = chall_dec(*chall_3, i);
-        for j in 0..k_b {
-            if delta_bits[j] == 1 {
-                for byte in 0..18 {
-                    q_e_xored[col_idx][byte] ^= u_tilde[byte];
+        if i < tau_0 {
+            let delta_bits : [u8;12] = chall_dec_k0(*chall_3, i);
+            for j in 0..k_0 {
+                if delta_bits[j] == 1 {
+                    for byte in 0..18 {
+                        q_e_xored[col_idx][byte] ^= u_tilde[byte];
+                    }
                 }
+                col_idx += 1;
             }
-            col_idx += 1;
+        } else {
+            let delta_bits : [u8;11] = chall_dec_k1(*chall_3, i);
+            for j in 0..k_1 {
+                if delta_bits[j] == 1 {
+                    for byte in 0..18 {
+                        q_e_xored[col_idx][byte] ^= u_tilde[byte];
+                    }
+                }
+                col_idx += 1;
+            }
         }
     }
-    let q_e_flat: Vec<u8> = q_e_xored.iter().flatten().copied().collect();
-
+    let mut q_e_flat : [u8;2304] = [0u8; 18 * (tau_0*k_0+tau_1*k_1)];
+    for i in 0..(tau_0*k_0+tau_1*k_1) {
+        for j in 0..(18) {
+            q_e_flat[i * 18 + j] = q_e_xored[i][j];
+        }
+    }
     // h_v value
-    let h_v = h_1_for_non_specific_size(&*q_e_flat);
+    let h_v : [u8;56] = h_1_for_non_specific_size(&q_e_flat);
 
     // chall 2
-    let chall_2 = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
+    let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
 
     // et lille fix til hvordan q den hænger sammen, samme check som til prove
-    let q_rows = vole_to_row_major(q_corrected);
+    let q_rows : [[u8; 128]; 1728] = vole_to_row_major(q_corrected);
     let q_arr: [[u8; lambda]; ell_bit_size + lambda] = q_rows.try_into().unwrap();
 
 
 
-    let b_tilde = faest_aes_verify(
+    let b_tilde : [u8;16] = faest_aes_verify(
         d.clone().try_into().unwrap(),
         q_arr,
         expand_bits_56(chall_2),
@@ -106,7 +124,7 @@ pub fn faest_verify(
         (pk.0.try_into().unwrap(), pk.1.try_into().unwrap())
     );
 
-    let chall_3_mark = h_2_3(chall_2, *a_tilde, b_tilde);
+    let chall_3_mark : [u8;16] = h_2_3(chall_2, *a_tilde, b_tilde);
     
 
     *chall_3 == chall_3_mark

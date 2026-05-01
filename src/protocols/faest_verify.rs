@@ -1,3 +1,4 @@
+use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1};
 use crate::utils::constants::ell;
 use crate::utils::types::sized_array_for_q_v;
 use crate::utils::types::sized_array_for_cop;
@@ -8,34 +9,51 @@ use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
 use crate::utils::helper_methods_prove_verify::to_field;
 
-pub fn faest_verify(msg : &[u8], pk : &([u8;lambda], [u8;lambda]), sig : &([[u8;234];tau], [u8;18],[u8;ell_bit_size], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16])) -> bool{
-    let c_bytes = &sig.0;
-    let u_tilde = &sig.1;
-    let d = &sig.2;
-    let a_tilde = &sig.3;
-    let pdcoms = &sig.4;
-    let chall_3 = &sig.5;
-    let iv = &sig.6;
+pub fn faest_verify(
+    msg : &[u8],
+    pk : &([u8;lambda], [u8;lambda]),
+    sig : &([[u8;234];tau], [u8;18],[u8;ell_bit_size], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]))
+    -> bool
+{
+    let c_bytes : &[[u8;234];tau] = &sig.0;
+    let u_tilde: &[u8;18] = &sig.1;
+    let d : &[u8;ell_bit_size]= &sig.2;
+    let a_tilde : &[u8; 16]= &sig.3;
+    let pdcoms: &[(sized_array_for_cop, [u8; 32]); 11] = &sig.4;
+    let chall_3 : &[u8; 16] = &sig.5;
+    let iv : &[u8; 16]= &sig.6;
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
-    let (h_com, q_mark) = FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
+    let (h_com, q_mark)  : ([u8; 56], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
 
-    let chall_1 = h_2_1(my, h_com, c_bytes, *iv);
+    let chall_1 : [u8;88] = h_2_1(my, h_com, c_bytes, *iv);
 
     // fixing q:
-    let mut q_corrected = q_mark;
+    let mut q_corrected : [sized_array_for_q_v; 11]  = q_mark;
 
     for i in 1..tau {
-        let k_b = if i < tau_0 { k_0 } else { k_1 };
-        // get delta bits for this instance from chall_3
-        let delta_bits = chall_dec(*chall_3, i);
-        for j in 0..k_b {
-            if delta_bits[j] == 1 {
-                // XOR column j of Q'i with ci
-                for byte in 0..234 {
-                    let mut row = *q_corrected[i].get(j);
-                    row[byte] ^= c_bytes[i][byte];
-                    q_corrected[i].set(j, row);
+        if i < tau_0 {
+            let delta_bits = chall_dec_k0(*chall_3, i);
+            for j in 0..k_0 {
+                if delta_bits[j] == 1 {
+                    // XOR column j of Q'i with ci
+                    for byte in 0..234 {
+                        let mut row = *q_corrected[i].get(j);
+                        row[byte] ^= c_bytes[i][byte];
+                        q_corrected[i].set(j, row);
+                    }
+                }
+            }
+        } else {
+            let delta_bits = chall_dec_k1(*chall_3, i);
+            for j in 0..k_1 {
+                if delta_bits[j] == 1 {
+                    // XOR column j of Q'i with ci
+                    for byte in 0..234 {
+                        let mut row = *q_corrected[i].get(j);
+                        row[byte] ^= c_bytes[i][byte];
+                        q_corrected[i].set(j, row);
+                    }
                 }
             }
         }

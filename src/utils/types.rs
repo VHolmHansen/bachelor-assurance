@@ -176,7 +176,7 @@ impl ret_value for Vec<u8> {
     }
 }
 
-/*
+#[allow(dead_code)]
 impl<const N: usize> ret_value for [[u8;16]; N] {
     type Elem = [u8;16];
     const dummy_value : Self::Elem = [0;16];
@@ -189,19 +189,15 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     fn get_element(&self, x : usize) -> [u8;16] {
         self[x]
     }
-    /*  TODO: This will not work for arrays, indexing method instead? use set_element instead
     fn push_value(mut self, x: [u8;16]) -> Self {
-
-        self[self.len()] = x;
         self
     }
-    */
     fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
         xor_arrays(x, y)
     }
 
     fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
-        let mut res: [[u8;16]; 8] = [[0u8; 16]; 8];
+        let mut res: [[u8;16]; N] = [[0u8; 16]; N];
         for i in 0..8 {
             let value_to_push = Self::xor_array(&x[i], &y[i]);
             res[i] = (value_to_push);
@@ -213,22 +209,21 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
         self[index] = *value;
     }
     fn new_with_size(size: usize, value: Self::Elem) -> Self {
-        [value; size]
+        [value; N]
     }
     fn len(&self) -> usize{
-        self.len()
+        <[_]>::len(self)
     }
     fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
         gf128_mul(&x, &alpha_val)
     }
-    /*  deprecated
-    fn turn_array_to_T(x : &[Self::Elem]) -> Vec<Self::Elem> {
-        x.to_vec()
+    fn turn_array_to_T(x : &[Self::Elem]) -> [[u8; 16]; N] {
+        panic!("should never be called")
     }
-    */
+
 }
 
-
+#[allow(dead_code)]
 impl<const N: usize> ret_value for [u8; N] {
     type Elem = u8;
     const dummy_value : Self::Elem = 0;
@@ -241,17 +236,16 @@ impl<const N: usize> ret_value for [u8; N] {
     fn get_element(&self, x : usize) -> u8 {
         self[x]
     }
-    /* TODO: This will not work for arrays, indexing method instead? use set_element instead
+    // TODO: This will not work for arrays, indexing method instead? use set_element instead
     fn push_value(mut self, x: u8) -> Self {
-        self.push(x);
-        self
+        panic!("should never be called")
     }
-    */
+    //
     fn xor_array(x : &u8, y : &u8) -> u8{
         x ^ y
     }
     fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
-        let mut res: [u8; 8] = [0u8; 8];
+        let mut res: [u8; N] = [0u8; N];
         for i in 0..8 {
             let value_to_push = Self::xor_array(&x[i], &y[i]);
             res[i] = value_to_push;
@@ -263,10 +257,10 @@ impl<const N: usize> ret_value for [u8; N] {
         self[index] = *value;
     }
     fn new_with_size(size: usize, value: Self::Elem) -> Self {
-        [value; size]
+        [value; N]
     }
     fn len(&self) -> usize{
-        self.len()
+        <[_]>::len(self)
     }
 
     fn multiply_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
@@ -278,13 +272,12 @@ impl<const N: usize> ret_value for [u8; N] {
             alpha_val
         }
     }
-    /*  deprecated
-    fn turn_array_to_T(x : &[Self::Elem]) -> Vec<Self::Elem> {
-        x.to_vec()
+
+    fn turn_array_to_T(x : &[Self::Elem]) -> [u8; N] {
+        panic!("should never be called")
     }
-    */
+
 }
- */
 
 
 

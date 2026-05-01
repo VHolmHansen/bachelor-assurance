@@ -34,7 +34,7 @@ mod tests {
     }
     #[test]
     fn sign_verify_test_random_key() {
-        let builder = std::thread::Builder::new().stack_size(8 * 1024 * 1024+768*1024); // 64MB
+        let builder = std::thread::Builder::new().stack_size(32 * 1024 * 1024); // 64MB
         let handler = builder.spawn(|| {
             let (key, pk) = faest_key_gen();
             let msg: &[u8] = b"hello world";

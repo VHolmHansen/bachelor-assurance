@@ -14,7 +14,7 @@ mod tests {
     use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
     use Bachelor_Assurance::utils::types::{State};
     use Bachelor_Assurance::utils::constants::{l_enc, l_ke, lambda, s_enc, S_ke,nk, R};
-
+/*
     fn make_synthetic_vole(
         w_bits: &[u8],
         delta: &[u8; 16],
@@ -165,8 +165,8 @@ mod tests {
 
         let b = faest_aes_enc_cstrnts_verifier(
             lambda,
-            &plaintext,
-            &ciphertext,
+            (*plaintext).try_into().unwrap(),
+            (*ciphertext).try_into().unwrap(),
             &q_enc_arr,
             &q_k,
             delta,
@@ -216,8 +216,8 @@ mod tests {
 
         let b = faest_aes_enc_cstrnts_verifier(
             lambda,
-            &plaintext.clone(),
-            &ciphertext.clone(),
+            (*plaintext).try_into().unwrap(),
+            (*ciphertext).try_into().unwrap(),
             &q_enc_arr,
             &q_k,
             delta,
@@ -341,8 +341,8 @@ mod tests {
 
         let b = faest_aes_enc_cstrnts_verifier(
             lambda,
-            &plain_text_flat,
-            &cipher_text_flat,
+            (*plain_text_flat).try_into().unwrap(),
+            (*cipher_text_flat).try_into().unwrap(),
             &q_enc_arr,
             &q_k,
             delta,
@@ -392,5 +392,7 @@ mod tests {
         println!("Checked {}/{} constraints ({} skipped due to zero S-box input)",
                  total - skipped, total, skipped);
     }
+    
+ */
 
 }

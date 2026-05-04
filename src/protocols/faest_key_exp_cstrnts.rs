@@ -41,8 +41,9 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(_m : usize, x: T, mtag : bool, mkey 
 }
 
 
-// x_k is the size of
-pub fn faest_aes_key_exp_bkwd<T : ret_value>(_m : usize, x: T, x_k : T, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [<T as ret_value>::Elem;ret_size_exp_bwd] {
+// x is 320
+// x_k is 1408
+pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m : usize, x: T, x_k : TK, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [<T as ret_value>::Elem;ret_size_exp_bwd] {
     if mtag && mkey{
         panic!("invalid tags")
     }
@@ -119,7 +120,6 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value>(_m : usize, x: T, x_k : T, mtag: bo
                 if lambda == 256 {rmvRcon = !rmvRcon; }
             }
         }
-
     }
     y
 
@@ -131,8 +131,11 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
     }
     let k : [u8;1408] = faest_aes_key_exp_fwd::<[u8;l_ke]>(1, w, false, false, [0;16]);
     let v_k : [[u8;16];1408] = faest_aes_key_exp_fwd::<[[u8;16];l_ke]>(128, v, true, false, [0;16]);
-    let w_tilde: [u8;ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<u8>>(1, w[lambda..].to_vec(), k.to_vec(), false, false, 0);
-    let v_w: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, v[lambda..].to_vec(), v_k.to_vec(), true, false, [0;16]);
+
+    let w_slice : &[u8;320] = (&w[lambda..]).try_into().unwrap(); // make w a known size, 320 is l_ke-lambda
+    let w_tilde: [u8;ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<[u8;320],[u8;1408]>(1, *w_slice, k, false, false, 0); // w : l_ke-lambda = 448-128 = 320, k : 1408
+    let v_slice : &[[u8;16];320] = (&v[lambda..]).try_into().unwrap(); // make v a known size, 320 is l_ke-lambda
+    let v_w: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<[[u8;16];320],[[u8;16];1408]>(128, *v_slice, v_k, true, false, [0;16]); // v : l_ke-lambda = 448-128 = 320, v_k : 1408
 
     let mut i_wd = 32 * (nk-1);
 
@@ -178,7 +181,8 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
         panic!("invalid tags")
     }
     let q_k = faest_aes_key_exp_fwd::<[[u8;16];l_ke]>(128, q, false, true, Delta);
-    let q_w_flat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
+    let q_slice : &[[u8;16];320] = (&q[lambda..]).try_into().unwrap();
+    let q_w_flat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<[[u8;16];320],[[u8;16];1408]>(128, *q_slice, q_k, false, true, Delta); // q : l_ke-lambda = 320, q_k : 1408
 
     let mut B : [[u8;16];S_ke] = [[0;16];S_ke];
 

@@ -43,7 +43,7 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 
 
         // first fwd
-        let fwd_key = faest_aes_key_exp_fwd(1, w.to_vec(), false, false, [0;16]);
+        let fwd_key = faest_aes_key_exp_fwd(1, w, false, false, [0;16]);
         let bwd_key = faest_aes_key_exp_bkwd(1, w[lambda..].to_vec(), fwd_key.to_vec(), false, false, 0);
         let mut valid = true;
 

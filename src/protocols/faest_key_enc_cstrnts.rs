@@ -14,20 +14,21 @@ use crate::utils::constants::{l_enc, lambda, s_enc, R};
 // Delta, global vole key if mkey = 1 else none
 // in_out should be size 128, where each u8 in it corresponds to one bit
 // should never be called with mtag=1 and mkey= 1
-pub fn faest_aes_enc_fwd<T : ret_value>(
+pub fn faest_aes_enc_fwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
     _m : usize,
     x: &T,
-    x_k : &T,
+    x_k : &TK,
     in_out : &[u8; 128],
     mtag : bool,
     mkey : bool,
     Delta : <T as ret_value>::Elem
 ) -> [[u8;16]; s_enc]
+where [T::Elem; 8]: ret_value<Elem = T::Elem>
 {
     if mtag && mkey {
         panic!("called with wrong values")
     }
-    let mut y : [<Vec<[u8;16]> as ret_value>::Elem;s_enc] = [<Vec<[u8;16]> as ret_value>::dummy_value;s_enc];
+    let mut y : [<[[u8;16];4] as ret_value>::Elem;s_enc] = [<[[u8;16];4] as ret_value>::dummy_value;s_enc]; // 4 is dummy
     for i in 0..16 {
         let mut x_in : [<T as ret_value>::Elem;8] = [<T as ret_value>::dummy_value;8];
         for j in 0..8 {
@@ -38,35 +39,39 @@ pub fn faest_aes_enc_fwd<T : ret_value>(
                 x_in[j] = if in_out[8*i+j] == 1 {<T as ret_value>::value_of_one} else {<T as ret_value>::dummy_value};
             }
         }
-        let x_k_slice_as_T = <T as ret_value>::turn_array_to_T(&x_k.get_slice(8*i,8*i+8));
-        let x_in_as_T = <T as ret_value>::turn_array_to_T(&x_in);
+        let x_k_slice_as_T: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x_k.get_slice(8*i, 8*i+8));
+        // let x_in_as_T = <T as ret_value>::turn_array_to_T(&x_in);
+        let x_in_as_T: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(&x_in);
 
         let parameter_1 : [u8;16] = byte_combine(x_in_as_T);
         let parameter_2 : [u8;16] = byte_combine(x_k_slice_as_T);
 
-        y[i] = <Vec<[u8;16]> as ret_value>::xor_array(&parameter_1, &parameter_2);
+        y[i] = <[[u8;16];4] as ret_value>::xor_array(&parameter_1, &parameter_2);
     }
     for j in 1..R{
         for c in 0..4{
             let i_x = 128 * (j-1) + 32 * c;
             let i_k = 128*j+32*c;
             let i_y = 16*j+4*c;
-            let mut x_hat : [<Vec<[u8;16]> as ret_value>::Elem;4] = [<Vec<[u8;16]> as ret_value>::dummy_value;4];
-            let mut x_hat_k : [<Vec<[u8;16]> as ret_value>::Elem;4] = [<Vec<[u8;16]> as ret_value>::dummy_value;4];
+            let mut x_hat : [<[[u8;16];4] as ret_value>::Elem;4] = [<[[u8;16];4] as ret_value>::dummy_value;4];
+            let mut x_hat_k : [<[[u8;16];4] as ret_value>::Elem;4] = [<[[u8;16];4] as ret_value>::dummy_value;4];
             for r in 0..4 {
-                let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
+                // let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
+                let get_slice_of_x: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r,i_x+8*r+8));
                 x_hat[r] = byte_combine(get_slice_of_x);
-                let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
+                // let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
+                let get_slice_of_x_k : [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
+
                 x_hat_k[r] = byte_combine(get_slice_of_x_k);
             }
-            let mut one = vec![<Vec<[u8;16]> as ret_value>::dummy_value;8];
-            let mut two = vec![<Vec<[u8;16]> as ret_value>::dummy_value;8];
-            let mut three = vec![<Vec<[u8;16]> as ret_value>::dummy_value;8];
+            let mut one = [<[[u8;16];4] as ret_value>::dummy_value;8];
+            let mut two = [<[[u8;16];4] as ret_value>::dummy_value;8];
+            let mut three = [<[[u8;16];4] as ret_value>::dummy_value;8];
 
-            one[0] = <Vec<[u8;16]> as ret_value>::value_of_one;
-            two[1] = <Vec<[u8;16]> as ret_value>::value_of_one;
-            three[0] = <Vec<[u8;16]> as ret_value>::value_of_one;
-            three[1] = <Vec<[u8;16]> as ret_value>::value_of_one;
+            one[0] = <[[u8;16];4] as ret_value>::value_of_one;
+            two[1] = <[[u8;16];4] as ret_value>::value_of_one;
+            three[0] = <[[u8;16];4] as ret_value>::value_of_one;
+            three[1] = <[[u8;16];4] as ret_value>::value_of_one;
 
             let value_of_one = byte_combine(one);
             let value_of_two = byte_combine(two);
@@ -176,10 +181,10 @@ pub fn faest_aes_enc_cstrnts_prover(
     if mkey {
         panic!("mkey should be false");
     }
-    let s : [[u8;16];160] = faest_aes_enc_fwd::<Vec<u8>>(1, &w.to_vec(), &k.to_vec(), &in_of_in_and_out, false, false, 0);
-    let v_s : [[u8;16];160] = faest_aes_enc_fwd::<Vec<[u8;16]>>(lambda, &v.to_vec(), &v_k.to_vec(), &in_of_in_and_out, true, false, [0;16]);
-    let s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<Vec<u8>>(1, &w.to_vec(), &k.to_vec(), &out_of_in_and_out, false, false, 0);
-    let v_s_overline : [[u8;16];160] = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &v.to_vec(), &v_k.to_vec(), &out_of_in_and_out, true, false, [0;16]);
+    let s : [[u8;16];160] = faest_aes_enc_fwd::<[u8;l_enc],[u8;1408]>(1, &w, &k, &in_of_in_and_out, false, false, 0); // w is 1152, k is 1408
+    let v_s : [[u8;16];160] = faest_aes_enc_fwd::<[[u8;16];l_enc],[[u8;16];1408]>(lambda, &v, &v_k, &in_of_in_and_out, true, false, [0;16]); // v is 1152, v_k is 1408
+    let s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<Vec<u8>>(1, &w.to_vec(), &k.to_vec(), &out_of_in_and_out, false, false, 0); // w is 1152, k is 1408
+    let v_s_overline : [[u8;16];160] = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &v.to_vec(), &v_k.to_vec(), &out_of_in_and_out, true, false, [0;16]); // v is 1152, v_k is 1408
     let mut A_0 : [[u8;16];s_enc] = [[0;16];s_enc];
     let mut A_1 : [[u8;16];s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
@@ -210,8 +215,8 @@ pub fn faest_aes_enc_cstrnts_verifier(
     if !mkey {
         panic!("mkey should not be false");
     }
-    let q_s : [[u8;16];160] = faest_aes_enc_fwd::<Vec<[u8;16]>>(lambda, &q.to_vec(), &q_k.to_vec(), in_of_in_and_out, false, true, delta);
-    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &q.to_vec(), &q_k.to_vec(), out_of_in_and_out, false, true, delta);
+    let q_s : [[u8;16];160] = faest_aes_enc_fwd::<[[u8;16];l_enc],[[u8;16];1408]>(lambda, q, q_k, in_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
+    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &q.to_vec(), &q_k.to_vec(), out_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
         let q_product : [u8;16] = gf128_mul(&q_s[j], &q_s_overline[j]);

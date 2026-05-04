@@ -64,6 +64,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     let mut all_decoms : [([u8;16], [u8;16], sized_array_for_coms);tau] = [([0;16], [0;16], sized_array_for_coms::sized_array_1([[0u8;32];k_0_pow]));tau];
     let mut commitments : [[u8; 56];tau] = [[0;56];tau];
     // iterate over r's
+    // this loop should be made able to be threaded
     for i in 0..tau{
         let loop_start = std::time::Instant::now();
         let (h, decoms, u, v) = if i < tau_0 {

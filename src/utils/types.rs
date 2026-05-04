@@ -218,7 +218,7 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
         gf128_mul(&x, &alpha_val)
     }
     fn turn_array_to_T(x : &[Self::Elem]) -> [[u8; 16]; N] {
-        panic!("should never be called")
+        x.try_into().unwrap()
     }
 
 }
@@ -274,7 +274,7 @@ impl<const N: usize> ret_value for [u8; N] {
     }
 
     fn turn_array_to_T(x : &[Self::Elem]) -> [u8; N] {
-        panic!("should never be called")
+        x.try_into().unwrap()
     }
 
 }

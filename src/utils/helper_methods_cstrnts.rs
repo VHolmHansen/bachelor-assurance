@@ -45,7 +45,7 @@ pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
         // - if elem is a scalar bit (0 or 1): return alpha_pow_val if bit=1, else [0;16]
         // - if elem is a field element [u8;16]: return gf128_mul(elem, alpha_pow_val)
         let contribution = <T as ret_value>::multiply_with_alpha(elem, alpha_pow_val);
-        res = <Vec<[u8; 16]> as ret_value>::xor_array(&res, &contribution);
+        res = <[[u8;16];4] as ret_value>::xor_array(&res, &contribution); // 4 is a dummy value
     }
     res
 }

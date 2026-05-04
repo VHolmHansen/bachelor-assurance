@@ -55,7 +55,6 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
 
 
 pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau], [u8; 234], [sized_array_for_q_v;tau]) {
-    println!("sign start - remaining stack: {:?}", stacker::remaining_stack());
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's
     let vec_of_rs: Vec<[u8;16]> = new_r.chunks_exact(16).map(|chunk| chunk.try_into().unwrap()).collect();
@@ -66,6 +65,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     let mut commitments : [[u8; 56];tau] = [[0;56];tau];
     // iterate over r's
     for i in 0..tau{
+        let loop_start = std::time::Instant::now();
         let (h, decoms, u, v) = if i < tau_0 {
             let (h, decoms, seeds) = vec_commit_k0(vec_of_rs[i], iv, k_0 as i128);
             let (u,v) = convert_to_VOLE::<k_0>(&seeds, iv);
@@ -80,6 +80,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
         big_u[i] = u;
         all_decoms[i] = decoms;
         commitments[i] = h;
+        println!("end of loop_commit took: {:?}", loop_start.elapsed());
     }
     let u_0 = big_u[0];
 
@@ -231,6 +232,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
     let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_1([[0u8;234];k_0]);tau];
 
     for i in 0..tau{
+        let loop_start = std::time::Instant::now();
         let b = chall_dec(chall, i);
         let current_k = if i < tau_0 { k_0 } else {k_1};
         let (com,sds) = if i < tau_0 {
@@ -269,6 +271,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
 
         commitments.push(com);
         big_q[i] = q;
+        println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
     }
     let mut coms_flat = [0u8; 56 * tau];
     for i in 0..tau {

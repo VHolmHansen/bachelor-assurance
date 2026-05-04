@@ -8,6 +8,7 @@ hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
 libcrux = { version = "0.0.2-pre.2", features = ["rand"] }
 rand = "0.10.0"
 stacker = "0.1.24"
+rayon = "1.12.0"
 
 [target."cfg(hax)".dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }

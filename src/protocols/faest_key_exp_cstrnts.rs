@@ -129,8 +129,8 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
     if mkey {
         panic!("invalid tags")
     }
-    let k = faest_aes_key_exp_fwd::<Vec<u8>>(1, w.to_vec(), false, false, [0;16]);
-    let v_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, v.to_vec(), true, false, [0;16]);
+    let k : [u8;1408] = faest_aes_key_exp_fwd::<[u8;l_ke]>(1, w, false, false, [0;16]);
+    let v_k : [[u8;16];1408] = faest_aes_key_exp_fwd::<[[u8;16];l_ke]>(128, v, true, false, [0;16]);
     let w_tilde: [u8;ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<u8>>(1, w[lambda..].to_vec(), k.to_vec(), false, false, 0);
     let v_w: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, v[lambda..].to_vec(), v_k.to_vec(), true, false, [0;16]);
 
@@ -150,18 +150,23 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         for r in 0..4 {
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
 
-            k_hat[r]   = byte_combine(k  [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
-            v_k_hat[r] = byte_combine(v_k[(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
-            w_hat[r]   = byte_combine(w_tilde[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
-            v_w_hat[r] = byte_combine(v_w   [(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
+            let k_hat_slice: &[u8;8] = (&k[(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)]).try_into().unwrap();
+            let v_k_hat_slice: &[[u8;16];8] = (&v_k[(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)]).try_into().unwrap();
+            let w_hat_slice : &[u8;8] = (&w_tilde[(32*j + 8*r)..(32*j + 8*r + 8)]).try_into().unwrap();
+            let v_w_hat_slice : &[[u8;16];8] = (&v_w   [(32*j + 8*r)..(32*j + 8*r + 8)]).try_into().unwrap();
+
+            k_hat[r]   = byte_combine(*k_hat_slice);
+            v_k_hat[r] = byte_combine(*v_k_hat_slice);
+            w_hat[r]   = byte_combine(*w_hat_slice);
+            v_w_hat[r] = byte_combine(*v_w_hat_slice);
         }
 
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
             A_0[4*j+r] = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
-            let product = gf128_mul(&<Vec<[u8;16]> as ret_value>::xor_array(&k_hat[r],&v_k_hat[r]),&<Vec<[u8;16]> as ret_value>::xor_array(&w_hat[r],&v_w_hat[r]));
-            let xor = <Vec<[u8;16]> as ret_value>::xor_array(&<Vec<[u8;16]> as ret_value>::value_of_one,&A_0[4*j+r]);
-            A_1[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&product,&xor);
+            let product = gf128_mul(&<[[u8;16];4] as ret_value>::xor_array(&k_hat[r],&v_k_hat[r]),&<[[u8;16];4] as ret_value>::xor_array(&w_hat[r],&v_w_hat[r]));
+            let xor = <[[u8;16];4] as ret_value>::xor_array(&<[[u8;16];4] as ret_value>::value_of_one,&A_0[4*j+r]);
+            A_1[4*j+r] = <[[u8;16];4] as ret_value>::xor_array(&product,&xor);
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }
@@ -172,7 +177,7 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
     if !mkey {
         panic!("invalid tags")
     }
-    let q_k = faest_aes_key_exp_fwd::<Vec<[u8;16]>>(128, q.to_vec(), false, true, Delta);
+    let q_k = faest_aes_key_exp_fwd::<[[u8;16];l_ke]>(128, q, false, true, Delta);
     let q_w_flat: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<Vec<[u8;16]>>(128, q[lambda..].to_vec(), q_k.to_vec(), false, true, Delta);
 
     let mut B : [[u8;16];S_ke] = [[0;16];S_ke];
@@ -185,13 +190,16 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
         for r in 0..4 {
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
 
-            q_hat_k[r] = byte_combine(q_k    [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)].to_vec());
-            q_hat_w[r] = byte_combine(q_w_flat[(32*j + 8*r)..(32*j + 8*r + 8)].to_vec());
+            let q_hat_k_slice : &[[u8;16];8] = (&q_k    [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)]).try_into().unwrap();
+            let q_hat_w_slice : &[[u8;16];8] = (&q_w_flat[(32*j + 8*r)..(32*j + 8*r + 8)]).try_into().unwrap();
+
+            q_hat_k[r] = byte_combine(*q_hat_k_slice);
+            q_hat_w[r] = byte_combine(*q_hat_w_slice);
         }
 
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
-            B[4*j+r] = <Vec<[u8;16]> as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
+            B[4*j+r] = <[[u8;16];4] as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }

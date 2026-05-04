@@ -25,13 +25,15 @@ pub fn faest_verify(
     let iv : &[u8; 16]= &sig.6;
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
+    let rec_start = std::time::Instant::now();
     let (h_com, q_mark) : ([u8; 56], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
+    println!("reconstruct took: {:?}", rec_start.elapsed());
 
     let chall_1 : [u8;88] = h_2_1(my, h_com, c_bytes, *iv);
 
     // fixing q:
     let mut q_corrected : [sized_array_for_q_v; 11]  = q_mark;
-
+    let challenge_start = std::time::Instant::now();
     for i in 1..tau {
         if i < tau_0 {
             let delta_bits : [u8;12] = chall_dec_k0(*chall_3, i);
@@ -59,7 +61,7 @@ pub fn faest_verify(
             }
         }
     }
-
+    println!("challenge took: {:?}", challenge_start.elapsed());
 
     let mut q_e_columns: [[u8;18];tau_0*k_0+tau_1*k_1] = [[0;18];tau_0*k_0+tau_1*k_1];
     let mut index : usize = 0;
@@ -115,6 +117,7 @@ pub fn faest_verify(
 
 
 
+    let verify_start = std::time::Instant::now();
     let b_tilde : [u8;16] = faest_aes_verify(
         d.clone().try_into().unwrap(),
         q_arr,
@@ -123,6 +126,7 @@ pub fn faest_verify(
         *a_tilde,
         (pk.0.try_into().unwrap(), pk.1.try_into().unwrap())
     );
+    println!("verify took: {:?}", verify_start.elapsed());
 
     let chall_3_mark : [u8;16] = h_2_3(chall_2, *a_tilde, b_tilde);
     

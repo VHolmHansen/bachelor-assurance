@@ -14,16 +14,19 @@ use crate::utils::math::transform_byte_array_to_state;
 
 
 pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> ([[u8; 234]; 11], [u8; 18], [u8; 1600], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]) {
-    println!("sign start - remaining stack: {:?}", stacker::remaining_stack());
     let mut rng : ThreadRng = rand::rng();
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
     let rho: [u8; 16] = rng.random();
 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho);
+    let vec_start = std::time::Instant::now();
     let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
-    println!("sign after vole_commit - remaining stack: {:?}", stacker::remaining_stack());
+    println!("vec_commit took: {:?}", vec_start.elapsed());
     let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
+
+
+
 
     // få u tilde
     let u_x_0 : &[u8] = &u_bytes[0..216];
@@ -67,8 +70,11 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let pt_state : State = bits_to_state(&pk.0);
     let ct_state : State = bits_to_state(&pk.1);
 
+    let extend_start = std::time::Instant::now();
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness : [u8;1600] = faest_aes_extend_witness(*sk, (pt_state, ct_state));
+    println!("extend_witness took: {:?}", extend_start.elapsed());
+
 
     let mut d: [u8;ell_bit_size] = [0; ell_bit_size];
     for i in 0..ell_bit_size {
@@ -77,12 +83,13 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
     let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
 
-
+    let prove_start = std::time::Instant::now();
     let (a_tilde , b_tilde) : ([u8;16],[u8;16]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
-
+    println!("prove took: {:?}", prove_start.elapsed());
 
     let chall_3 : [u8;16] = h_2_3(chall_2, a_tilde, b_tilde);
 
+    let open_start = std::time::Instant::now();
     // pdecoms
     let mut pdecoms : [(sized_array_for_cop, [u8; 32]);tau] = [(sized_array_for_cop::sized_array_1([[0u8;16];k_0]),[0u8;32]);tau];
     for i in 0..tau {
@@ -96,6 +103,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
         pdecoms[i] = pdecom;
     }
+    println!("open took: {:?}", open_start.elapsed());
     let signature = (c_bytes, u_tilde, d, a_tilde, pdecoms, chall_3, iv);
     signature
 

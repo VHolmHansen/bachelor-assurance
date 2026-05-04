@@ -32,7 +32,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> Vec<u8>{
     let Beta = lambda / 128;
     for b in 0..Beta{
         let mut state_new : State = in_aes;
-        add_round_key(&mut state_new, k_overline[0..4].to_vec());
+        add_round_key(&mut state_new, k_overline[0..4].try_into().unwrap());
         for j in 1..R{
             sub_bytes(&mut state_new);
             shift_rows(&mut state_new);
@@ -45,7 +45,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> Vec<u8>{
                 }
             }
             mix_columns(&mut state_new);
-            add_round_key(&mut state_new, k_overline[4*j..4*j+4].to_vec());
+            add_round_key(&mut state_new, k_overline[4*j..4*j+4].try_into().unwrap());
         }
     }
 

@@ -1,6 +1,7 @@
 use crate::utils::galois_field::gf128_pow;
 use crate::utils::types::Word;
 use crate::utils::types::{k_0, k_1, ret_size_exp_bwd, ret_size_exp_fwd, ret_value, s_enc, tau_0, S_ke, State};
+#[hax_lib::exclude]
 pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
     x.chunks(4)
         .map(|chunk| {
@@ -51,6 +52,8 @@ pub fn byte_to_bits(byte: u8) -> [u8; 8] {
     bits
 }
 
+
+#[hax_lib::requires(bits.len() == 8)]
 pub fn bits_to_byte(bits: &[u8]) -> u8 {
     let mut result = 0u8;
     for i in 0..8 {

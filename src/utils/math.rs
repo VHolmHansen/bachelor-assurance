@@ -147,3 +147,9 @@ pub fn transform_state_to_array(state: &State) -> [u8; 16] {
     bytes
 }
 
+#[hax_lib::requires(n <= u8::MAX && modu <= u8::BITS as u8)]
+#[hax_lib::ensures(|result| result < u8::BITS as u8)]
+pub fn bitand_mod(n: u8, modu: u8) -> u8 {
+    hax_lib::assume!(n & modu < u8::BITS as u8); // make lemma?
+    n & modu
+}

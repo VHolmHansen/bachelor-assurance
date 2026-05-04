@@ -1,9 +1,7 @@
 
-use hax_lib::{loop_invariant, Int, ToInt};
-use libcrux::drbg::{Drbg, RngCore};
-use crate::utils::{math, galois_field};
-use crate::utils::finite_field::{Field};
-use crate::utils::types::{Matrix, State, Word};
+use crate::utils::{galois_field};
+use crate::utils::types::{ArrayMatrix, State, Word};
+use hax_lib::Prop as prop; // THIS IS USED!
 
 
 pub const nk: usize = 4;            // code dup
@@ -181,7 +179,7 @@ pub fn gf2_affine_transform(w: u8) -> u8 {
 
 #[hax_lib::requires(n <= u8::MAX && modu <= u8::BITS as u8)]
 #[hax_lib::ensures(|result| result < u8::BITS as u8)]
-fn bitand_mod(n: u8, modu: u8) -> u8 {
+pub fn bitand_mod(n: u8, modu: u8) -> u8 {
     hax_lib::assume!(n & modu < u8::BITS as u8); // make lemma?
     n & modu
 }

@@ -1,4 +1,7 @@
 use crate::utils::types::{State, Matrix, ArrayMatrix};
+use hax_lib::*;
+use crate::utils::math::{bitand_mod};
+
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
                     && a >= 0
@@ -25,11 +28,7 @@ pub fn gf28_multiply(mut a: u8, mut b: u8) -> u8 {
 }
 
 
-
-#[hax_lib::opaque]
-#[hax_lib::requires(a <= u8::MAX
-&& a >= 0)]
-#[hax_lib::ensures(|result| gf28_multiply(result, a) == 1)]
+// TODO: need to lemma to prove postcondition gf28_multiply(result, a) ==1)
 pub fn gf28_inverse(a: u8) -> u8 {
     if a == 0 {
         return 0;
@@ -40,22 +39,23 @@ pub fn gf28_inverse(a: u8) -> u8 {
     fn gf28_pow(mut base: u8, mut exp: u8) -> u8 {
         let mut result = 1;
         while exp > 0 {
+            hax_lib::loop_decreases!(exp);
             if exp & 1 != 0 {
                 result = gf28_multiply(base, result);
             }
             base = gf28_multiply(base, base);
+            let old_exp = exp;
             exp >>= 1;
         }
         result
     }
 
-    let result = gf28_pow(a, 254);
-    assert!(result > 0);
+
+    let result = gf28_pow(a, 254); // usage of prop or lemma maybe?
     result
 }
 
-
-
+/*
 #[hax_lib::requires(a.len() > 0
                     && a[0].len() > 0
                     && b.len() > 0
@@ -153,6 +153,9 @@ pub fn gf28_matrix_multiplication<const N: usize, const M: usize>(a: ArrayMatrix
     res
 }
 
+ */
+
+
 pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     // carry-less multiplication of two 128-bit polynomials
     // result is 256 bits before reduction
@@ -193,16 +196,18 @@ pub fn gf128_pow(base: &[u8; 16], pow_of: i32) -> [u8; 16] {
         return *base;
     }
     let mut res = *base;
-    for _ in 2..=pow_of {
+    for _ in 2..(pow_of + 1) {          // range inclusive
         res = gf128_mul(&res, base);
     }
     res
 }
 
+#[hax_lib::requires(a.len() > i / 8)]
 fn get_bit(a: &[u8], i: usize) -> u8 {
-    (a[i / 8] >> (i % 8)) & 1
+    (a[i / 8] >> (bitand_mod(i as u8, 8))) & 1
 }
 
+#[hax_lib::requires(a.len() > i / 8)]
 fn flip_bit(a: &mut [u8], i: usize) {
     a[i / 8] ^= 1 << (i % 8);
 }

@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
+hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.5" , features = ["macros"]}
 libcrux = { version = "0.0.2-pre.2", features = ["rand"] }
 rand = "0.10.0"
 
 [target."cfg(hax)".dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
 
+[build]
+rustflags = ["--cfg", "hax"]

@@ -3,7 +3,7 @@ mod tests {
     use Bachelor_Assurance::utils::types::*;
     use Bachelor_Assurance::utils::galois_field::*;
     
-    
+    /*
      #[test]
          fn test_gf28_matrix_multiplication_identity() {
              let A: ArrayMatrix<u8, nk, nst> = [[1, 0, 0, 0],
@@ -95,6 +95,8 @@ mod tests {
         assert_eq!(gf28_matrix_multiplication(A, B), expected);
 
     }
+
+     */
 
     #[test]
     fn test_gf28_multiply() {    

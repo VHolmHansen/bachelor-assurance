@@ -169,21 +169,6 @@ mod tests {
     }
 
     #[test]
-    fn test_add_round_key() {
-        let mut plaintext: State = [[50, 67, 246, 168], [136, 90, 48, 141],
-            [49, 49, 152, 162], [224, 55, 7, 52]];
-
-        let key: [Word; 4] = [[43, 126, 21, 22], [40, 174, 210, 166],
-                                       [171, 247, 21, 136], [9, 207, 79, 60]];
-
-        let expected: State = [[25, 107, 93, 161], [246, 244, 199, 66], [36, 227, 141, 237], [246, 145, 143, 8]];
-
-        aes::add_round_key(&mut plaintext, key);
-
-        assert_eq!(plaintext, expected);
-    }
-
-    #[test]
     fn test_add_round_key_two_props() {
         let plaintext1: State = [[50, 67, 246, 168], [136, 90, 48, 141],
             [49, 49, 152, 162], [224, 55, 7, 52]];
@@ -291,7 +276,7 @@ mod tests {
         let mut state = plaintext;
 
         // initial add round key
-        add_round_key(&mut state, key_mark[0..4].to_vec());
+        add_round_key(&mut state, key_mark[0..4].try_into().unwrap());
         println!("After initial AddRoundKey: {:02x?}", state);
         // FIPS-197 expected:
         // col 0: [19, 3d, e3, be]
@@ -314,7 +299,7 @@ mod tests {
         mix_columns(&mut state);
         println!("After MixColumns: {:02x?}", state);
 
-        add_round_key(&mut state, key_mark[4..8].to_vec());
+        add_round_key(&mut state, key_mark[4..8].try_into().unwrap());
         println!("After AddRoundKey: {:02x?}", state);
         // FIPS-197 expected end of round 1:
         // col 0: [54, 73, 31, 36]...

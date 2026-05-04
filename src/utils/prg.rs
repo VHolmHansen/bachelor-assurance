@@ -6,6 +6,7 @@ use crate::protocols::aes;
 
 // should have an extra parameter based on size, but we know size is 2 \lambda, which for us is 256
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
+#[hax_lib::opaque]
 pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
     let num_blocks = (output.len() + 15) / 16; // ceiling division
 
@@ -33,6 +34,7 @@ pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
     }
 }
 
+#[hax_lib::opaque]
 pub fn prg_convert_to_vole(sd: [u8;16], iv: [u8; 16]) -> [u8; ell]{
     let mut input : [u8; 32] = [0u8; 32];
     input[..16].copy_from_slice(&sd);
@@ -40,6 +42,7 @@ pub fn prg_convert_to_vole(sd: [u8;16], iv: [u8; 16]) -> [u8; ell]{
     digest::shake128::<ell>(&mut input)
 }
 
+#[hax_lib::opaque]
 pub fn prg_vole_commit_r(r: [u8;16], iv: [u8;16]) -> [u8; (tau*lambda)/8] {
     let mut input : [u8; 32] = [0u8; 32];
     input[..16].copy_from_slice(&r);

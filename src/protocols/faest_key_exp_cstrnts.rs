@@ -1,6 +1,5 @@
 use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{add_round_key, setup_rcon_table, R};
-use crate::utils::types::{S_ke, State};
 use crate::utils::types::{k_0, k_1, ret_size_exp_bwd, ret_size_exp_fwd, ret_value, s_enc, tau_0, S_ke, State};
 use crate::protocols::aes::{key_expansion, mix_columns, nk, shift_rows, sub_bytes};
 use crate::utils::galois_field::gf128_pow;

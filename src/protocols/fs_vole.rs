@@ -22,7 +22,7 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
     let mut r: Vec<Vec<Option<[u8; ell]>>> = vec![vec![None; sds.len()]; d + 1];
 
 
-    //let mut r : [[Option<[u8; ell]>; length_of_sds]; d + 1] = [[None; length_of_sds]; d + 1];  //TODO: is r[i] = sds.len() ? - derived from for loop below is r.len() = d? derived further below
+    //let mut r : [[Option<[u8; ell]>; sds.len()]; d + 1] = [[None; sds.len()]; d + 1];  //TODO: is r[i] = sds.len() ? - derived from for loop below is r.len() = d? derived further below
     // if we are verifier
     if sds[0] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {
         r[0][0] = Some([0u8;ell]);

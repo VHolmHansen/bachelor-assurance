@@ -1,12 +1,12 @@
 mod tests{
-    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
-    use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
-    use Bachelor_Assurance::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
-    use Bachelor_Assurance::utils::galois_field::gf128_mul;
-    use Bachelor_Assurance::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
-    use Bachelor_Assurance::utils::math::transform_byte_array_to_state;
-    use Bachelor_Assurance::utils::types::{State};
-    use Bachelor_Assurance::utils::constants::{s_enc};
+    use bachelor_assurance::protocols::aes::{encrypt, key_expansion};
+    use bachelor_assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
+    use bachelor_assurance::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
+    use bachelor_assurance::utils::galois_field::gf128_mul;
+    use bachelor_assurance::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
+    use bachelor_assurance::utils::math::transform_byte_array_to_state;
+    use bachelor_assurance::utils::types::{State};
+    use bachelor_assurance::utils::constants::{s_enc};
     
     /*
     #[test]

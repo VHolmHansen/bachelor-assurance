@@ -1,11 +1,9 @@
-use hax_lib::ToInt;
-use Bachelor_Assurance::protocols::faest_key_gen::faest_key_gen;
-use Bachelor_Assurance::protocols::faest_sign::faest_sign;
-use Bachelor_Assurance::protocols::faest_verify::faest_verify;
-mod utils;
-mod protocols;
-mod verifier;
-mod prover;
+use crate::protocols::faest_key_gen::faest_key_gen;
+use crate::protocols::faest_sign::faest_sign;
+use crate::protocols::faest_verify::faest_verify;
+
+pub mod utils;
+pub mod protocols;
 
 #[hax_lib::exclude]
 fn main() {

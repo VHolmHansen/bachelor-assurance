@@ -1,8 +1,9 @@
+#![allow(non_upper_case_globals)]
 use crate::utils::constants::{k_0,k_1,k_0_pow,k_1_pow};
 use crate::utils::ggm_tree::{get_cop, get_leaves_from_cop_and_b, get_leaves_node_from_root};
 use crate::utils::hash_functions::{h_0, h_1};
 use crate::utils::preliminary_helper_methods::{num_rec, num_rec_k0, num_rec_k1};
-use crate::utils::types::{sized_array_16, sized_array_32, sized_array_for_cop, sized_array_for_coms, sized_array_for_sds, sized_option_array};
+use crate::utils::types::{sized_array_16, sized_array_for_cop, sized_array_for_coms, sized_array_for_sds, sized_option_array};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
@@ -29,7 +30,6 @@ pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16],
     let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, d);
     let mut sds: [[u8; 16];k_1_pow] = [[0;16];k_1_pow];
     let mut coms: [[u8; 32];k_1_pow] = [[0;32];k_1_pow];
-    let mut i = 0;
     for i in 0..k_1_pow{        // leaves.len
         let (sd, com) = h_0(leaves[i], iv);
         sds[i] = sd;
@@ -120,13 +120,13 @@ fn vec_reconstruct_inner<const size: usize, const size_pow: usize>(cop: &sized_a
         match l {
             Some(leaf) => {
                 let (sd, com) = h_0(leaf, iv);
-                sds[i] = (sd);
-                coms[i] = (com);
+                sds[i] = sd;
+                coms[i] = com;
                 i += 1;
             },
             None => {
-                coms[i] = (com_star);
-                sds[i] = ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+                coms[i] = com_star;
+                sds[i] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
                 i += 1;
             },
         }

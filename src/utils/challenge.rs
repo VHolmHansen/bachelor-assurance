@@ -3,18 +3,8 @@ use libcrux::drbg::Drbg;
 use crate::utils::types::Matrix;
 use crate::utils::math;
 
-fn main() {
-    let _l = 10; // dimension m
-    let r = 20;
-    let tau = 30;
-    let _r_tau = r * tau; // dimension n
-}
-
-fn get_challenge() -> Int {
-    0.to_int()
-
-}
-
+//TODO: dead code
+#[allow(dead_code)]
 fn generate_random_matrix(m: usize, n: usize) -> Matrix<Int> {
     let mut result_matrix: Matrix<Int> = vec![vec![0.to_int(); n]; m];
 

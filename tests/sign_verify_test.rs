@@ -1,8 +1,7 @@
 mod tests {
-    use Bachelor_Assurance::protocols::faest_key_gen::faest_key_gen;
-    use Bachelor_Assurance::protocols::faest_sign::faest_sign;
-    use Bachelor_Assurance::protocols::faest_verify::faest_verify;
-    use stacker;
+    use bachelor_assurance::protocols::faest_key_gen::faest_key_gen;
+    use bachelor_assurance::protocols::faest_sign::faest_sign;
+    use bachelor_assurance::protocols::faest_verify::faest_verify;
 
     #[test]
     fn sign_verify_test() {

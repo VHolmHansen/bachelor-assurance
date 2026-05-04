@@ -1,14 +1,12 @@
 use crate::utils::constants::tau_1;
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1};
-use crate::utils::constants::ell;
 use crate::utils::types::sized_array_for_q_v;
 use crate::utils::types::sized_array_for_cop;
 use crate::protocols::faest_prove_and_verify::faest_aes_verify;
-use crate::protocols::fs_vole::{chall_dec, FAEST_VOLE_reconstruct};
+use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
 use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell_bit_size};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3};
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
-use crate::utils::helper_methods_prove_verify::to_field;
 
 pub fn faest_verify(
     msg : &[u8],
@@ -25,7 +23,7 @@ pub fn faest_verify(
     let iv : &[u8; 16]= &sig.6;
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
-    let rec_start = std::time::Instant::now();
+    let _rec_start = std::time::Instant::now();
     let (h_com, q_mark) : ([u8; 56], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
     // println!("reconstruct took: {:?}", rec_start.elapsed());
 
@@ -33,7 +31,7 @@ pub fn faest_verify(
 
     // fixing q:
     let mut q_corrected : [sized_array_for_q_v; 11]  = q_mark;
-    let challenge_start = std::time::Instant::now();
+    let _challenge_start = std::time::Instant::now();
     for i in 1..tau {
         if i < tau_0 {
             let delta_bits : [u8;12] = chall_dec_k0(*chall_3, i);
@@ -70,7 +68,7 @@ pub fn faest_verify(
         for j in 0..k_b {
             let col : &[u8;234] = q_corrected[i].get(j);
             let col_hash : [u8;18] = vole_hash(&chall_1, &col[0..216], &col[216..234]);
-            q_e_columns[index] = (col_hash.try_into().unwrap());
+            q_e_columns[index] = col_hash.try_into().unwrap();
             index += 1;
         }
     }
@@ -117,7 +115,7 @@ pub fn faest_verify(
 
 
 
-    let verify_start = std::time::Instant::now();
+    let _verify_start = std::time::Instant::now();
     let b_tilde : [u8;16] = faest_aes_verify(
         d.clone().try_into().unwrap(),
         q_arr,

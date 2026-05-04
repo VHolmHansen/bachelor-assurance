@@ -1,8 +1,6 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::math::xor_arrays;
-use crate::utils::preliminary_helper_methods::num_rec;
-use crate::utils::prg::prg;
 
 use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow, ell};
 
@@ -68,7 +66,6 @@ pub trait ret_value {
     const value_of_three : Self::Elem;
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
     fn get_element(&self, x : usize) -> Self::Elem;
-    fn push_value(self, x : Self::Elem) -> Self;
     fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
     fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
     fn set_element(&mut self, index : usize, value : &Self::Elem);
@@ -88,10 +85,6 @@ impl ret_value for Vec<[u8;16]> {
     }
     fn get_element(&self, x : usize) -> [u8;16] {
         self[x]
-    }
-    fn push_value(mut self, x: [u8;16]) -> Self {
-        self.push(x);
-        self
     }
     fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
         xor_arrays(x, y)
@@ -135,10 +128,6 @@ impl ret_value for Vec<u8> {
     }
     fn get_element(&self, x : usize) -> u8 {
         self[x]
-    }
-    fn push_value(mut self, x: u8) -> Self {
-        self.push(x);
-        self
     }
     fn xor_array(x : &u8, y : &u8) -> u8{
         x ^ y
@@ -189,9 +178,6 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     fn get_element(&self, x : usize) -> [u8;16] {
         self[x]
     }
-    fn push_value(mut self, x: [u8;16]) -> Self {
-        self
-    }
     fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
         xor_arrays(x, y)
     }
@@ -200,7 +186,7 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
         let mut res: [[u8;16]; N] = [[0u8; 16]; N];
         for i in 0..8 {
             let value_to_push = Self::xor_array(&x[i], &y[i]);
-            res[i] = (value_to_push);
+            res[i] = value_to_push;
         }
         res
     }
@@ -208,7 +194,7 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     fn set_element(&mut self, index : usize, value : &Self::Elem) {
         self[index] = *value;
     }
-    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+    fn new_with_size(_size: usize, value: Self::Elem) -> Self {
         [value; N]
     }
     fn len(&self) -> usize{
@@ -236,11 +222,6 @@ impl<const N: usize> ret_value for [u8; N] {
     fn get_element(&self, x : usize) -> u8 {
         self[x]
     }
-    // TODO: This will not work for arrays, indexing method instead? use set_element instead
-    fn push_value(mut self, x: u8) -> Self {
-        panic!("should never be called")
-    }
-    //
     fn xor_array(x : &u8, y : &u8) -> u8{
         x ^ y
     }
@@ -256,7 +237,7 @@ impl<const N: usize> ret_value for [u8; N] {
     fn set_element(&mut self, index : usize, value : &Self::Elem) {
         self[index] = *value;
     }
-    fn new_with_size(size: usize, value: Self::Elem) -> Self {
+    fn new_with_size(_size: usize, value: Self::Elem) -> Self {
         [value; N]
     }
     fn len(&self) -> usize{

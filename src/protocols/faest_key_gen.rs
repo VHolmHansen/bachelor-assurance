@@ -1,4 +1,4 @@
-use rand::{Rng, RngExt};
+use rand::{RngExt};
 use crate::utils::constants::nk;
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
@@ -16,7 +16,7 @@ use crate::utils::math::transform_byte_array_to_state;
 
 pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 {
-    let mut rng = rand::rng();
+    let mut rng = rand::rng(); //TODO: proxy and maybe replace with libcrux
     loop {
         let key: [u8; 16] = rng.random();
         let plaintext: [u8; 16] = rng.random();

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use Bachelor_Assurance::utils::types::*;
-    use Bachelor_Assurance::utils::galois_field::*;
+    use bachelor_assurance::utils::types::*;
+    use bachelor_assurance::utils::galois_field::*;
     
     
      #[test]

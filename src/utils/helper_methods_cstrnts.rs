@@ -15,6 +15,7 @@ pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
 }
 // M is N/4
 // TODO: make pub when integrating
+#[allow(dead_code)]
 fn array_words_to_blocks<const N: usize, const M: usize>(x: [Word; N]) -> [[u8; 16]; M]
     //where [(); N / 4]: Sized
 {

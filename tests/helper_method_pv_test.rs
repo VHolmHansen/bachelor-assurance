@@ -1,8 +1,8 @@
 mod tests{
-    use Bachelor_Assurance::utils::constants::lambda;
-    use Bachelor_Assurance::utils::galois_field::gf128_mul;
-    use Bachelor_Assurance::utils::helper_methods_prove_verify::{to_bits, to_field, zk_hash};
-    use Bachelor_Assurance::utils::math::xor_arrays;
+    use bachelor_assurance::utils::constants::lambda;
+    use bachelor_assurance::utils::galois_field::gf128_mul;
+    use bachelor_assurance::utils::helper_methods_prove_verify::{to_bits, to_field, zk_hash};
+    use bachelor_assurance::utils::math::xor_arrays;
 
     // tests that the helper methods work
     #[test]

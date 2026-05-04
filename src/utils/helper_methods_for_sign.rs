@@ -1,5 +1,5 @@
 use crate::utils::types::sized_array_for_q_v;
-use crate::utils::constants::{big_b, ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
+use crate::utils::constants::{big_b, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
 use crate::utils::galois_field::{gf128_mul, gf64_add, gf64_mul};
 use crate::utils::helper_methods_cstrnts::bits_to_byte;
 use crate::utils::math::xor_arrays;

@@ -3,7 +3,7 @@ use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{setup_rcon_table};
 use crate::utils::types::{ret_value};
 use crate::utils::helper_methods_cstrnts::{byte_combine};
-use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, s_enc, S_ke, nk, lambda, R, l_ke};
+use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lambda, R, l_ke};
 
 
 // pk, is a tuple with a in message and out that is 128 * (\lambda / 128)

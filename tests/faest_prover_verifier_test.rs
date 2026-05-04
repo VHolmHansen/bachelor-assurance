@@ -1,16 +1,16 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 
 mod tests{
-    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
-    use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
-    use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{faest_aes_exp_cstrnts_qDelta, faest_aes_key_exp_fwd};
-    use Bachelor_Assurance::protocols::faest_prove_and_verify::{faest_aes_prove, faest_aes_verify};
-    use Bachelor_Assurance::utils::constants::{ell_bit_size, l_ke, lambda};
-    use Bachelor_Assurance::utils::galois_field::gf128_mul;
-    use Bachelor_Assurance::utils::helper_methods_cstrnts::byte_to_bits;
-    use Bachelor_Assurance::utils::helper_methods_prove_verify::{to_field, zk_hash};
-    use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
-    use Bachelor_Assurance::utils::types::State;
+    use bachelor_assurance::protocols::aes::{encrypt, key_expansion};
+    use bachelor_assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
+    use bachelor_assurance::protocols::faest_key_exp_cstrnts::{faest_aes_exp_cstrnts_qDelta, faest_aes_key_exp_fwd};
+    use bachelor_assurance::protocols::faest_prove_and_verify::{faest_aes_prove, faest_aes_verify};
+    use bachelor_assurance::utils::constants::{ell_bit_size, l_ke, lambda};
+    use bachelor_assurance::utils::galois_field::gf128_mul;
+    use bachelor_assurance::utils::helper_methods_cstrnts::byte_to_bits;
+    use bachelor_assurance::utils::helper_methods_prove_verify::{to_field, zk_hash};
+    use bachelor_assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
+    use bachelor_assurance::utils::types::State;
     /*
     #[test]
     fn test_prove_and_verify(){
@@ -107,9 +107,9 @@ mod tests{
         );
 
         // ============ DIAGNOSTIC CHECKS ============
-        use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::faest_aes_exp_cstrnts_wv;
-        use Bachelor_Assurance::protocols::faest_key_enc_cstrnts::faest_aes_enc_cstrnts_prover;
-        use Bachelor_Assurance::utils::constants::{S_ke, s_enc};
+        use bachelor_assurance::protocols::faest_key_exp_cstrnts::faest_aes_exp_cstrnts_wv;
+        use bachelor_assurance::protocols::faest_key_enc_cstrnts::faest_aes_enc_cstrnts_prover;
+        use bachelor_assurance::utils::constants::{S_ke, s_enc};
 
         let delta_field = to_field(&chall_3, lambda)[0];
 
@@ -234,9 +234,9 @@ mod tests{
     }
 
     fn find_valid_faest_key() -> ([u8; 16], [u8; 16], Vec<u8>) {
-        use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
-        use Bachelor_Assurance::utils::helper_methods_cstrnts::bits_to_byte;
-        use Bachelor_Assurance::utils::constants::{nk, S_ke, lambda};
+        use bachelor_assurance::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
+        use bachelor_assurance::utils::helper_methods_cstrnts::bits_to_byte;
+        use bachelor_assurance::utils::constants::{nk, S_ke, lambda};
 
         let plaintext: [u8; 16] = [
             0x32, 0x43, 0xf6, 0xa8,

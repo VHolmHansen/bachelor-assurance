@@ -1,5 +1,6 @@
+#![allow(non_upper_case_globals)]
 use crate::utils::prg::prg;
-use crate::utils::constants::{k_0, k_1, twothousandsandfortyeight,onethousandandtwentyfour, fivehundredandtwelve, twohundredandfiftysix, onehundredandtwentyeight, sixtyfour, thirtytwo, sixteen, eight, four, two, one};
+use crate::utils::constants::{k_1, twothousandsandfortyeight,onethousandandtwentyfour, fivehundredandtwelve, twohundredandfiftysix, onehundredandtwentyeight, sixtyfour, thirtytwo, sixteen, eight, four, two, one};
 use crate::utils::types::{sized_array_16, sized_option_array};
 
 pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 16], d: i128) -> sized_array_16<size_pow>{

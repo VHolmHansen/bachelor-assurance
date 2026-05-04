@@ -2,10 +2,10 @@ mod tests{
     // den her test, tester blot at den public key vi får, er key, (plaintext, enc_key(plaintext))
     #[test]
     fn test_key_gen() {
-        use Bachelor_Assurance::protocols::faest_key_gen::faest_key_gen;
-        use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
-        use Bachelor_Assurance::utils::helper_methods_cstrnts::bits_to_byte;
-        use Bachelor_Assurance::utils::math::transform_byte_array_to_state;
+        use bachelor_assurance::protocols::faest_key_gen::faest_key_gen;
+        use bachelor_assurance::protocols::aes::{encrypt, key_expansion};
+        use bachelor_assurance::utils::helper_methods_cstrnts::bits_to_byte;
+        use bachelor_assurance::utils::math::transform_byte_array_to_state;
 
         let (key, (plain_text_flat, cipher_text_flat)) = faest_key_gen();
 

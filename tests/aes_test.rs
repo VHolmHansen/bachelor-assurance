@@ -1,11 +1,11 @@
 
 #[cfg(test)]
 mod tests {
-    use Bachelor_Assurance::protocols::aes::{add_round_key, gf2_affine_transform, mix_columns, shift_rows, sub_bytes};
-    use Bachelor_Assurance::protocols::aes;
-    use Bachelor_Assurance::utils::types::*;
-    use Bachelor_Assurance::utils::galois_field::*;
-    use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, transform_state_to_array};
+    use bachelor_assurance::protocols::aes::{add_round_key, gf2_affine_transform, mix_columns, shift_rows, sub_bytes};
+    use bachelor_assurance::protocols::aes;
+    use bachelor_assurance::utils::types::*;
+    use bachelor_assurance::utils::galois_field::*;
+    use bachelor_assurance::utils::math::{transform_byte_array_to_state, transform_state_to_array};
 
     #[test]
     fn test_encrypt() {

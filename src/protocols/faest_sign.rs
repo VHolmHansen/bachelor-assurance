@@ -4,13 +4,11 @@ use crate::utils::types::{sized_array_for_coms, sized_array_for_cop, sized_array
 use crate::utils::vector_commit::{vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
-use crate::utils::types::{ret_value, sized_array_16};
-use crate::protocols::fs_vole::{chall_dec, chall_dec_k0, chall_dec_k1, FAEST_VOLE_commit};
-use crate::utils::constants::{ell, ell_bit_size, k_0, k_1, lambda, tau, tau_0, tau_1};
+use crate::utils::types::{ret_value};
+use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1, FAEST_VOLE_commit};
+use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau, tau_0, tau_1};
 use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
-use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits};
 use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_1728_bits, vole_hash, vole_to_row_major};
-use crate::utils::math::transform_byte_array_to_state;
 
 
 pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> ([[u8; 234]; 11], [u8; 18], [u8; 1600], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]) {
@@ -20,7 +18,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let rho: [u8; 16] = rng.random();
 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho);
-    let vec_start = std::time::Instant::now();
+    let _vec_start = std::time::Instant::now();
     let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
     // println!("vec_commit took: {:?}", vec_start.elapsed());
     let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
@@ -70,7 +68,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let pt_state : State = bits_to_state(&pk.0);
     let ct_state : State = bits_to_state(&pk.1);
 
-    let extend_start = std::time::Instant::now();
+    let _extend_start = std::time::Instant::now();
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness : [u8;1600] = faest_aes_extend_witness(*sk, (pt_state, ct_state));
     // println!("extend_witness took: {:?}", extend_start.elapsed());
@@ -83,13 +81,13 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
     let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
 
-    let prove_start = std::time::Instant::now();
+    let _prove_start = std::time::Instant::now();
     let (a_tilde , b_tilde) : ([u8;16],[u8;16]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
     // println!("prove took: {:?}", prove_start.elapsed());
 
     let chall_3 : [u8;16] = h_2_3(chall_2, a_tilde, b_tilde);
 
-    let open_start = std::time::Instant::now();
+    let _open_start = std::time::Instant::now();
     // pdecoms
     let mut pdecoms : [(sized_array_for_cop, [u8; 32]);tau] = [(sized_array_for_cop::sized_array_1([[0u8;16];k_0]),[0u8;32]);tau];
     for i in 0..tau {

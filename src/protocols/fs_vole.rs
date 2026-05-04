@@ -1,6 +1,6 @@
-#![allow(non_snake_case)]
+#![allow(non_snake_case, non_upper_case_globals)]
 
-use crate::utils::types::sized_array_for_q_v::sized_array_1;
+
 use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_sds};
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
 use crate::utils::hash_functions::{h_1_for_non_specific_size};
@@ -59,14 +59,14 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     // extract all r's
     let vec_of_rs: Vec<[u8;16]> = new_r.chunks_exact(16).map(|chunk| chunk.try_into().unwrap()).collect();
     // big V
-    let mut big_v:  [sized_array_for_q_v;tau] = [sized_array_1([[0u8;234];k_0]);tau];
+    let mut big_v:  [sized_array_for_q_v;tau] = [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];
     let mut big_u: [[u8;234];tau] = [[0;234];tau];
     let mut all_decoms : [([u8;16], [u8;16], sized_array_for_coms);tau] = [([0;16], [0;16], sized_array_for_coms::sized_array_1([[0u8;32];k_0_pow]));tau];
     let mut commitments : [[u8; 56];tau] = [[0;56];tau];
     // iterate over r's
     // this loop should be made able to be threaded
     for i in 0..tau{
-        let loop_start = std::time::Instant::now();
+        let _loop_start = std::time::Instant::now();
         let (h, decoms, u, v) = if i < tau_0 {
             let (h, decoms, seeds) = vec_commit_k0(vec_of_rs[i], iv, k_0 as i128);
             let (u,v) = convert_to_VOLE::<k_0>(&seeds, iv);
@@ -146,7 +146,7 @@ fn array_FAEST_VOLE_commit<const dummy_n: usize, const dummy_m: usize, const dum
  */
 
 pub fn chall_dec(chall : [u8;16], i : usize) -> Vec<u8>{
-    if i > tau || i < 0 {
+    if i > tau {
         panic!("i is not in right index");
     }
     let lo : usize;
@@ -230,10 +230,10 @@ fn array_chall_dec<const dummy_n: usize>(chall : [u8;16], i : usize) -> [u8; dum
 
 pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;56], [sized_array_for_q_v;tau]){
     let mut commitments : Vec<[u8; 56]> = vec![];
-    let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_1([[0u8;234];k_0]);tau];
+    let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];
 
     for i in 0..tau{
-        let loop_start = std::time::Instant::now();
+        let _loop_start = std::time::Instant::now();
         let b = chall_dec(chall, i);
         let current_k = if i < tau_0 { k_0 } else {k_1};
         let (com,sds) = if i < tau_0 {

@@ -1,19 +1,19 @@
 
 mod tests {
-    use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
-    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
-    use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{
+    use bachelor_assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
+    use bachelor_assurance::protocols::aes::{encrypt, key_expansion};
+    use bachelor_assurance::protocols::faest_key_exp_cstrnts::{
         faest_aes_exp_cstrnts_qDelta, faest_aes_exp_cstrnts_wv,
         faest_aes_key_exp_fwd,
     };
-    use Bachelor_Assurance::protocols::faest_key_enc_cstrnts::{
+    use bachelor_assurance::protocols::faest_key_enc_cstrnts::{
         faest_aes_enc_cstrnts_prover, faest_aes_enc_cstrnts_verifier,
     };
-    use Bachelor_Assurance::utils::galois_field::gf128_mul;
-    use Bachelor_Assurance::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
-    use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
-    use Bachelor_Assurance::utils::types::{State};
-    use Bachelor_Assurance::utils::constants::{l_enc, l_ke, lambda, s_enc, S_ke,nk, R};
+    use bachelor_assurance::utils::galois_field::gf128_mul;
+    use bachelor_assurance::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
+    use bachelor_assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
+    use bachelor_assurance::utils::types::{State};
+    use bachelor_assurance::utils::constants::{l_enc, l_ke, lambda, s_enc, S_ke,nk, R};
 /*
     fn make_synthetic_vole(
         w_bits: &[u8],
@@ -224,7 +224,7 @@ mod tests {
             true,
         );
 
-        use Bachelor_Assurance::protocols::faest_key_enc_cstrnts::faest_aes_enc_fwd;
+        use bachelor_assurance::protocols::faest_key_enc_cstrnts::faest_aes_enc_fwd;
 
         let s = faest_aes_enc_fwd::<Vec<u8>>(
             1,
@@ -349,7 +349,7 @@ mod tests {
             true,
         );
 
-        use Bachelor_Assurance::protocols::faest_key_enc_cstrnts::faest_aes_enc_fwd;
+        use bachelor_assurance::protocols::faest_key_enc_cstrnts::faest_aes_enc_fwd;
 
         let s = faest_aes_enc_fwd::<Vec<u8>>(
             1,

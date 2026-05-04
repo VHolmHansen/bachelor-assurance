@@ -81,7 +81,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
         big_u[i] = u;
         all_decoms[i] = decoms;
         commitments[i] = h;
-        println!("end of loop_commit took: {:?}", loop_start.elapsed());
+        // println!("end of loop_commit took: {:?}", loop_start.elapsed());
     }
     let u_0 = big_u[0];
 
@@ -272,7 +272,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
 
         commitments.push(com);
         big_q[i] = q;
-        println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
+        // println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
     }
     let mut coms_flat = [0u8; 56 * tau];
     for i in 0..tau {

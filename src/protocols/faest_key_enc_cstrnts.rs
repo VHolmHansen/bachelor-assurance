@@ -110,16 +110,16 @@ where [T::Elem; 8]: ret_value<Elem = T::Elem>
 }
 // delta is here a T value, that is only for simplifiuying implementation, delta should always be a [u8;16], and when this function is called with T = u8
 // then, it should also have mkey == 0, and therefore will never be set equal to delta
-pub fn faest_aes_enc_bkwd<T : ret_value>(
+pub fn faest_aes_enc_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
     _m : usize, x : &T,
-    x_k : &T,
+    x_k : &TK,
     in_out : &[u8; 128],
     mtag : bool,
     mkey : bool,
     Delta : <T as ret_value>::Elem
-) -> [[u8;16];160]
+) -> [[u8;16];160] where [T::Elem; 8]: ret_value<Elem = T::Elem>
 {
-    let mut y : [<Vec<[u8;16]> as ret_value>::Elem;s_enc] = [<Vec<[u8;16]> as ret_value>::dummy_value;s_enc];
+    let mut y : [<[[u8;16];4] as ret_value>::Elem;s_enc] = [<[[u8;16];4] as ret_value>::dummy_value;s_enc]; // 4 is a dummy value
     for j in 0..R{
         for c in 0..4{
             for r in 0..4{
@@ -160,7 +160,7 @@ pub fn faest_aes_enc_bkwd<T : ret_value>(
                 y_tilde[0] = <T as ret_value>::xor_array(&y_tilde[0],&value_might_be_delta);
                 y_tilde[2] = <T as ret_value>::xor_array(&y_tilde[2],&value_might_be_delta);
 
-                y[16*j+4*c+r] = byte_combine(<T as ret_value>::turn_array_to_T(&y_tilde));
+                y[16*j+4*c+r] = byte_combine(<[T::Elem; 8] as ret_value>::turn_array_to_T(&y_tilde));
             }
         }
     }
@@ -183,8 +183,8 @@ pub fn faest_aes_enc_cstrnts_prover(
     }
     let s : [[u8;16];160] = faest_aes_enc_fwd::<[u8;l_enc],[u8;1408]>(1, &w, &k, &in_of_in_and_out, false, false, 0); // w is 1152, k is 1408
     let v_s : [[u8;16];160] = faest_aes_enc_fwd::<[[u8;16];l_enc],[[u8;16];1408]>(lambda, &v, &v_k, &in_of_in_and_out, true, false, [0;16]); // v is 1152, v_k is 1408
-    let s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<Vec<u8>>(1, &w.to_vec(), &k.to_vec(), &out_of_in_and_out, false, false, 0); // w is 1152, k is 1408
-    let v_s_overline : [[u8;16];160] = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &v.to_vec(), &v_k.to_vec(), &out_of_in_and_out, true, false, [0;16]); // v is 1152, v_k is 1408
+    let s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<[u8;l_enc],[u8;1408]>(1, &w, &k, &out_of_in_and_out, false, false, 0); // w is 1152, k is 1408
+    let v_s_overline : [[u8;16];160] = faest_aes_enc_bkwd::<[[u8;16];l_enc],[[u8;16];1408]>(lambda, &v, &v_k, &out_of_in_and_out, true, false, [0;16]); // v is 1152, v_k is 1408
     let mut A_0 : [[u8;16];s_enc] = [[0;16];s_enc];
     let mut A_1 : [[u8;16];s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
@@ -216,7 +216,7 @@ pub fn faest_aes_enc_cstrnts_verifier(
         panic!("mkey should not be false");
     }
     let q_s : [[u8;16];160] = faest_aes_enc_fwd::<[[u8;16];l_enc],[[u8;16];1408]>(lambda, q, q_k, in_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
-    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<Vec<[u8;16]>>(lambda, &q.to_vec(), &q_k.to_vec(), out_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
+    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd::<[[u8;16];l_enc],[[u8;16];1408]>(lambda, &q, &q_k, out_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
         let q_product : [u8;16] = gf128_mul(&q_s[j], &q_s_overline[j]);

@@ -22,7 +22,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho);
     let vec_start = std::time::Instant::now();
     let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
-    println!("vec_commit took: {:?}", vec_start.elapsed());
+    // println!("vec_commit took: {:?}", vec_start.elapsed());
     let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
 
 
@@ -73,7 +73,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let extend_start = std::time::Instant::now();
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness : [u8;1600] = faest_aes_extend_witness(*sk, (pt_state, ct_state));
-    println!("extend_witness took: {:?}", extend_start.elapsed());
+    // println!("extend_witness took: {:?}", extend_start.elapsed());
 
 
     let mut d: [u8;ell_bit_size] = [0; ell_bit_size];
@@ -85,7 +85,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
     let prove_start = std::time::Instant::now();
     let (a_tilde , b_tilde) : ([u8;16],[u8;16]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
-    println!("prove took: {:?}", prove_start.elapsed());
+    // println!("prove took: {:?}", prove_start.elapsed());
 
     let chall_3 : [u8;16] = h_2_3(chall_2, a_tilde, b_tilde);
 
@@ -103,7 +103,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
         pdecoms[i] = pdecom;
     }
-    println!("open took: {:?}", open_start.elapsed());
+    // println!("open took: {:?}", open_start.elapsed());
     let signature = (c_bytes, u_tilde, d, a_tilde, pdecoms, chall_3, iv);
     signature
 

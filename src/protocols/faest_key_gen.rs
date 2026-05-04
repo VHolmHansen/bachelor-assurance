@@ -115,6 +115,7 @@ fn blocks_to_u8(x : [u8;16]) -> [u8;128]{
     }
     x_flat
 }
+
 fn turn_states_to_bits(x : State) -> [u8; lambda] {
     let mut res = [0; lambda];
     let mut word_index = 0;

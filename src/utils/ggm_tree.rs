@@ -27,7 +27,8 @@ pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 1
     // returns correct size
     leaves
 }
-/*
+
+//TODO: do we need this?
 pub fn get_some_leaves<const size_pow: usize>(r: [u8; 16], iv: [u8; 16], d: i128) -> sized_option_array<size_pow>{
     let mut leaves = [None; size_pow];
     leaves[0] = Some(r);
@@ -41,8 +42,8 @@ pub fn get_some_leaves<const size_pow: usize>(r: [u8; 16], iv: [u8; 16], d: i128
             prg(ran_value.unwrap(), iv, &mut nodes);
 
             // get child values for left and right
-            let left_node_value : Some([u8;16])= nodes[..16].try_into().unwrap();
-            let right_node_value : Some([u8;16]) = nodes[16..].try_into().unwrap();
+            let left_node_value : Option<[u8;16]> = Some(nodes[..16].try_into().unwrap());
+            let right_node_value : Option<[u8;16]> = Some(nodes[16..].try_into().unwrap());
 
             // insert child values
             leaves[(2*j) as usize] = left_node_value;
@@ -52,8 +53,6 @@ pub fn get_some_leaves<const size_pow: usize>(r: [u8; 16], iv: [u8; 16], d: i128
     // returns correct size
     leaves
 }
-
- */
 
 pub fn get_cop<const size: usize>(r: [u8;16], iv: [u8;16], b: u64, d: i128) -> sized_array_16<size> {
     let mut cop = [[0u8; 16]; size];
@@ -115,7 +114,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
         match match_value {
              twothousandsandfortyeight => {
                  let d =  11; // should be log_2(2048)
-                 let leaves_to_add = get_leaves_node_from_root::<twothousandsandfortyeight>(c, iv, d);
+                 let leaves_to_add = get_leaves_node_from_root::<twothousandsandfortyeight>(c, iv, d);  //TODO: could maybe use get_some_leaves here to only go through leaves once
                  if get_if_left(d, b as i128){
                      for i in (current_start+twothousandsandfortyeight)..current_end {
                          leaves[i] = Some(leaves_to_add[i-twothousandsandfortyeight]);
@@ -132,7 +131,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
              }
             onethousandandtwentyfour => {
                 let d =  10; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<onethousandandtwentyfour>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<onethousandandtwentyfour>(c, iv, d);    //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+onethousandandtwentyfour)..current_end {
                         leaves[i] = Some(leaves_to_add[i-onethousandandtwentyfour-current_start]);
@@ -149,7 +148,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             fivehundredandtwelve => {
                 let d =  9; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<fivehundredandtwelve>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<fivehundredandtwelve>(c, iv, d);    //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+fivehundredandtwelve)..current_end {
                         leaves[i] = Some(leaves_to_add[i-fivehundredandtwelve-current_start]);
@@ -166,7 +165,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             twohundredandfiftysix => {
                 let d =  8; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<twohundredandfiftysix>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<twohundredandfiftysix>(c, iv, d);   //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+twohundredandfiftysix)..current_end {
                         leaves[i] = Some(leaves_to_add[i-twohundredandfiftysix-current_start]);
@@ -183,7 +182,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             onehundredandtwentyeight => {
                 let d =  7; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<onehundredandtwentyeight>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<onehundredandtwentyeight>(c, iv, d);    //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+onehundredandtwentyeight)..current_end {
                         leaves[i] = Some(leaves_to_add[i-onehundredandtwentyeight-current_start]);
@@ -200,7 +199,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             sixtyfour => {
                 let d =  6; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<sixtyfour>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<sixtyfour>(c, iv, d);   //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+sixtyfour)..current_end {
                         leaves[i] = Some(leaves_to_add[i-sixtyfour-current_start]);
@@ -217,7 +216,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             thirtytwo => {
                 let d =  5; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<thirtytwo>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<thirtytwo>(c, iv, d);   //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+thirtytwo)..current_end {
                         leaves[i] = Some(leaves_to_add[i-thirtytwo-current_start]);
@@ -234,7 +233,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             sixteen => {
                 let d =  4; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<sixteen>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<sixteen>(c, iv, d);     //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+sixteen)..current_end {
                         leaves[i] = Some(leaves_to_add[i-sixteen-current_start]);
@@ -251,7 +250,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             eight => {
                 let d =  3; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<eight>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<eight>(c, iv, d);   //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+eight)..current_end {
                         leaves[i] = Some(leaves_to_add[i-eight-current_start]);
@@ -268,7 +267,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             four => {
                 let d =  2; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<four>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<four>(c, iv, d);    //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+four)..current_end {
                         leaves[i] = Some(leaves_to_add[i-four-current_start]);
@@ -285,7 +284,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             two => {
                 let d =  1; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<two>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<two>(c, iv, d); //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+two)..current_end {
                         leaves[i] = Some(leaves_to_add[i-two-current_start]);
@@ -302,7 +301,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             }
             one => {
                 let d =  0; // should be log_2(2048)
-                let leaves_to_add = get_leaves_node_from_root::<one>(c, iv, d);
+                let leaves_to_add = get_leaves_node_from_root::<one>(c, iv, d); //TODO: could maybe use get_some_leaves here to only go through leaves once
                 if get_if_left(d, b as i128){
                     for i in (current_start+one)..current_end {
                         leaves[i] = Some(leaves_to_add[i-one-current_start]);
@@ -317,7 +316,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
                     match_value = match_value / 2;
                 }
             }
-            _ => panic!("what the f")
+            _ => panic!("matching on a value that is different from 2^n, should never happen for ggm tree")   //TODO: maybe different panic idk
         }
     }
 

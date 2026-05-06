@@ -7,7 +7,7 @@ use crate::utils::constants::{lambda, S_ke, nk, R, ell_bit_size};
 pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit_size]{
     let (in_aes, _out_aes) = pk;
     let k_overline = key_expansion(k);
-    let bytes_from_k_overline : Vec<u8> = words_to_blocks(k_overline.clone()[0..nk].to_vec()).into_iter().flat_map(|arr| arr).collect();
+    let bytes_from_k_overline : Vec<u8> = words_to_blocks(k_overline.clone()[0..nk].to_vec()).into_iter().flat_map(|arr| arr).collect();    //TODO: rewrite for hax compat + vec -> array
     let mut witness : [u8;ell_bit_size] = [0;ell_bit_size];
     let mut index = 0;
     for b in bytes_from_k_overline{
@@ -18,7 +18,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
         }
     }
 
-    let k_overline_for_loops : Vec<u8> = k_overline.clone().into_iter().flat_map(|word| word).collect();
+    let k_overline_for_loops : Vec<u8> = k_overline.clone().into_iter().flat_map(|word| word).collect();    //TODO: rewrite for hax compat + vec -> array
 
     let mut ik = nk;
 
@@ -37,7 +37,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
     let Beta = lambda / 128;
     for _ in 0..Beta{
         let mut state_new : State = in_aes;
-        add_round_key(&mut state_new, k_overline[0..4].to_vec());
+        add_round_key(&mut state_new, k_overline[0..4].try_into().unwrap());
         for j in 1..R{
             sub_bytes(&mut state_new);
             shift_rows(&mut state_new);
@@ -51,7 +51,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
                 }
             }
             mix_columns(&mut state_new);
-            add_round_key(&mut state_new, k_overline[4*j..4*j+4].to_vec());
+            add_round_key(&mut state_new, k_overline[4*j..4*j+4].try_into().unwrap());
         }
     }
 

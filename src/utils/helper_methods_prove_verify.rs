@@ -4,6 +4,7 @@ use crate::utils::math::xor_arrays;
 
 // x er her en liste af u8, men det skal være bits
 // k er størrelsen på det field F_{2^k} vi gerne vil have det til
+//TODO: vec -> array
 pub fn to_field(x: &[u8], k: usize) -> Vec<[u8; 16]> {
     assert!(x.len() % k == 0, "input length must be multiple of k");
     let n = x.len() / k;
@@ -49,12 +50,13 @@ fn array_to_field<const dummy_n: usize>(x: &[u8], k: usize) -> [[u8; 16]; dummy_
  */
 
 // burde være omvendt af den ovenstående funktion
+//TODO: vec -> array
 pub fn to_bits(x: &[[u8; 16]], k: usize) -> Vec<u8> {
     let mut result = Vec::new();
 
     for field_elem in x {
         for j in 0..k {
-            let byte_idx = j / 8;
+            let byte_idx = j / 8; //TODO: j >> 3 ?
             let bit_idx = j % 8;
             let bit = (field_elem[byte_idx] >> bit_idx) & 1;
             result.push(bit);

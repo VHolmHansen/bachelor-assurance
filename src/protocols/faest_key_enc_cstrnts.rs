@@ -225,10 +225,3 @@ pub fn faest_aes_enc_cstrnts_verifier(
     }
     B
 }
-//TODO: what this
-#[allow(dead_code)]
-fn gf28_mul_embedded(a: &[u8;16], b: &[u8;16]) -> [u8;16] {
-    let mut result : [u8;16] = [0u8;16];
-    result[0] = crate::utils::galois_field::gf28_multiply(a[0], b[0]);
-    result
-}

@@ -5,6 +5,8 @@ mod tests {
 
     #[test]
     fn sign_verify_test() {
+        let builder = std::thread::Builder::new().stack_size(32 * 1024 * 1024); // 64MB
+        let handler = builder.spawn(|| {
         let key = [
             201, 162, 240, 157, 17, 221, 199, 249, 177, 157, 68, 52, 44, 101, 110, 159,
         ];
@@ -30,10 +32,13 @@ mod tests {
 
         let test_work = faest_verify(msg, &pk, &sig);
         assert!(test_work);
+        }).unwrap();
+        handler.join().unwrap();
     }
     #[test]
     fn sign_verify_test_random_key() {
-        let builder = std::thread::Builder::new().stack_size(32 * 1024 * 1024); // 64MB
+        let builder = std::thread::Builder::new().stack_size(9 * 1024 * 1024); // 64MB
+        // this command: cargo test --release --test sign_verify_test sign_verify_test_random_key, runs the optimized compiler for that test, can be done with stack size 5 mb
         let handler = builder.spawn(|| {
             let start = std::time::Instant::now();
 
@@ -55,7 +60,7 @@ mod tests {
         handler.join().unwrap();
     }
     #[test]
-    fn sign_verify_test_random_key_multiple() {
+    fn sign_verify_test_random_multiple() {
         let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024); // 64MB
         let handler = builder.spawn(|| {for i in 0..10 {
             let messages: Vec<&[u8]> = vec![

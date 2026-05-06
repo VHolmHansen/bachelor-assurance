@@ -55,7 +55,7 @@ pub fn gf28_inverse(a: u8) -> u8 {
 }
 
 
-
+// used in tests
 #[hax_lib::requires(a.len() > 0
                     && a[0].len() > 0
                     && b.len() > 0

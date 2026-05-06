@@ -2,6 +2,7 @@ use libcrux::digest;
 use crate::utils::constants::{ell, tau, lambda};
 use crate::utils::math;
 use crate::protocols::aes;
+use crate::utils::libcrux_proxy::DigestProxy;
 
 // should have an extra parameter based on size, but we know size is 2 \lambda, which for us is 256
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
@@ -36,7 +37,7 @@ pub fn prg_convert_to_vole(sd: [u8;16], iv: [u8; 16]) -> [u8; ell]{
     let mut input : [u8; 32] = [0u8; 32];
     input[..16].copy_from_slice(&sd);
     input[16..].copy_from_slice(&iv);
-    digest::shake128::<ell>(&mut input)
+    DigestProxy::shake128::<ell>(&mut input)
 }
 
 pub fn prg_vole_commit_r(r: [u8;16], iv: [u8;16]) -> [u8; (tau*lambda)/8] {
@@ -44,5 +45,5 @@ pub fn prg_vole_commit_r(r: [u8;16], iv: [u8;16]) -> [u8; (tau*lambda)/8] {
     input[..16].copy_from_slice(&r);
     input[16..].copy_from_slice(&iv);
     const SIZE : usize = (tau*lambda)/8;
-    digest::shake128::<SIZE>(&mut input)
+    DigestProxy::shake128::<SIZE>(&mut input)
 }

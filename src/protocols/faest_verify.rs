@@ -1,4 +1,4 @@
-use crate::utils::constants::tau_1;
+use crate::utils::constants::{tau_1, tau_minus_one};
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1};
 use crate::utils::types::sized_array_for_q_v;
 use crate::utils::types::sized_array_for_cop;
@@ -11,10 +11,10 @@ use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole
 pub fn faest_verify(
     msg : &[u8],
     pk : &([u8;lambda], [u8;lambda]),
-    sig : &([[u8;234];tau], [u8;18],[u8;ell_bit_size], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]))
+    sig : &([[u8;234];tau_minus_one], [u8;18],[u8;ell_bit_size], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]))
     -> bool
 {
-    let c_bytes : &[[u8;234];tau] = &sig.0;
+    let c_bytes : &[[u8;234];tau_minus_one] = &sig.0;
     let u_tilde: &[u8;18] = &sig.1;
     let d : &[u8;ell_bit_size]= &sig.2;
     let a_tilde : &[u8; 16]= &sig.3;
@@ -40,7 +40,7 @@ pub fn faest_verify(
                     // XOR column j of Q'i with ci
                     for byte in 0..234 {
                         let mut row : [u8;234] = *q_corrected[i].get(j);
-                        row[byte] ^= c_bytes[i][byte];
+                        row[byte] ^= c_bytes[i-1][byte];
                         q_corrected[i].set(j, row);
                     }
                 }
@@ -52,7 +52,7 @@ pub fn faest_verify(
                     // XOR column j of Q'i with ci
                     for byte in 0..234 {
                         let mut row : [u8;234] = *q_corrected[i].get(j);
-                        row[byte] ^= c_bytes[i][byte];
+                        row[byte] ^= c_bytes[i-1][byte];
                         q_corrected[i].set(j, row);
                     }
                 }

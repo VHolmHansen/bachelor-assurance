@@ -355,7 +355,7 @@ fn sum_of_polynomials(party: Party, messages: Vec<Message>) -> Party {
                 && sum_of_messages < f.p
 
             });
-        assume!(messages[i].value < f.p); //TODO
+        assume!(messages[i].value < f.p); //assumption
         sum_of_messages = f.addition(sum_of_messages, messages[i].value)
     }
 
@@ -494,7 +494,7 @@ fn lambda_i_of(message1: Message, message2: Message, message3: Message) -> Int {
     let denom= f.multiplication(f.addition(x1, f.additive_inverse(x3)), f.addition(x1, f.additive_inverse(x2)));
     //let denom = ((x1 - x3) * (x1 - x2)).rem_euclid(field().p);
     hax_lib::assert!(denom < f.p);
-    hax_lib::assume!(denom > 0.to_int()); //TODO: Check if can be replaced with assert
+    hax_lib::assume!(denom > 0.to_int()); //assumption
     let denom_inv = f.multiplicative_inverse(denom);
     hax_lib::assert!(denom_inv < f.p);
 
@@ -505,7 +505,7 @@ fn lambda_i_of(message1: Message, message2: Message, message3: Message) -> Int {
 #[hax_lib::exclude]
 #[hax_lib::requires(view1.messages.len() > 0
                     && view2.messages.len() > 0
-                    && n < view1.messages.len() //TODO: probably not correct
+                    && n < view1.messages.len() //probably not correct
                     )]
 fn check_consistent_view(view1: View, view2: View, n: usize) -> bool {
     let number_iter = n..n + n;

@@ -1,6 +1,8 @@
+
 use crate::protocols::faest_key_gen::faest_key_gen;
 use crate::protocols::faest_sign::faest_sign;
 use crate::protocols::faest_verify::faest_verify;
+
 
 pub mod utils;
 pub mod protocols;
@@ -22,9 +24,13 @@ fn main() {
         let verify_start = std::time::Instant::now();
         let great_succes = faest_verify(msg, &pk, &sig);
         println!("verify took: {:?}", verify_start.elapsed());
-
         println!("verify succes: {:?}", great_succes);
+        println!("sig is: {:?}", sig);
     }).unwrap();
     handler.join().unwrap();
+
+
+    // test_vector()
 }
+
 

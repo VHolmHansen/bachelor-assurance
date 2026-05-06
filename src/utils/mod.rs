@@ -10,6 +10,6 @@ pub mod prg;
 pub mod preliminary_helper_methods;
 pub mod helper_methods_cstrnts;
 pub mod helper_methods_prove_verify;
-mod libcrux_proxy;
+pub mod libcrux_proxy;
 pub mod helper_methods_for_sign;
 pub mod ggm_tree;

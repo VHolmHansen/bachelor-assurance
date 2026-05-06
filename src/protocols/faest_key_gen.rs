@@ -1,4 +1,3 @@
-use rand::{RngExt};
 use crate::utils::constants::nk;
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
@@ -7,19 +6,22 @@ use crate::utils::constants::S_ke;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits, words_to_blocks};
-use crate::utils::types::State;
+use crate::utils::types::{State};
 use crate::protocols::aes::{encrypt, key_expansion};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::utils::constants::s_enc;
 use crate::utils::galois_field::gf128_mul;
+use crate::utils::libcrux_proxy::RandGenProxy;
 use crate::utils::math::transform_byte_array_to_state;
 
 pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 {
-    let mut rng = rand::rng(); //TODO: proxy and maybe replace with libcrux
+    let mut rng = RandGenProxy::get_rand_gen_sha256();
     loop {
-        let key: [u8; 16] = rng.random();
-        let plaintext: [u8; 16] = rng.random();
+        let mut key: [u8; 16] = [0u8; 16];
+        rng.fill_bytes(&mut key);
+        let mut plaintext: [u8; 16] = [0u8; 16];
+        rng.fill_bytes(&mut plaintext);
 
         let expanded_key = key_expansion(key);
 
@@ -30,21 +32,13 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         let plain_text_flat = blocks_to_u8(plaintext);
         let cipher_text_flat = turn_states_to_bits(ciphertext_state);
 
-        let mut expanded_key_flat = vec![];
-        let blocks_of_expanded_key = words_to_blocks(expanded_key);
 
-        for block in blocks_of_expanded_key {
-            let bits_of_blocks = blocks_to_u8(block);
-            for b in bits_of_blocks {
-                expanded_key_flat.push(b);
-            }
-        }
-        let w_enc: Vec<u8> = w[448..1600].to_vec();
 
 
         // first fwd
         let fwd_key = faest_aes_key_exp_fwd(1, w, false, false, [0;16]);
-        let bwd_key = faest_aes_key_exp_bkwd(1, w[lambda..].to_vec(), fwd_key.to_vec(), false, false, 0);
+        let w_lambda : [u8; 1472] = w[lambda..].try_into().unwrap(); // 1600-128 = 1472
+        let bwd_key : [u8;320]= faest_aes_key_exp_bkwd(1, w_lambda, fwd_key, false, false, 0);
         let mut valid = true;
 
         let one_gf8 : u8 = 0x01;
@@ -74,6 +68,19 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
             continue;
         }
         // second fwd
+        let mut expanded_key_flat = [0;1408];
+        let blocks_of_expanded_key = words_to_blocks(expanded_key.to_vec()); //TODO: vec -> array
+
+        let mut i = 0;
+        for block in blocks_of_expanded_key {
+            let bits_of_blocks = blocks_to_u8(block);
+            for b in bits_of_blocks {
+                expanded_key_flat[i] = b;
+                i += 1;
+            }
+        }
+        let w_enc: [u8;1152] = w[448..1600].try_into().unwrap();
+
         let enc_fwd = faest_aes_enc_fwd(1, &w_enc, &expanded_key_flat, &plain_text_flat, false,false, 0);
         let enc_bwd = faest_aes_enc_bkwd(
             1, &w_enc, &expanded_key_flat,

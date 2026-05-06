@@ -3,7 +3,7 @@ mod tests {
 
     use bachelor_assurance::protocols::fs_vole::{chall_dec, convert_to_VOLE, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
     use bachelor_assurance::utils::math::xor_arrays;
-    use bachelor_assurance::utils::preliminary_helper_methods::num_rec;
+    
     use bachelor_assurance::utils::constants::{k_0, k_1, tau, tau_0};
     use bachelor_assurance::utils::vector_commit::{vec_commit_k0, vec_open_k0, vec_reconstruct_k0};
 

@@ -5,10 +5,10 @@ use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
 use crate::utils::hash_functions::{h_1_for_non_specific_size};
 use crate::utils::math::xor_arrays;
-use crate::utils::preliminary_helper_methods::num_rec;
+use crate::utils::preliminary_helper_methods::{num_rec_k0,num_rec_k1};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
 use crate::utils::vector_commit::{vec_commit_k0, vec_commit_k1, vec_reconstruct_k0, vec_reconstruct_k1};
-use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow};
+use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow, tau_minus_one};
 
 
 pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16]) -> ([u8; ell], sized_array_234<d>) {
@@ -17,12 +17,11 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
         sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
     };
 
-
+    hax_lib::assert!(sds.len() == 2048 || sds.len() == 4096);
     // the r structure:
-    let mut r: Vec<Vec<Option<[u8; ell]>>> = vec![vec![None; sds.len()]; d + 1];
+    let mut r: Vec<Vec<Option<[u8; ell]>>> = vec![vec![None; sds.len()]; d + 1];    // keeping as vec, annoying rewrite, plus sugar for report
 
 
-    //let mut r : [[Option<[u8; ell]>; sds.len()]; d + 1] = [[None; sds.len()]; d + 1];  //TODO: is r[i] = sds.len() ? - derived from for loop below is r.len() = d? derived further below
     // if we are verifier
     if sds[0] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {
         r[0][0] = Some([0u8;ell]);
@@ -54,10 +53,12 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
 }
 
 
-pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau], [u8; 234], [sized_array_for_q_v;tau]) {
+pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau]) {
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's
-    let vec_of_rs: Vec<[u8;16]> = new_r.chunks_exact(16).map(|chunk| chunk.try_into().unwrap()).collect();
+    let arr_of_rs: [[u8; 16]; 11] = std::array::from_fn(|i| {
+        new_r[i * 16..(i + 1) * 16].try_into().unwrap()
+    });
     // big V
     let mut big_v:  [sized_array_for_q_v;tau] = [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];
     let mut big_u: [[u8;234];tau] = [[0;234];tau];
@@ -68,11 +69,11 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     for i in 0..tau{
         let _loop_start = std::time::Instant::now();
         let (h, decoms, u, v) = if i < tau_0 {
-            let (h, decoms, seeds) = vec_commit_k0(vec_of_rs[i], iv, k_0 as i128);
+            let (h, decoms, seeds) = vec_commit_k0(arr_of_rs[i], iv, k_0 as i128);
             let (u,v) = convert_to_VOLE::<k_0>(&seeds, iv);
             (h, decoms, u, sized_array_for_q_v::sized_array_1(v))
         } else {
-            let (h, decoms, seeds) = vec_commit_k1(vec_of_rs[i], iv, k_1 as i128);
+            let (h, decoms, seeds) = vec_commit_k1(arr_of_rs[i], iv, k_1 as i128);
             let (u,v) = convert_to_VOLE::<k_1>(&seeds, iv);
             (h, decoms, u, sized_array_for_q_v::sized_array_2(v))
         };
@@ -85,9 +86,11 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     }
     let u_0 = big_u[0];
 
-    let mut big_c: [[u8;234]; tau] = [[0u8; 234]; tau];   //TODO: beware initial zeroes & verify length & is dummy_a = tau?
+    let mut big_c: [[u8;234]; tau_minus_one] = [[0u8; 234]; tau_minus_one];
     for i in 0..tau{
-        big_c[i] = xor_arrays(&u_0, &big_u[i]);
+        if i > 0 {
+            big_c[i-1] = xor_arrays(&u_0, &big_u[i]);
+        }
     }
 
     let mut coms_flat = [0u8; 56 * tau];
@@ -101,50 +104,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
-/*
-fn array_FAEST_VOLE_commit<const dummy_n: usize, const dummy_m: usize, const dummy_a: usize, const dummy_b: usize, const dummy_c: usize>(r: [u8; 16], iv: [u8; 16]) ->
-([u8; 56], [(Tree, [[u8;32]; dummy_m]); dummy_n], [[u8;234]; dummy_a], [u8; 234], [[[u8; 234]; dummy_b]; dummy_c]) {
-    let new_r = prg_vole_commit_r(r, iv);
-    // extract all r's
-    let mut vec_of_rs = [[0u8; 16]; tau];       //TODO: beware inital zeroes & verify length
-    for i in 0..tau {
-        vec_of_rs[i] = chunk.copy_from_slice(&new_r[(i * 16)..(i * 16) + 16]);
-    }
-
-    // big V
-    let mut big_v:  [[[u8; 234]; dummy_b]; dummy_c] =  [[[0u8; 234]; dummy_b]; tau];     //TODO: beware intial zeroes, is dummy_c = tau? & verify length
-    let mut big_u: [[u8;234]; tau] = [[0u8; 234]; tau];      //TODO: beware initial zeroes, is len = tau? & verify length
-    let mut all_decoms : [(Tree, [[u8;32]; dummy_m]); dummy_n] = [[[0u8; 32]; dummy_m]; dummy_n]       //TODO: beware initial zeroes, is dummy_n = tau?
-    let mut commitments : [[u8; 56]; tau]> = [[0u8; 56;] tau];       //TODO: beware initial zeroes & verify length
-    // iterate over r's
-    for i in 0..tau{
-        let b = if i < tau_0 { k_0 } else { k_1 };
-        let (h, decoms, seeds) = vec_commit(vec_of_rs[i], iv, b as i128);
-        let (u,v) = convert_to_VOLE(seeds, iv);
-        big_v[i] = v;
-        big_u[i] = u;
-        all_decoms[i] = decoms;
-        commitments[i] = h;
-    }
-    let u_0 = big_u[0];
-
-    let mut big_c: [[u8;234]; dummy_a]> = [[0u8; 234]; dummy_a];   //TODO: beware initial zeroes & verify length & is dummy_a = tau?
-    for i in 0..tau{
-        big_c[i] = xor_arrays(&u_0, &big_u[i]);
-    }
-
-    let mut coms_flat = [0u8; 56 * tau];
-    for i in 0..tau {
-        for j in 0..56 {
-            coms_flat[i * 56 + j] = commitments[i][j];
-        }
-    }
-
-    let hash = h_1_for_non_specific_size(coms_flat);
-    (hash, all_decoms, big_c, u_0, big_v)
-}
- */
-
+//TODO: deprecated function?
 pub fn chall_dec(chall : [u8;16], i : usize) -> Vec<u8>{
     if i > tau {
         panic!("i is not in right index");
@@ -177,7 +137,7 @@ pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
     let hi = (i + 1) * k_0 - 1;
 
     let mut bits = [0u8; k_0];
-    for (idx, b) in (lo..=hi).enumerate() {
+    for (idx, b) in (lo..=hi).enumerate() {     //TODO: rewrite for hax compat
         let byte_index = b / 8;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
@@ -192,7 +152,7 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
     let hi = tau_0 * k_0 + (t + 1) * k_1 - 1;
 
     let mut bits = [0u8; k_1];
-    for (idx, b) in (lo..=hi).enumerate() {
+    for (idx, b) in (lo..=hi).enumerate() {     //TODO: rewrite for hax compat
         let byte_index = b / 8;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
@@ -200,78 +160,56 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
     bits
 }
 
-/*
-fn array_chall_dec<const dummy_n: usize>(chall : [u8;16], i : usize) -> [u8; dummy_n]>{     //TODO: verify length (& streamline)
-    if i > tau || i < 0 {       //TODO: unnecessary?
-        panic!("i is not in right index");
-    }
-    let lo : usize;
-    let hi : usize;
-    if i < tau_0 {
-        lo = i * k_0;
-        hi = (i+1)*k_0-1;
-    } else {
-        let t = i- tau_0;
-        lo = tau_0 * k_0 + t* k_1;
-        hi = tau_0 * k_0 + (t+1) * k_1 - 1;
-    }
-    let mut bits: [u8; hi - lo + 1] = [u8; hi - lo + 1];
-
-    for b in lo..=hi {
-        let byte_index = b / 8;
-        let bit_index = b % 8;
-
-        let bit = (chall[byte_index] >> bit_index) & 1;
-        bits[b] = bit;
-    }
-    bits
-}
- */
-
 pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;56], [sized_array_for_q_v;tau]){
-    let mut commitments : Vec<[u8; 56]> = vec![];
+    let mut commitments : [[u8; 56];tau] = [[0;56];tau];
     let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];
 
     for i in 0..tau{
         let _loop_start = std::time::Instant::now();
-        let b = chall_dec(chall, i);
-        let current_k = if i < tau_0 { k_0 } else {k_1};
-        let (com,sds) = if i < tau_0 {
-            vec_reconstruct_k0(&pdecoms[i], b.clone(), iv, k_0 as i128)
-        } else {
-            vec_reconstruct_k1(&pdecoms[i], b.clone(), iv, k_1 as i128)
-        };
-        let sds: &[[u8; 16]] = match &sds {
-            sized_array_for_sds::sized_array_1(inner) => inner.as_slice(),
-            sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
-        };
-        let N_b = sds.len();
-        let delta = num_rec(b.clone(), current_k as u64);
-        let sds_for_later_use :  sized_array_for_sds = if i < tau_0 {
+
+        if i < tau_0 {
+            let b = chall_dec_k0(chall, i);
+            let (com,sds) = vec_reconstruct_k0(&pdecoms[i], b.clone(), iv);
+            let sds: &[[u8; 16]] = match &sds {
+                sized_array_for_sds::sized_array_1(inner) => inner.as_slice(),
+                sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
+            };
+            let N_b = sds.len();
+            let delta = num_rec_k0(&b);
             let mut sd_updated_verifier: [[u8;16];k_0_pow] = [[0;16];k_0_pow];
             for j in 1..N_b {
                 sd_updated_verifier[j] = sds[(j as u64 ^ delta) as usize]
             }
-            sized_array_for_sds::sized_array_1(sd_updated_verifier)
+            let sds_for_later_use :  sized_array_for_sds = sized_array_for_sds::sized_array_1(sd_updated_verifier);
+            let (_u_mark, q) = convert_to_VOLE::<k_0>(&sds_for_later_use, iv);
+            let (_u_mark, q) = (_u_mark, sized_array_for_q_v::sized_array_1(q));
+
+            commitments[i] = com;
+            big_q[i] = q;
+
         } else {
+            let b = chall_dec_k1(chall, i);
+            let (com,sds) = vec_reconstruct_k1(&pdecoms[i], b.clone(), iv);
+            let sds: &[[u8; 16]] = match &sds {
+                sized_array_for_sds::sized_array_1(inner) => inner.as_slice(),
+                sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
+            };
+            let N_b = sds.len();
+            let delta = num_rec_k1(&b);
+
             let mut sd_updated_verifier: [[u8;16];k_1_pow] = [[0;16];k_1_pow];
             for j in 1..N_b {
                 sd_updated_verifier[j] = sds[(j as u64 ^ delta) as usize]
             }
-            sized_array_for_sds::sized_array_2(sd_updated_verifier)
-        };
-
-        let (_u_mark, q) = if i < tau_0 {
-            let (_u_mark, q) = convert_to_VOLE::<k_0>(&sds_for_later_use, iv);
-            (_u_mark, sized_array_for_q_v::sized_array_1(q))
-        }
-        else {
+            let sds_for_later_use :  sized_array_for_sds = sized_array_for_sds::sized_array_2(sd_updated_verifier);
             let (_u_mark, q) = convert_to_VOLE::<k_1>(&sds_for_later_use, iv);
-            (_u_mark, sized_array_for_q_v::sized_array_2(q))
+            let (_u_mark, q) = (_u_mark, sized_array_for_q_v::sized_array_2(q));
+
+            commitments[i] = com;
+            big_q[i] = q;
         };
 
-        commitments.push(com);
-        big_q[i] = q;
+
         // println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
     }
     let mut coms_flat = [0u8; 56 * tau];
@@ -283,42 +221,3 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
     let hash = h_1_for_non_specific_size(&coms_flat);
     (hash, big_q)
 }
-
-/*
-fn array_FAEST_VOLE_reconstruct<const dummy_n: usize, const dummy_m: usize, const dummy_a: usize, const dummy_b: usize>(chall: [u8;16], pdecoms: [([[u8; 16]>,[u8; 32]; dummy_m]); dummy_n], iv : [u8;16]) -> ([u8;56], [[[u8;234]; dummy_a]; dummy_b]){
-    let mut commitments : [[u8; 56]; tau] = [[0u8; 56]; tau];         //TODO: beware initial zeroes & verify length
-    let mut big_q:  [[[u8; 234]; dummy_a]; dummy_b] =  [[[0u8; 234]; dummy_a]; tau];       //TODO: beware initial zeroes & verify length & is dummy_b = tau? - derived below
-
-    for i in 0..tau{
-        let b = chall_dec(chall, i);
-        let current_k;
-        if i < tau_0 {
-            current_k = k_0;
-        } else {
-            current_k = k_1;
-        }
-        let delta = num_rec(b.clone(), current_k as u64);
-        let (com, seeds) = vec_reconstruct(pdecoms[i].clone(), b, iv, current_k as i128);
-        let N_b = seeds.len();
-        let mut sd_updated_verifier : [[u8;16]; N_v] = [[0;16]; N_b];
-        for j in 1..N_b {
-            sd_updated_verifier[j] = seeds[(j as u64 ^ delta) as usize]
-        }
-
-        let (_u_mark, q) = convert_to_VOLE(sd_updated_verifier, iv);
-
-        commitments[i] = com;
-        big_q[i] = q;
-    }
-
-    let mut coms_flat = [0u8; 56 * tau];
-    for i in 0..tau {
-        for j in 0..56 {
-            coms_flat[i * 56 + j] = commitments[i][j];
-        }
-    }
-
-    let hash = h_1_for_non_specific_size(coms_flat);
-    (hash, big_q)
-}
- */

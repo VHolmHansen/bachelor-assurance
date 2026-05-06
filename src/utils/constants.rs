@@ -17,7 +17,7 @@ pub const l_enc : usize = 8 * (s_enc - 16); // den er 1152
 pub type State = [[u8; nst]; nk];
 
 pub const ret_size_exp_fwd : usize = lambda *(R +1);
-pub const ret_size_exp_bwd : usize = 8 * S_ke;
+pub const ret_size_exp_bwd : usize = 8 * S_ke; // 8 * 40 = 320
 
 pub const s_enc : usize = 16 * R;
 
@@ -41,3 +41,5 @@ pub const twohundredandfiftysix : usize = 256;
 pub const fivehundredandtwelve : usize = 512;
 pub const onethousandandtwentyfour : usize = 1024;
 pub const twothousandsandfortyeight : usize = 2048;
+
+pub const tau_minus_one : usize = tau-1;

@@ -9,12 +9,12 @@ use crate::utils::libcrux_proxy::DigestProxy;
 pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
     let num_blocks = (output.len() + 15) / 16; // ceiling division
 
-    let iv_int = u128::from_le_bytes(iv);
+    let iv_int = u128::from_be_bytes(iv);
 
     let key_ex = aes::key_expansion(k);
 
     for i in 0..num_blocks {
-        let counter = (iv_int + i as u128).to_le_bytes();
+        let counter = (iv_int + i as u128).to_be_bytes();
         let counter_state = math::transform_byte_array_to_state(&counter);
         let block = aes::encrypt(counter_state, &key_ex); // your existing function
         let block_arr= math::transform_state_to_array(&block);
@@ -28,8 +28,8 @@ pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
             output[start..start + 16].copy_from_slice(&block_arr);
         }
 
-        let start = i * 16;
-        output[start..start + 16].copy_from_slice(&block_arr);
+        //let start = i * 16;
+        //output[start..start + 16].copy_from_slice(&block_arr);
     }
 }
 

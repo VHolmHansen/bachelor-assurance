@@ -1,4 +1,4 @@
-use crate::utils::constants::nk;
+use crate::utils::constants::{nk, nst, R};
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
 use crate::utils::constants::lambda;
@@ -6,7 +6,7 @@ use crate::utils::constants::S_ke;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits, words_to_blocks};
-use crate::utils::types::{State};
+use crate::utils::types::{State, Word};
 use crate::protocols::aes::{encrypt, key_expansion};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::utils::constants::s_enc;
@@ -23,7 +23,7 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         let mut plaintext: [u8; 16] = [0u8; 16];
         rng.fill_bytes(&mut plaintext);
 
-        let expanded_key = key_expansion(key);
+        let expanded_key: [Word; nst * (R + 1)] = key_expansion(key);
 
         let plaintext_state = transform_byte_array_to_state(&plaintext);
         let ciphertext_state = encrypt(plaintext_state, &expanded_key);
@@ -69,7 +69,8 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         }
         // second fwd
         let mut expanded_key_flat = [0;1408];
-        let blocks_of_expanded_key = words_to_blocks(expanded_key.to_vec()); //TODO: vec -> array
+        //let blocks_of_expanded_key = words_to_blocks(expanded_key.to_vec()); //TODO: vec -> array
+        let blocks_of_expanded_key: [[u8; 16]; R + 1] = words_to_blocks(expanded_key);      //size derived from (R + 1) * nst / wordsize, where nst = 4 and wordsize = 4
 
         let mut i = 0;
         for block in blocks_of_expanded_key {

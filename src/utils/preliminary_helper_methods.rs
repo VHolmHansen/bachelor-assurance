@@ -53,3 +53,15 @@ fn array_get_b<const dummy_n: usize>(b: [bool; dummy_n], d: u64) -> u64{
     0
 }
  */
+
+
+pub fn flatten<const OUTER_LEN: usize, const INNER_LEN: usize, const COMBINED_LEN: usize>(input: [[u8; INNER_LEN]; OUTER_LEN]) -> [u8; COMBINED_LEN] {
+    let mut res: [u8; COMBINED_LEN] = [0u8; COMBINED_LEN];
+    for i in 0..OUTER_LEN {
+        for j in 0..INNER_LEN {
+            res[i * INNER_LEN + j] = input[i][j];
+        }
+    }
+    res
+}
+

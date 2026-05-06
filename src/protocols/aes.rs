@@ -22,27 +22,26 @@ pub fn main(_field: Field) {
 
 }
 
-#[hax_lib::exclude]
+#[hax_lib::requires(key.len() == nst * (R + 1))]
 pub fn encrypt(state: State, key: &[Word]) -> State {
     let mut res_state = state;
-    add_round_key(&mut res_state, key[0..nst].try_into().unwrap());        //TODO: vec -> array
+    add_round_key(&mut res_state, key[0..nst].try_into().unwrap());
 
     //4-8
     for r in 1..R {
         sub_bytes(&mut res_state);
         shift_rows(&mut res_state);
         mix_columns(&mut res_state);
-        add_round_key(&mut res_state, key[(nst * r)..(nst*(r+1))].try_into().unwrap());    //TODO: vec -> array
+        add_round_key(&mut res_state, key[(nst * r)..(nst*(r+1))].try_into().unwrap());
     }
 
     sub_bytes(&mut res_state);
     shift_rows(&mut res_state);
-    add_round_key(&mut res_state, key[nst*(R)..nst*(R+1)].try_into().unwrap()); //replace R where R = nk*11 as temp + TODO: vec -> array
+    add_round_key(&mut res_state, key[nst*(R)..nst*(R+1)].try_into().unwrap());
 
     res_state
 }
 
-#[hax_lib::exclude]
 pub fn key_expansion(key: [u8; 16]) -> [Word; nst * (R + 1)] {
     let rcon = setup_rcon_table(nk + 6);
     let mut result_key: [Word; 44] = [[0u8, 0u8, 0u8, 0u8]; 44];
@@ -73,7 +72,7 @@ pub fn key_expansion(key: [u8; 16]) -> [Word; nst * (R + 1)] {
     result_key
 }
 
-#[hax_lib::exclude]
+#[hax_lib::ensures(|result| result.len() == R)]
 pub fn setup_rcon_table(n: usize) -> [u8; R] {
     let mut rcon: [u8; R] = [0u8; R];
     let mut value: u8 = 0x01;
@@ -85,7 +84,12 @@ pub fn setup_rcon_table(n: usize) -> [u8; R] {
 
 }
 
-#[hax_lib::exclude]
+#[hax_lib::requires(prop::from(state.len() == nk)
+                    .and(hax_lib::forall(|i: usize| i >= state.len()
+                        || state[i].len() == nst)))]
+#[hax_lib::ensures(|state| prop::from(state.len() == nk)
+                    .and(hax_lib::forall(|i: usize| i >= state.len()
+                        || state[i].len() == nst)))]
 pub fn sub_bytes(state: &mut State) {
     for i in 0..nk {
         for j in 0..nst {
@@ -94,13 +98,16 @@ pub fn sub_bytes(state: &mut State) {
     }
 }
 
-#[hax_lib::exclude]
 #[hax_lib::ensures(|result| result <= u8::MAX)]
 fn s_box(b: u8) -> u8{
     gf2_affine_transform(galois_field::gf28_inverse(b))
 }
 
-#[hax_lib::exclude]
+
+#[hax_lib::requires(prop::from(keys.len() >= nk)
+                    .and(hax_lib::forall(|i: usize| i >= keys.len() || keys[i].len() >= nst)))]
+#[hax_lib::ensures(|state| prop::from(state.len() == nk)
+                    .and(hax_lib::forall(|i: usize| i >= state.len() || state[i].len() == nst)))]
 pub fn add_round_key(state: &mut State, keys: [Word; nst]) {
     for row in 0..4 {
         for c in 0..4 {
@@ -112,8 +119,8 @@ pub fn add_round_key(state: &mut State, keys: [Word; nst]) {
 // doesn't work for nst = 8
 #[hax_lib::requires(state.len() == nk
                     && state[0].len() == nst)]
-#[hax_lib::ensures(|state| state.len() == nk
-                    && state[0].len() == nst)]
+#[hax_lib::ensures(|state| prop::from(state.len() == nk)
+                    .and(hax_lib::forall(|i: usize| i >= state.len() || state[i].len() == nst)))]
 pub fn shift_rows(state: &mut State) {
     let temp_state = state.clone();
     for row in 1..4 {
@@ -192,6 +199,6 @@ pub fn gf2_affine_transform(w: u8) -> u8 {
 #[hax_lib::requires(n <= u8::MAX && modu <= u8::BITS as u8)]
 #[hax_lib::ensures(|result| result < u8::BITS as u8)]
 fn bitand_mod(n: u8, modu: u8) -> u8 {
-    hax_lib::assume!(n & modu < u8::BITS as u8);
+    hax_lib::assume!(n & modu < u8::BITS as u8);    //TODO: make lemma?
     n & modu
 }

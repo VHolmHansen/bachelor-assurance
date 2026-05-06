@@ -1,6 +1,5 @@
 pub mod finite_field;
 pub mod math;
-mod challenge;
 pub mod galois_field;
 pub mod types;
 pub mod constants;

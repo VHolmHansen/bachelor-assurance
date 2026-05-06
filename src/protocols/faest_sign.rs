@@ -4,8 +4,8 @@ use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
 use crate::utils::types::{ret_value};
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1, FAEST_VOLE_commit};
-use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau, tau_0, tau_1, tau_minus_one};
-use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
+use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, not_deterministic_test, tau, tau_0, tau_1, tau_minus_one};
+use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
 use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_1728_bits, vole_hash, vole_to_row_major};
 use crate::utils::libcrux_proxy::RandGenProxy;
 
@@ -14,7 +14,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
     let mut rho: [u8; 16] = [0u8; 16];
-    rng.fill_bytes(&mut rho);
+    if not_deterministic_test {rng.fill_bytes(&mut rho);}
 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho); // mention to bas, it is hard to check to their test vectors, because differences in random algorithm
     let _vec_start = std::time::Instant::now();
@@ -53,7 +53,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
         }
     }
 
-    let h_v : [u8;56] = h_1_for_non_specific_size(&h_v_val);
+    let h_v : [u8;56] = h_1_for_2304(&h_v_val);
 
     // u_bytes og v_bytes skal pakkes om til bits, siden det er sådan de bliver brugt senere
     let u_bits: &[u8;1728] = &u_to_1728_bits(&u_bytes);
@@ -68,6 +68,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let _extend_start = std::time::Instant::now();
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness : [u8;1600] = faest_aes_extend_witness(*sk, (pt_state, ct_state));
+    println!("Extended witness: {:?}", extended_witness);
     // println!("extend_witness took: {:?}", extend_start.elapsed());
 
 

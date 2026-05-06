@@ -1,7 +1,9 @@
 #![allow(non_upper_case_globals)]
-use crate::utils::constants::{k_0,k_1,k_0_pow,k_1_pow};
+
+
+use crate::utils::constants::{k_0, k_1, k_0_pow, k_1_pow};
 use crate::utils::ggm_tree::{get_cop, get_leaves_from_cop_and_b, get_leaves_node_from_root};
-use crate::utils::hash_functions::{h_0, h_1};
+use crate::utils::hash_functions::{h_0, h_1_k1,h_1_k0};
 use crate::utils::preliminary_helper_methods::{num_rec_k0, num_rec_k1};
 use crate::utils::types::{sized_array_for_cop, sized_array_for_coms, sized_array_for_sds, sized_option_array};
 
@@ -17,7 +19,7 @@ pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16],
         coms[i] = com;
     }
 
-    let h = h_1(&coms);
+    let h = h_1_k0(&coms);
 
     let coms_to_return = sized_array_for_coms::sized_array_1(coms);
     let sds_to_return = sized_array_for_sds::sized_array_1(sds);
@@ -36,7 +38,7 @@ pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16],
         coms[i] = com;
     }
 
-    let h = h_1(&coms);
+    let h = h_1_k1(&coms);
     let coms_to_return = sized_array_for_coms::sized_array_2(coms);
     let sds_to_return = sized_array_for_sds::sized_array_2(sds);
     let decom = (r, iv, coms_to_return);
@@ -111,7 +113,7 @@ pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0],
         }
     }
 
-    let h = h_1(&coms);
+    let h = h_1_k0(&coms);
 
     let seeds_to_return = sized_array_for_sds::sized_array_1(sds);
 
@@ -145,7 +147,7 @@ pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_1],
         }
     }
 
-    let h = h_1(&coms);
+    let h = h_1_k1(&coms);
 
     let seeds_to_return = sized_array_for_sds::sized_array_2(sds);
 

@@ -3,6 +3,7 @@ use crate::utils::types::Word;
 use crate::utils::types::{ret_value};
 use crate::utils::constants::{alpha};
 //TODO: vec -> array (see below function)
+/*
 pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
     x.chunks(4)
         .map(|chunk| {
@@ -14,13 +15,14 @@ pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
         })
         .collect()      //TODO: rewrite for hax compat
 }
+
+ */
 // M is N/4
-#[allow(dead_code)]
-fn array_words_to_blocks<const N: usize, const M: usize>(x: [Word; N]) -> [[u8; 16]; M]
+pub fn words_to_blocks<const LEN: usize>(x: [Word; 44]) -> [[u8; 16]; LEN]
     //where [(); N / 4]: Sized
 {
-    let mut a: [[u8; 16]; M] = [[0u8; 16]; M];
-    for i in 0..M {
+    let mut a: [[u8; 16]; LEN] = [[0u8; 16]; LEN];
+    for i in 0..LEN {
         let mut acc: usize = 0;
         for j in 0..4 {
             for k in 0..4 { // word len

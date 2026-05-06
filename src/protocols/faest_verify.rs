@@ -5,7 +5,7 @@ use crate::utils::types::sized_array_for_cop;
 use crate::protocols::faest_prove_and_verify::faest_aes_verify;
 use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
 use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell_bit_size};
-use crate::utils::hash_functions::{h_1_for_non_specific_size, h_1_for_sign, h_2_1, h_2_2, h_2_3};
+use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
 
 pub fn faest_verify(
@@ -104,7 +104,7 @@ pub fn faest_verify(
         }
     }
     // h_v value
-    let h_v : [u8;56] = h_1_for_non_specific_size(&q_e_flat);
+    let h_v : [u8;56] = h_1_for_2304(&q_e_flat);
 
     // chall 2
     let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());

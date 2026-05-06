@@ -3,7 +3,7 @@
 
 use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_sds};
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
-use crate::utils::hash_functions::{h_1_for_non_specific_size};
+use crate::utils::hash_functions::{h_1_for_616};
 use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::{num_rec_k0,num_rec_k1};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
@@ -100,7 +100,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
         }
     }
 
-    let hash = h_1_for_non_specific_size(&coms_flat);
+    let hash = h_1_for_616(&coms_flat);
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
@@ -137,7 +137,7 @@ pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
     let hi = (i + 1) * k_0 - 1;
 
     let mut bits = [0u8; k_0];
-    for (idx, b) in (lo..=hi).enumerate() {     //TODO: rewrite for hax compat
+    for (idx, b) in (lo..(hi + 1)).enumerate() {     //inclusive range
         let byte_index = b / 8;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
@@ -152,7 +152,7 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
     let hi = tau_0 * k_0 + (t + 1) * k_1 - 1;
 
     let mut bits = [0u8; k_1];
-    for (idx, b) in (lo..=hi).enumerate() {     //TODO: rewrite for hax compat
+    for (idx, b) in (lo..(hi + 1)).enumerate() {     //inclusive range
         let byte_index = b / 8;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
@@ -218,6 +218,6 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
             coms_flat[i * 56 + j] = commitments[i][j];
         }
     }
-    let hash = h_1_for_non_specific_size(&coms_flat);
+    let hash = h_1_for_616(&coms_flat);
     (hash, big_q)
 }

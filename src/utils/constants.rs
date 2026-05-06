@@ -43,3 +43,6 @@ pub const onethousandandtwentyfour : usize = 1024;
 pub const twothousandsandfortyeight : usize = 2048;
 
 pub const tau_minus_one : usize = tau-1;
+
+// when we want to do deterministic tests, keep this false
+pub const not_deterministic_test : bool = false;

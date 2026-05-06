@@ -1,13 +1,14 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 use crate::protocols::aes::{add_round_key, key_expansion, mix_columns, shift_rows, sub_bytes};
-use crate::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
+use crate::utils::helper_methods_cstrnts::{byte_to_bits};
 use crate::utils::types::{State};
 use crate::utils::constants::{lambda, S_ke, nk, R, ell_bit_size};
+use crate::utils::preliminary_helper_methods::flatten;
 
 pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit_size]{
     let (in_aes, _out_aes) = pk;
     let k_overline = key_expansion(k);
-    let bytes_from_k_overline : Vec<u8> = words_to_blocks(k_overline.clone()[0..nk].to_vec()).into_iter().flat_map(|arr| arr).collect();    //TODO: rewrite for hax compat + vec -> array
+    let bytes_from_k_overline: [u8; 16] = flatten::<nk, 4, 16>(k_overline[0..nk].try_into().unwrap());     //INNER_LEN = word len
     let mut witness : [u8;ell_bit_size] = [0;ell_bit_size];
     let mut index = 0;
     for b in bytes_from_k_overline{
@@ -17,8 +18,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
             index += 1;
         }
     }
-
-    let k_overline_for_loops : Vec<u8> = k_overline.clone().into_iter().flat_map(|word| word).collect();    //TODO: rewrite for hax compat + vec -> array
+    let k_overline_for_loops : [u8; (R+1) * 4 * 4] = flatten::<{(R+1)*4}, 4, {(R+1) * 4 * 4}>(k_overline);
 
     let mut ik = nk;
 

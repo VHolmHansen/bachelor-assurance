@@ -9,7 +9,7 @@ use crate::utils::types::{sized_array_for_cop, sized_array_for_coms, sized_array
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
-pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
     let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, d);
     let mut sds: [[u8; 16];k_0_pow] = [[0;16];k_0_pow];
     let mut coms: [[u8; 32];k_0_pow] = [[0;32];k_0_pow];
@@ -27,7 +27,7 @@ pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16],
 
     (h, decom, sds_to_return)
 }
-pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
     // println!("start of vec_commit_k1 - remaining stack: {:?}", stacker::remaining_stack());
     let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, d);
     let mut sds: [[u8; 16];k_1_pow] = [[0;16];k_1_pow];
@@ -42,8 +42,7 @@ pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], ([u8;16],
     let coms_to_return = sized_array_for_coms::sized_array_2(coms);
     let sds_to_return = sized_array_for_sds::sized_array_2(sds);
     let decom = (r, iv, coms_to_return);
-
-
+    
     (h, decom, sds_to_return)
 }
 
@@ -85,7 +84,7 @@ pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 11
 // we want to know using the pdecom, to reconstruct all the committed seeds, except the j* one
 // we should still be able to check if we have the right values, using the commitments, and the saved commitment for jstar
 // i have no idea if this works
-pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0], iv: [u8; 16]) -> ([u8; 56], sized_array_for_sds) {
+pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0], iv: [u8; 16]) -> ([u8; 32], sized_array_for_sds) {
     let cop = match pdecom.0 {
         sized_array_for_cop::sized_array_1(arr) => arr,
         _ => panic!("expected k0 array")
@@ -105,7 +104,7 @@ pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0],
     (h, seeds_to_return)
 }
 
-pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_1], iv: [u8; 16]) -> ([u8; 56], sized_array_for_sds) {
+pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_1], iv: [u8; 16]) -> ([u8; 32], sized_array_for_sds) {
     let cop = match pdecom.0 {
         sized_array_for_cop::sized_array_2(arr) => arr,
         _ => panic!("expected k1 array")

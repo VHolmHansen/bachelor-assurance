@@ -7,9 +7,10 @@ mod tests{
     // tests that the helper methods work
     #[test]
     fn test_to_bits_to_field_inverse() {
-        let bits = vec![1,0,1,1,0,0,0,0, 0,1,0,0,0,0,0,0];
-        let field_elems = to_field(&bits, 8);
-        let bits_back = to_bits(&field_elems, 8);
+        let bits: [u8; 16] = [1,0,1,1,0,0,0,0, 0,1,0,0,0,0,0,0];
+        let field_elems: [[u8; 16]; 2] = to_field::<16, 8, 2>(&bits);
+        let mut bits_back = [0u8; 16];
+        to_bits::<2, 8, 16>(&field_elems, &mut bits_back);
         assert_eq!(bits, bits_back);
     }
 
@@ -26,7 +27,7 @@ mod tests{
             0,1,1,1,0,0,1,0,1,1,0,1,0,0,1,1,
             1,0,1,0,0,1,1,1,0,1,0,0,1,1,0,0,
             1,1,0,1,0,0,1,1,1,0,0,1,0,1,1,0];
-        let delta_field = to_field(&chall_3, lambda)[0];
+        let delta_field = to_field::<128,128,1>(&chall_3)[0];
         let zero = [0u8;16];
 
         let chall_2: [u8; 3 * lambda + 64] = {

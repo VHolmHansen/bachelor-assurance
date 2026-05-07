@@ -116,7 +116,7 @@ pub fn shift_rows(state: &mut State) {
 #[hax_lib::ensures(|state| state.len() == nk
                     && state[0].len() == nst)]
 pub fn mix_columns(state: &mut State) {
-    let a: Matrix<u8, nst, nk> =
+    let a: ArrayMatrix<u8, nst, nk> =
         [[2, 3, 1, 1],
         [1, 2, 3, 1],
         [1, 1, 2, 3],

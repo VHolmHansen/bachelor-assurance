@@ -18,41 +18,6 @@ pub fn num_rec_k1(b: &[u8; k_1]) -> u64 {
     j_star
 }
 
-// i think when there is a line over it, it should be the complement
-//TODO: vec -> array
-pub fn get_complement_of_b(b: Vec<bool>, d: u64) -> u64{
-    if b[d as usize] {
-        return 0
-    }
-    1
-}
-
-/*
-fn array_get_complement_of_b<const dummy_n: usize>(b: [bool; dummy_n]>, d: u64) -> u64{
-    if b[d as usize] {
-        return 0
-    }
-    1
-}
- */
-
-// this just extract the bit
-//TODO: vec -> array
-pub fn get_b(b: Vec<bool>, d: u64) -> u64{
-    if b[d as usize] {
-        return 1;
-    }
-    0
-}
-
-/*
-fn array_get_b<const dummy_n: usize>(b: [bool; dummy_n], d: u64) -> u64{
-    if b[d as usize] {
-        return 1;
-    }
-    0
-}
- */
 
 
 pub fn flatten<const OUTER_LEN: usize, const INNER_LEN: usize, const COMBINED_LEN: usize>(input: [[u8; INNER_LEN]; OUTER_LEN]) -> [u8; COMBINED_LEN] {

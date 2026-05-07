@@ -12,14 +12,14 @@ pub fn faest_aes_prove(
     u : &[u8; 1728],
     V : &[[u8; 128]; 1728],
     pk : ([u8;lambda], [u8;lambda]),
-    chall : [u8;3*lambda+64]) -> ([u8;16],[u8;16]
+    chall : [u8;56]) -> ([u8;16],[u8;16]
 )
 {
 
     // nyt v, lidt rodet, basically V|_i betyder kolonne i, og vi skal tage og sige to_field for kolonne i
     let mut v: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
     for i in 0..ell_bit_size+lambda {
-        v[i] = to_field(&V[i], lambda)[0]
+        v[i] = to_field::<128,128,1>(&V[i])[0] // k=lambda
     }
 
     let in_of_in_and_out : [u8;128] = pk.0;
@@ -54,7 +54,7 @@ pub fn faest_aes_prove(
 
     let mut new_u : [[u8;16];lambda] = [[0;16];lambda];
     for i in 0..lambda {
-        new_u[i] = to_field(&[u[ell_bit_size+i]], 1)[0];
+        new_u[i] = to_field::<1,1,1>(&[u[ell_bit_size+i]])[0]; // k = 1
     }
     
 
@@ -76,17 +76,24 @@ pub fn faest_aes_prove(
         v_star = xor_arrays(&v_star, &term);
     }
 
-
+    
     let alpha_tilde : [u8;16] = zk_hash(&chall, &a_1, &u_star);
     let beta_tilde : [u8;16] = zk_hash(&chall, &a_0, &v_star);
-    
+
+    println!("u_star: {:x?}", u_star);
+    println!("v_star: {:x?}", v_star);
+    println!("a_0 first element: {:x?}", a_0[0]);
+    println!("a_1 first element: {:x?}", a_1[0]);
+    println!("a_tilde (alpha_tilde): {:x?}", alpha_tilde);
+    println!("b_tilde (beta_tilde): {:x?}", beta_tilde);
+    println!("chall first 16: {:x?}", &chall[..16]);
 
     (alpha_tilde, beta_tilde)
 }
 
-pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+lambda], chall_2 : [u8; 3*lambda+64], chall_3 : [u8;lambda], a_tilde : [u8;16],pk : ([u8;lambda], [u8;lambda])) -> [u8;16]
+pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+lambda], chall_2 : [u8; 56], chall_3 : [u8;lambda], a_tilde : [u8;16],pk : ([u8;lambda], [u8;lambda])) -> [u8;16]
 {
-    let delta : [u8;16] = to_field(&chall_3, lambda)[0];
+    let delta : [u8;16] = to_field::<128,128,1>(&chall_3)[0]; // k = lambda
     let in_of_in_and_out : [u8;128] = pk.0;
     let out_of_in_and_out : [u8;128] = pk.1;
 
@@ -108,7 +115,7 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     // After correction - row 0 should now equal v[0] from sign since d[0]=w[0] XOR u[0]
     let mut q: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
     for i in 0..ell_bit_size+lambda {
-        q[i] = to_field(&Q_mut[i], lambda)[0]
+        q[i] = to_field::<128,128,1>(&Q_mut[i])[0] // k = lambda
     }
 
     // til 13
@@ -149,7 +156,7 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     let q_tilde_minus_a_tilde_times_delta : [u8;16] = xor_arrays(&q_tilde, &a_tilde_times_delta);
 
 
- 
+
 
 
     q_tilde_minus_a_tilde_times_delta
@@ -167,4 +174,14 @@ fn concat_arrays(b1: [[u8; 16]; S_ke], b2: [[u8; 16]; 200 - S_ke]) -> [[u8; 16];
         idx += 1;
     }
     result
+}
+
+pub fn bits_to_bytes_56(bits: &[u8; 448]) -> [u8; 56] {
+    let mut bytes = [0u8; 56];
+    for i in 0..56 {
+        for bit in 0..8 {
+            bytes[i] |= bits[i * 8 + bit] << bit;
+        }
+    }
+    bytes
 }

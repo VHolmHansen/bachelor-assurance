@@ -125,7 +125,7 @@ pub trait ret_value {
     fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
     fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
     fn set_element(&mut self, index : usize, value : &Self::Elem);
-    fn new_with_size(size: usize, value: Self::Elem) -> Self;
+    fn new_with_size(value: Self::Elem) -> Self;
     fn len(&self) -> usize;
     fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
     fn turn_array_to_T(x : &[Self::Elem]) -> Self;
@@ -159,7 +159,7 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     fn set_element(&mut self, index : usize, value : &Self::Elem) {
         self[index] = *value;
     }
-    fn new_with_size(_size: usize, value: Self::Elem) -> Self {
+    fn new_with_size(value: Self::Elem) -> Self {
         [value; N]
     }
     fn len(&self) -> usize{
@@ -201,7 +201,7 @@ impl<const N: usize> ret_value for [u8; N] {
     fn set_element(&mut self, index : usize, value : &Self::Elem) {
         self[index] = *value;
     }
-    fn new_with_size(_size: usize, value: Self::Elem) -> Self {
+    fn new_with_size(value: Self::Elem) -> Self {
         [value; N]
     }
     fn len(&self) -> usize{

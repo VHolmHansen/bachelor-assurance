@@ -4,6 +4,8 @@ mod tests {
     use bachelor_assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
     use bachelor_assurance::protocols::faest_key_exp_cstrnts::{faest_aes_key_exp_bkwd, faest_aes_key_exp_fwd};
     use bachelor_assurance::utils::galois_field::{gf28_multiply};
+    use bachelor_assurance::protocols::fs_vole::{FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
+    use bachelor_assurance::utils::galois_field::{gf128_mul, gf28_inverse, gf28_multiply};
     use bachelor_assurance::utils::helper_methods_cstrnts::bits_to_byte;
     use bachelor_assurance::utils::math::{transform_byte_array_to_state};
     use bachelor_assurance::utils::constants::{nk, ell, k_0, k_1, lambda, tau, tau_0, S_ke};

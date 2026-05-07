@@ -82,56 +82,69 @@ pub fn bits_to_state(text: &[u8; 128]) -> State {
 }
 
 // vole hash function: den bruger som udgangspunkt tobits og tofield, men i specificationen forklarer de at man godt kan skip det, på baggrund af ens repræsentation af binary fields
-pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8;18] {
-    // sd is 5*lambda + 64 bits = 5*16 + 8 = 88 bytes
-    // parse sd into r0,r1,r2,r3 (lambda bits each) and s (lambda bits) and t (64 bits)
-    let r0: [u8;16] = sd[0..16].try_into().unwrap();
-    let r1: [u8;16] = sd[16..32].try_into().unwrap();
-    let r2: [u8;16] = sd[32..48].try_into().unwrap();
-    let r3: [u8;16] = sd[48..64].try_into().unwrap();
-    let s:  [u8;16] = sd[64..80].try_into().unwrap();
-    let t:  [u8; 8] = sd[80..88].try_into().unwrap();
+pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8; 18] {
+    // parse sd into r0,r1,r2,r3,s (16 bytes each) and t (8 bytes)
+    let r0: [u8; 16] = sd[0..16].try_into().unwrap();
+    let r1: [u8; 16] = sd[16..32].try_into().unwrap();
+    let r2: [u8; 16] = sd[32..48].try_into().unwrap();
+    let r3: [u8; 16] = sd[48..64].try_into().unwrap();
+    let s:  [u8; 16] = sd[64..80].try_into().unwrap();
+    let t:  [u8;  8] = sd[80..88].try_into().unwrap();
 
-    // pad x0 to multiple of lambda bits
-    let l_prime = lambda * ((x0.len() + lambda - 1) / lambda);
-    let mut x0_padded = [0u8; 216];  // all 216 bytes are 0
-    x0_padded[..x0.len()].copy_from_slice(x0);
 
-    // compute h0 as polynomial hash in F2^lambda
-    // parse x0_padded as lambda-bit field elements
-    let num_chunks_lambda = l_prime / lambda;
+    let lambda_bytes = 16usize; // 128 bits / 8
+    let chunk_64 = 8usize;      // 64 bits / 8
+
+    // number of lambda-sized chunks (ceiling division)
+    let num_chunks_lambda = (x0.len() + lambda_bytes - 1) / lambda_bytes; // 14
+
+    // number of 64-bit chunks (ceiling division)
+    let num_chunks_64 = (x0.len() + chunk_64 - 1) / chunk_64; // 27
+
+    // pad x0 to multiple of lambda_bytes
+    let mut x0_padded_lambda = vec![0u8; num_chunks_lambda * lambda_bytes]; // 224 bytes
+    x0_padded_lambda[..x0.len()].copy_from_slice(x0);
+
+    // pad x0 to multiple of 8 bytes
+    let mut x0_padded_64 = vec![0u8; num_chunks_64 * chunk_64]; // 216 bytes
+    x0_padded_64[..x0.len()].copy_from_slice(x0);
+
+    // h0: polynomial hash over F_{2^128} using Horner's method
     let mut h0 = [0u8; 16];
     for i in 0..num_chunks_lambda {
-        let chunk: [u8;16] = x0_padded[i*16..(i+1)*16].try_into().unwrap();
-        // h0 = h0 * s + chunk
+        let chunk: [u8; 16] = x0_padded_lambda[i * 16..(i + 1) * 16].try_into().unwrap();
         h0 = xor_arrays(&gf128_mul(&h0, &s), &chunk);
     }
 
-    // compute h1 as polynomial hash in F2^64
-    let num_chunks_64 = l_prime / 64;
+
+    // h1: polynomial hash over F_{2^64} using Horner's method
     let mut h1 = [0u8; 8];
-    for i in 0..num_chunks_64 {
-        let chunk: [u8;8] = x0_padded[i*8..(i+1)*8].try_into().unwrap();
-        // h1 = h1 * t + chunk  (in F2^64)
+    let total_64_chunks = num_chunks_lambda * lambda_bytes / 8; // 28
+    for i in 0..total_64_chunks {
+        let chunk: [u8; 8] = x0_padded_lambda[i * 8..(i + 1) * 8].try_into().unwrap();
         h1 = gf64_add(&gf64_mul(&h1, &t), &chunk);
     }
 
-    // pad h1 to lambda bits
+
+    // zero-pad h1 to lambda bytes
     let mut h1_prime = [0u8; 16];
     h1_prime[0..8].copy_from_slice(&h1);
 
+    // matrix multiply:
     // h2 = r0*h0 + r1*h1'
     // h3 = r2*h0 + r3*h1'
     let h2 = xor_arrays(&gf128_mul(&r0, &h0), &gf128_mul(&r1, &h1_prime));
     let h3 = xor_arrays(&gf128_mul(&r2, &h0), &gf128_mul(&r3, &h1_prime));
 
-    // take first lambda + B bits of (h2 | h3) and XOR with x1
-    let mut h = [0u8; (lambda + big_b) / 8]; // (128 + 16) / 8 = 18 bytes
+
+    // take first lambda+B = 128+16 = 144 bits = 18 bytes
+    // = all 16 bytes of h2 + first 2 bytes of h3
+    let mut h = [0u8; 18];
     h[0..16].copy_from_slice(&h2);
-    h[16..18].copy_from_slice(&h3[0..2]); // first B=16 bits of h3
+    h[16..18].copy_from_slice(&h3[0..2]);
 
     // XOR with x1
-    for i in 0..h.len() {
+    for i in 0..18 {
         h[i] ^= x1[i];
     }
 

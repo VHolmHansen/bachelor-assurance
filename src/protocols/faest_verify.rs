@@ -5,7 +5,7 @@ use crate::utils::types::sized_array_for_cop;
 use crate::protocols::faest_prove_and_verify::faest_aes_verify;
 use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
 use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell_bit_size};
-use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
+use crate::utils::hash_functions::{bits_to_bytes_for_d, h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
 
 pub fn faest_verify(
@@ -24,7 +24,7 @@ pub fn faest_verify(
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
     let _rec_start = std::time::Instant::now();
-    let (h_com, q_mark) : ([u8; 56], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
+    let (h_com, q_mark) : ([u8; 32], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
     // println!("reconstruct took: {:?}", rec_start.elapsed());
 
     let chall_1 : [u8;88] = h_2_1(my, h_com, c_bytes, *iv);
@@ -104,10 +104,12 @@ pub fn faest_verify(
         }
     }
     // h_v value
-    let h_v : [u8;56] = h_1_for_2304(&q_e_flat);
+    let h_v : [u8;32] = h_1_for_2304(&q_e_flat);
+
+    let d_bytes : [u8;200] = bits_to_bytes_for_d(d);
 
     // chall 2
-    let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
+    let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d_bytes);
 
     // et lille fix til hvordan q den hænger sammen, samme check som til prove
     let q_rows : [[u8; 128]; 1728] = vole_to_row_major(q_corrected);
@@ -119,7 +121,7 @@ pub fn faest_verify(
     let b_tilde : [u8;16] = faest_aes_verify(
         d.clone().try_into().unwrap(),
         q_arr,
-        expand_bits_56(chall_2),
+        chall_2,
         chall3_to_bits(&chall_3),
         *a_tilde,
         (pk.0.try_into().unwrap(), pk.1.try_into().unwrap())

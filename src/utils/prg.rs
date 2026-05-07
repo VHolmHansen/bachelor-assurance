@@ -34,16 +34,13 @@ pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
 }
 
 pub fn prg_convert_to_vole(sd: [u8;16], iv: [u8; 16]) -> [u8; ell]{
-    let mut input : [u8; 32] = [0u8; 32];
-    input[..16].copy_from_slice(&sd);
-    input[16..].copy_from_slice(&iv);
-    DigestProxy::shake128::<ell>(&mut input)
+    let mut output = [0u8; ell];
+    prg(sd, iv, &mut output);
+    output
 }
 
 pub fn prg_vole_commit_r(r: [u8;16], iv: [u8;16]) -> [u8; (tau*lambda)/8] {
-    let mut input : [u8; 32] = [0u8; 32];
-    input[..16].copy_from_slice(&r);
-    input[16..].copy_from_slice(&iv);
-    const SIZE : usize = (tau*lambda)/8;
-    DigestProxy::shake128::<SIZE>(&mut input)
+    let mut output  = [0u8; (tau * lambda) / 8];
+    prg(r, iv, &mut output);
+    output
 }

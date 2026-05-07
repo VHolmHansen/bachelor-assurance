@@ -3,7 +3,7 @@
 
 use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_sds};
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
-use crate::utils::hash_functions::{h_1_for_616};
+use crate::utils::hash_functions::{h_1_for_352};
 use crate::utils::math::xor_arrays;
 use crate::utils::preliminary_helper_methods::{num_rec_k0,num_rec_k1};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
@@ -53,7 +53,7 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
 }
 
 
-pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau]) {
+pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau]) {
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's
     let arr_of_rs: [[u8; 16]; 11] = std::array::from_fn(|i| {
@@ -63,18 +63,24 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     let mut big_v:  [sized_array_for_q_v;tau] = [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];
     let mut big_u: [[u8;234];tau] = [[0;234];tau];
     let mut all_decoms : [([u8;16], [u8;16], sized_array_for_coms);tau] = [([0;16], [0;16], sized_array_for_coms::sized_array_1([[0u8;32];k_0_pow]));tau];
-    let mut commitments : [[u8; 56];tau] = [[0;56];tau];
+    let mut commitments : [[u8; 32];tau] = [[0;32];tau];
     // iterate over r's
     // this loop should be made able to be threaded
     for i in 0..tau{
         let _loop_start = std::time::Instant::now();
         let (h, decoms, u, v) = if i < tau_0 {
+            println!("hello");
             let (h, decoms, seeds) = vec_commit_k0(arr_of_rs[i], iv, k_0 as i128);
+            println!("hello1");
             let (u,v) = convert_to_VOLE::<k_0>(&seeds, iv);
+            println!("hell2");
             (h, decoms, u, sized_array_for_q_v::sized_array_1(v))
         } else {
+            println!("hello");
             let (h, decoms, seeds) = vec_commit_k1(arr_of_rs[i], iv, k_1 as i128);
+            println!("hello1");
             let (u,v) = convert_to_VOLE::<k_1>(&seeds, iv);
+            println!("hell2");
             (h, decoms, u, sized_array_for_q_v::sized_array_2(v))
         };
 
@@ -93,14 +99,17 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
         }
     }
 
-    let mut coms_flat = [0u8; 56 * tau];
+    let mut coms_flat = [0u8; 32 * tau];
     for i in 0..tau {
-        for j in 0..56 {
-            coms_flat[i * 56 + j] = commitments[i][j];
+        for j in 0..32 {
+            coms_flat[i * 32 + j] = commitments[i][j];
         }
     }
 
-    let hash = h_1_for_616(&coms_flat);
+    let hash = h_1_for_352(&coms_flat);
+
+    
+
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
@@ -136,8 +145,8 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
     bits
 }
 
-pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;56], [sized_array_for_q_v;tau]){
-    let mut commitments : [[u8; 56];tau] = [[0;56];tau];
+pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;32], [sized_array_for_q_v;tau]){
+    let mut commitments : [[u8; 32];tau] = [[0;32];tau];
     let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];
 
     for i in 0..tau{
@@ -188,12 +197,12 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
 
         // println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
     }
-    let mut coms_flat = [0u8; 56 * tau];
+    let mut coms_flat = [0u8; 32 * tau];
     for i in 0..tau {
-        for j in 0..56 {
-            coms_flat[i * 56 + j] = commitments[i][j];
+        for j in 0..32 {
+            coms_flat[i * 32 + j] = commitments[i][j];
         }
     }
-    let hash = h_1_for_616(&coms_flat);
+    let hash = h_1_for_352(&coms_flat);
     (hash, big_q)
 }

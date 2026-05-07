@@ -42,57 +42,28 @@ pub fn to_bits<const N: usize, const K: usize, const NK: usize>(
 
 // funktion brugt af prove og verify
 pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {
-    let lambda = 128;
+    // sd = r0 || r1 || s || t = 16 + 16 + 16 + 8 = 56 bytes
+    let r0: [u8; 16] = sd[0..16].try_into().unwrap();
+    let r1: [u8; 16] = sd[16..32].try_into().unwrap();
+    let s:  [u8; 16] = sd[32..48].try_into().unwrap();
+    let t:  [u8;  8] = sd[48..56].try_into().unwrap();
 
-    // Step 2: Parse sd into r0, r1, s (lambda bits each) and t (64 bits)
-    // sd is given as bits, each u8 is 0 or 1
-    let r0_bits: &[u8; 128] = sd[0..128].try_into().unwrap();
-    let r1_bits: &[u8; 128] = sd[128..256].try_into().unwrap();
-    let s_bits:  &[u8; 128] = sd[256..384].try_into().unwrap();
-    let t_bits:  &[u8; 64]  = sd[384..448].try_into().unwrap();
-
-    // Convert to field elements
-    let r0 = to_field::<128,128,1>(r0_bits)[0];
-    let r1 = to_field::<128,128,1>(r1_bits)[0];
-    let s  = to_field::<128,128,1>(s_bits)[0];
-
-    // t is 64 bits zero-padded to lambda
-    let mut t_padded = [0u8; 128];
-    t_padded[..64].copy_from_slice(t_bits);
-    let t: [u8; 16] = to_field::<128, 128, 1>(&t_padded)[0];
-
-    let l = x0.len();
-
-    // Step 6: h0 = sum_{i=0}^{l-1} s^{l-1-i} * x0[i]  in F_{2^lambda}
+    // init
     let mut h0 = [0u8; 16];
-    let mut s_pow = field_pow(&s, l - 1); // s^{l-1}
-    for i in 0..l {
-        let term = gf128_mul(&s_pow, &x0[i]);
-        h0 = xor_arrays(&h0, &term);
-        if i < l - 1 {
-            // divide by s (multiply by s^{-1}) to get next power
-            // equivalently recompute: s_pow = s^{l-2-i}
-            s_pow = field_pow(&s, l - 2 - i);
-        }
-    }
-
-    // Step 7: h1 = sum_{i=0}^{l-1} t^{l-1-i} * x0[i]  in F_{2^lambda}
     let mut h1 = [0u8; 16];
-    let mut t_pow = field_pow(&t, l - 1);
-    for i in 0..l {
-        let term = gf128_mul(&t_pow, &x0[i]);
-        h1 = xor_arrays(&h1, &term);
-        if i < l - 1 {
-            t_pow = field_pow(&t, l - 2 - i);
-        }
+
+    // update for each constraint value (incremental Horner)
+    for v in x0 {
+        // h0 = h0 * s + v  (in F_{2^128})
+        h0 = xor_arrays(&gf128_mul(&h0, &s), v);
+        // h1 = h1 * t + v  (bf128_mul_64: 128-bit * 64-bit)
+        h1 = xor_arrays(&gf128_mul_64(&h1, &t), v);
     }
 
-    // Step 8: h = ToBits(r0*h0 + r1*h1 + x1)
-    let r0_h0 = gf128_mul(&r0, &h0);
-    let r1_h1 = gf128_mul(&r1, &h1);
-    let sum   = xor_arrays(&xor_arrays(&r0_h0, &r1_h1), x1);
-
-    sum
+    // finalize: h = r0*h0 + r1*h1 + x1
+    let term0 = gf128_mul(&r0, &h0);
+    let term1 = gf128_mul(&r1, &h1);
+    xor_arrays(&xor_arrays(&term0, &term1), x1)
 }
 
 // Helper: compute base^exp in GF(2^128)
@@ -114,4 +85,10 @@ fn field_pow(base: &[u8; 16], exp: usize) -> [u8; 16] {
         e >>= 1;
     }
     result
+}
+pub fn gf128_mul_64(a: &[u8; 16], b: &[u8; 8]) -> [u8; 16] {
+    // zero-pad b to 16 bytes and use regular gf128_mul
+    let mut b_padded = [0u8; 16];
+    b_padded[..8].copy_from_slice(b);
+    gf128_mul(a, &b_padded)
 }

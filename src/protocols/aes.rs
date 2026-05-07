@@ -22,7 +22,7 @@ pub fn main(_field: Field) {
 
 }
 
-#[hax_lib::requires(key.len() == nst * (R + 1))]
+#[hax_lib::requires(key.len() == nst * (R + 1))]        //TODO: bit optimization (not sure if works in hax?)
 pub fn encrypt(state: State, key: &[Word]) -> State {
     let mut res_state = state;
     add_round_key(&mut res_state, key[0..nst].try_into().unwrap());
@@ -32,27 +32,27 @@ pub fn encrypt(state: State, key: &[Word]) -> State {
         sub_bytes(&mut res_state);
         shift_rows(&mut res_state);
         mix_columns(&mut res_state);
-        add_round_key(&mut res_state, key[(nst * r)..(nst*(r+1))].try_into().unwrap());
+        add_round_key(&mut res_state, key[(r << 2)..((r+1) << 2)].try_into().unwrap());     //nst * r = r << 2 & nst*(r+1) = (r+1) << 2
     }
 
     sub_bytes(&mut res_state);
     shift_rows(&mut res_state);
-    add_round_key(&mut res_state, key[nst*(R)..nst*(R+1)].try_into().unwrap());
+    add_round_key(&mut res_state, key[(R << 2)..(R+1) << 2].try_into().unwrap());     //nst * R = R << 2 & nst * (R+1) = (R+1) << 2
 
     res_state
 }
 
-pub fn key_expansion(key: [u8; 16]) -> [Word; nst * (R + 1)] {
+pub fn key_expansion(key: [u8; 16]) -> [Word; (R + 1) << 2] {      // nst * (R+1) = (R+1) << 2
     let rcon = setup_rcon_table(nk + 6);
     let mut result_key: [Word; 44] = [[0u8, 0u8, 0u8, 0u8]; 44];
 
     for i in 0..4 {
         for j in 0..4 {
-            result_key[i][j] = key[(i*4)+j];
+            result_key[i][j] = key[(i << 2)+j];        // i * 4 = i << 2
         }
     }
 
-    for i in nk..(nst * (R + 1)) {
+    for i in nk..(nst * (R + 1)) {      // nst * (R+1) = (R+1) z
         let mut temp = result_key[i-1];
         if i.rem_euclid(nk) == 0 {
             let mut rotated = sub_word(rot_word(temp));

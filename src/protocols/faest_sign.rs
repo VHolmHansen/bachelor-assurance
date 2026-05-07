@@ -1,3 +1,4 @@
+use crate::utils::hash_functions::bits_to_bytes_for_d;
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop, sized_array_for_q_v, State};
 use crate::utils::vector_commit::{vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
@@ -13,13 +14,12 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let mut rng = RandGenProxy::get_rand_gen_sha256();
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
-    let mut rho: [u8; 16] = [0u8; 16];
+    let mut rho: [u8; 16] = [0x42; 16];
     if not_deterministic_test {rng.fill_bytes(&mut rho);}
 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho); // mention to bas, it is hard to check to their test vectors, because differences in random algorithm
     let _vec_start = std::time::Instant::now();
-    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 56], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
-    // println!("vec_commit took: {:?}", vec_start.elapsed());
+    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
     let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
 
 
@@ -27,6 +27,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let u_x_0 : &[u8] = &u_bytes[0..216];
     let u_x_1 : &[u8]= &u_bytes[216..234];
     let u_tilde: [u8;18] = vole_hash(&chall_1, u_x_0, u_x_1);
+
 
     // få v_tilde
     let mut v_tilde : [[u8; 18];tau_0*k_0+tau_1*k_1] = [[0u8; 18]; tau_0*k_0+tau_1*k_1];       // len : ( tau_0 * k_0 + tau_1*k_1 )
@@ -53,7 +54,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
         }
     }
 
-    let h_v : [u8;56] = h_1_for_2304(&h_v_val);
+    let h_v : [u8;32] = h_1_for_2304(&h_v_val);
 
     // u_bytes og v_bytes skal pakkes om til bits, siden det er sådan de bliver brugt senere
     let u_bits: &[u8;1728] = &u_to_1728_bits(&u_bytes);
@@ -68,7 +69,6 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let _extend_start = std::time::Instant::now();
     // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness : [u8;1600] = faest_aes_extend_witness(*sk, (pt_state, ct_state));
-    println!("Extended witness: {:?}", extended_witness);
     // println!("extend_witness took: {:?}", extend_start.elapsed());
 
 
@@ -77,12 +77,15 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
         d[i] = extended_witness[i] ^ u_bits[i];
     }
 
-    let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d.clone());
+
+    let d_bytes = bits_to_bytes_for_d(&d);
+
+    let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d_bytes);
 
     let _prove_start = std::time::Instant::now();
-    let (a_tilde , b_tilde) : ([u8;16],[u8;16]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), expand_bits_56(chall_2));
+    let (a_tilde , b_tilde) : ([u8;16],[u8;16]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), chall_2);
     // println!("prove took: {:?}", prove_start.elapsed());
-
+    println!("b_tilde: {:x?}", b_tilde);
     let chall_3 : [u8;16] = h_2_3(chall_2, a_tilde, b_tilde);
 
     let _open_start = std::time::Instant::now();

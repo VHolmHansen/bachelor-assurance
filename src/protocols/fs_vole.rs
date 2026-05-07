@@ -92,7 +92,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8
             big_c[i-1] = xor_arrays(&u_0, &big_u[i]);
         }
     }
-    let coms_flat: [u8; tau * 56] = flatten::<tau, 56, {tau * 56}>(commitments);
+    let coms_flat: [u8; tau * 32] = flatten::<tau, 32, {tau * 32}>(commitments);
 
     let hash = h_1_for_352(&coms_flat);
 
@@ -183,7 +183,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
         // println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
     }
 
-    let coms_flat: [u8; tau * 56] = flatten::<tau, 56, {tau * 56}>(commitments);
+    let coms_flat: [u8; tau * 32] = flatten::<tau, 32, {tau * 32}>(commitments);
     let hash = h_1_for_352(&coms_flat);
     (hash, big_q)
 }

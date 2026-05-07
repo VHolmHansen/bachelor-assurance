@@ -104,32 +104,8 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
-//TODO: deprecated function?
-pub fn chall_dec(chall : [u8;16], i : usize) -> Vec<u8>{
-    if i > tau {
-        panic!("i is not in right index");
-    }
-    let lo : usize;
-    let hi : usize;
-    if i < tau_0 {
-        lo = i * k_0;
-        hi = (i+1)*k_0-1;
-    } else {
-        let t = i- tau_0;
-        lo = tau_0 * k_0 + t* k_1;
-        hi = tau_0 * k_0 + (t+1) * k_1 - 1;
-    }
-    let mut bits = Vec::with_capacity(hi - lo + 1);
 
-    for b in lo..=hi {
-        let byte_index = b / 8;
-        let bit_index = b % 8;
 
-        let bit = (chall[byte_index] >> bit_index) & 1;
-        bits.push(bit);
-    }
-    bits
-}
 
 pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
     assert!(i < tau_0, "i must be < tau_0 for k_0 variant");

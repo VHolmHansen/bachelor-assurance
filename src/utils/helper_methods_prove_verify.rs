@@ -4,16 +4,14 @@ use crate::utils::math::xor_arrays;
 
 // x er her en liste af u8, men det skal være bits
 // k er størrelsen på det field F_{2^k} vi gerne vil have det til
-//TODO: vec -> array
-pub fn to_field(x: &[u8], k: usize) -> Vec<[u8; 16]> {
-    assert!(x.len() % k == 0, "input length must be multiple of k");
-    let n = x.len() / k;
-    let mut result = vec![[0u8; 16]; n];
+pub fn to_field<const x_len : usize, const K: usize, const N: usize>(x: &[u8;x_len]) -> [[u8; 16]; N] { // N should always be equal to X_len / K
+    assert!(x.len() % K == 0, "input length must be multiple of k");
 
-    for i in 0..n {
+    let mut result = [[0u8; 16]; N];
+    for i in 0..N {
         let mut field_elem = [0u8; 16];
-        for j in 0..k {
-            let bit = x[i * k + j];
+        for j in 0..K {
+            let bit = x[i * K + j];
             if bit == 1 {
                 // Set the j-th bit in the field element (little-endian)
                 let byte_idx = j / 8;
@@ -25,63 +23,22 @@ pub fn to_field(x: &[u8], k: usize) -> Vec<[u8; 16]> {
     }
     result
 }
-
-/*
-fn array_to_field<const dummy_n: usize>(x: &[u8], k: usize) -> [[u8; 16]; dummy_n]> {
-    assert!(x.len() % k == 0, "input length must be multiple of k");
-    let n = x.len() / k;        //TODO: rewrite to use that dummy_n = n
-    let mut result = [[0u8; 16]; n];
-
-    for i in 0..n {
-        let mut field_elem = [0u8; 16];
-        for j in 0..k {
-            let bit = x[i * k + j];
-            if bit == 1 {
-                // Set the j-th bit in the field element (little-endian)
-                let byte_idx = j / 8;
-                let bit_idx = j % 8;
-                field_elem[byte_idx] |= 1 << bit_idx;
-            }
-        }
-        result[i] = field_elem;
-    }
-    result
-}
- */
 
 // burde være omvendt af den ovenstående funktion
-//TODO: vec -> array
-pub fn to_bits(x: &[[u8; 16]], k: usize) -> Vec<u8> {
-    let mut result = Vec::new();
-
+pub fn to_bits<const N: usize, const K: usize, const NK: usize>(
+    x: &[[u8; 16]; N],
+    result: &mut [u8; NK],
+) {
+    debug_assert_eq!(N * K, NK);
+    let mut idx = 0;
     for field_elem in x {
-        for j in 0..k {
-            let byte_idx = j / 8; //TODO: j >> 3 ?
-            let bit_idx = j % 8;
-            let bit = (field_elem[byte_idx] >> bit_idx) & 1;
-            result.push(bit);
+        for j in 0..K {
+            result[idx] = (field_elem[j >> 3] >> (j & 7)) & 1;
+            idx += 1;
         }
     }
-
-    result
 }
 
-/*
-fn array_to_bits<const size: usize>(x: &[[u8; 16]], size: usize) -> [u8; size] {
-    let mut result = [0u8; size];       // TODO: beware initial zeroes
-
-    for field_elem in x {
-        for j in 0..size {
-            let byte_idx = j / 8;
-            let bit_idx = j % 8;
-            let bit = (field_elem[byte_idx] >> bit_idx) & 1;
-            result[j] = bit;
-        }
-    }
-
-    result
-}
- */
 
 // funktion brugt af prove og verify
 pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {
@@ -89,20 +46,20 @@ pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {
 
     // Step 2: Parse sd into r0, r1, s (lambda bits each) and t (64 bits)
     // sd is given as bits, each u8 is 0 or 1
-    let r0_bits = &sd[0..lambda];
-    let r1_bits = &sd[lambda..2*lambda];
-    let s_bits  = &sd[2*lambda..3*lambda];
-    let t_bits  = &sd[3*lambda..3*lambda+64];
+    let r0_bits: &[u8; 128] = sd[0..128].try_into().unwrap();
+    let r1_bits: &[u8; 128] = sd[128..256].try_into().unwrap();
+    let s_bits:  &[u8; 128] = sd[256..384].try_into().unwrap();
+    let t_bits:  &[u8; 64]  = sd[384..448].try_into().unwrap();
 
     // Convert to field elements
-    let r0 = to_field(r0_bits, lambda)[0];
-    let r1 = to_field(r1_bits, lambda)[0];
-    let s  = to_field(s_bits,  lambda)[0];
+    let r0 = to_field::<128,128,1>(r0_bits)[0];
+    let r1 = to_field::<128,128,1>(r1_bits)[0];
+    let s  = to_field::<128,128,1>(s_bits)[0];
 
     // t is 64 bits zero-padded to lambda
-    let mut t_padded = vec![0u8; lambda];
+    let mut t_padded = [0u8; 128];
     t_padded[..64].copy_from_slice(t_bits);
-    let t = to_field(&t_padded, lambda)[0];
+    let t: [u8; 16] = to_field::<128, 128, 1>(&t_padded)[0];
 
     let l = x0.len();
 

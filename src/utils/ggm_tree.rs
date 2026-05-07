@@ -316,7 +316,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
                     match_value = match_value / 2;
                 }
             }
-            _ => panic!("matching on a value that is different from 2^n, should never happen for ggm tree")   //TODO: maybe different panic idk
+            _ => panic!("matching on a value that is different from 2^n, should never happen for ggm tree")   
         }
     }
 

@@ -19,7 +19,7 @@ pub fn faest_aes_prove(
     // nyt v, lidt rodet, basically V|_i betyder kolonne i, og vi skal tage og sige to_field for kolonne i
     let mut v: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
     for i in 0..ell_bit_size+lambda {
-        v[i] = to_field(&V[i], lambda)[0]
+        v[i] = to_field::<128,128,1>(&V[i])[0] // k=lambda
     }
 
     let in_of_in_and_out : [u8;128] = pk.0;
@@ -54,7 +54,7 @@ pub fn faest_aes_prove(
 
     let mut new_u : [[u8;16];lambda] = [[0;16];lambda];
     for i in 0..lambda {
-        new_u[i] = to_field(&[u[ell_bit_size+i]], 1)[0];
+        new_u[i] = to_field::<1,1,1>(&[u[ell_bit_size+i]])[0]; // k = 1
     }
     
 
@@ -86,7 +86,7 @@ pub fn faest_aes_prove(
 
 pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+lambda], chall_2 : [u8; 3*lambda+64], chall_3 : [u8;lambda], a_tilde : [u8;16],pk : ([u8;lambda], [u8;lambda])) -> [u8;16]
 {
-    let delta : [u8;16] = to_field(&chall_3, lambda)[0];
+    let delta : [u8;16] = to_field::<128,128,1>(&chall_3)[0]; // k = lambda
     let in_of_in_and_out : [u8;128] = pk.0;
     let out_of_in_and_out : [u8;128] = pk.1;
 
@@ -108,7 +108,7 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     // After correction - row 0 should now equal v[0] from sign since d[0]=w[0] XOR u[0]
     let mut q: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
     for i in 0..ell_bit_size+lambda {
-        q[i] = to_field(&Q_mut[i], lambda)[0]
+        q[i] = to_field::<128,128,1>(&Q_mut[i])[0] // k = lambda
     }
 
     // til 13

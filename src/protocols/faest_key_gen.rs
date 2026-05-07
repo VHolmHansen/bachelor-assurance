@@ -69,7 +69,6 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         }
         // second fwd
         let mut expanded_key_flat = [0;1408];
-        //let blocks_of_expanded_key = words_to_blocks(expanded_key.to_vec()); //TODO: vec -> array
         let blocks_of_expanded_key: [[u8; 16]; R + 1] = words_to_blocks(expanded_key);      //size derived from (R + 1) * nst / wordsize, where nst = 4 and wordsize = 4
 
         let mut i = 0;

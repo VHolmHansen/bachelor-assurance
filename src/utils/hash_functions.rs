@@ -68,10 +68,10 @@ pub fn h_1_for_616(coms: &[u8;616]) -> [u8; 56] {
     DigestProxy::shake128::<56>(&mut input)
 }
 
-pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;32]{
+pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;32]{ 
     // Concatenate plaintext, ciphertext, and message
     let mut input: Vec<u8> = Vec::with_capacity(16 + pk.0.len() + pk.1.len() + msg.len());      //TODO: vec -> array
-
+    // vi er nok nød til at sætte et upper bound på message size, problemet er nemlig at vi ikke ved hvor stor message er ved compile time, en overvejelse her om vi er nød til at bibeholde vec
     // plaintext
     input.extend_from_slice(&pk.0);
     // ciphertext

@@ -55,20 +55,18 @@ pub fn expand_bits_56(input: [u8; 56]) -> [u8; 448] {
     output
 }
 
-//TODO: vec -> array
-pub fn bytes_to_bits(bytes: &[u8]) -> Vec<u8> {
-    let mut bits = vec![];
-    for &byte in bytes {
+
+
+pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
+    let mut bits = [0u8; 128];
+    let mut idx = 0;
+    for &byte in chall_3 {
         for i in 0..8 {
-            bits.push((byte >> i) & 1);
+            bits[idx] = (byte >> i) & 1;
+            idx += 1;
         }
     }
     bits
-}
-
-pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
-    let bits = bytes_to_bits(chall_3);
-    bits.try_into().unwrap()
 }
 
 // turn pk and sk into states:
@@ -83,7 +81,7 @@ pub fn bits_to_state(text: &[u8; 128]) -> State {
     state
 }
 
-// vole hash function:
+// vole hash function: den bruger som udgangspunkt tobits og tofield, men i specificationen forklarer de at man godt kan skip det, på baggrund af ens repræsentation af binary fields
 pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8;18] {
     // sd is 5*lambda + 64 bits = 5*16 + 8 = 88 bytes
     // parse sd into r0,r1,r2,r3 (lambda bits each) and s (lambda bits) and t (64 bits)
@@ -96,8 +94,8 @@ pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8;18] {
 
     // pad x0 to multiple of lambda bits
     let l_prime = lambda * ((x0.len() + lambda - 1) / lambda);
-    let mut x0_padded = x0.to_vec();        //TODO: vec -> array
-    x0_padded.resize(l_prime / 8, 0u8);     //TODO: make sure func is in hax
+    let mut x0_padded = [0u8; 216];  // all 216 bytes are 0
+    x0_padded[..x0.len()].copy_from_slice(x0);
 
     // compute h0 as polynomial hash in F2^lambda
     // parse x0_padded as lambda-bit field elements

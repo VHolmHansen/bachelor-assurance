@@ -85,7 +85,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
             }
         }
 
-        let mut y_tilde : T = <T as ret_value>::new_with_size(8, T::dummy_value);   //TODO: this function has hard coded size
+        let mut y_tilde : T = <T as ret_value>::new_with_size(T::dummy_value); 
         for i in 0..8{
             // all three parameters
             let parameter_a = x_tilde.get_element(((i+7) as i32).rem_euclid(8) as usize); // should be same for usize as -1

@@ -1,5 +1,4 @@
 #![allow(non_upper_case_globals)]
-use libcrux::digest;
 use crate::utils::constants::lambda;
 use crate::utils::libcrux_proxy::DigestProxy;
 
@@ -19,7 +18,7 @@ pub fn h_0(k: [u8; 16], iv: [u8; 16]) -> ([u8; 16], [u8; 32]) {
 }
 
 pub fn h_1_k0(coms: &[[u8; 32];4096]) -> [u8; 56] {
-    const size_of_input : usize = 16 + 4096*32;
+    const size_of_input : usize = 16 + (4096 << 5);
     let mut input : [u8;size_of_input] = [0u8;size_of_input];
     let mut i = 0;
     for j in 0..4096{
@@ -32,7 +31,7 @@ pub fn h_1_k0(coms: &[[u8; 32];4096]) -> [u8; 56] {
     DigestProxy::shake128::<56>(&mut input)
 }
 pub fn h_1_k1(coms: &[[u8; 32];2048]) -> [u8; 56] {
-    const size_of_input : usize = 16 + 2048*32;
+    const size_of_input : usize = 16 + (2048 << 5);
     let mut input : [u8;size_of_input] = [0u8;size_of_input];
     let mut i = 0;
     for j in 0..2048{
@@ -44,19 +43,6 @@ pub fn h_1_k1(coms: &[[u8; 32];2048]) -> [u8; 56] {
 
     DigestProxy::shake128::<56>(&mut input)
 }
-/*
-fn array_h_1<const dummy_n: usize>(coms: &[[u8; 32]; dummy_n]) -> [u8; 56] {
-    let mut input: [u8; dummy_n * 32 + 16] = [0u8; dummy_n * 32 + 16]
-    for i in 0..dummy_n {
-        for j in 0..32 {
-            input[16 + 32 * i + j] = coms[i][j];
-        }
-
-    }
-    digest::shake128::<56>(&mut input)
-}
-*/
-
 
 pub fn h_1_for_2304(coms: &[u8;2304]) -> [u8; 56] {
     let mut input = *coms;

@@ -1,4 +1,3 @@
-pub mod finite_field;
 pub mod math;
 pub mod galois_field;
 pub mod types;

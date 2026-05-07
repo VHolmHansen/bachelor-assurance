@@ -21,19 +21,19 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(_m : usize, x: T, mtag : bool, mkey 
         y[i] = x.get_element(i);
     }
     let mut iwd = lambda;
-    for j in nk..4*(R+1){
+    for j in nk..((R+1) << 2){
         let cond = (j % nk) == 0 || (nk > 6 && j % nk == 4);
         if cond {
             // same change made here, we are not pushing bits, we are pushing words, so for every 32 bits to be pushed, push one word
             for i in 0..32 {
-                y[32*j+i] = x.get_element(iwd+i);
+                y[(j << 5) + i] = x.get_element(iwd+i);
             }
             iwd += 32;
         }  else {
             // same change made here, we are not pushing bits, we are pushing words, so for every 32 bits to be pushed, push one word
             for i in 0..32{
-                let value_to_pushed :<T as ret_value>::Elem = <T as ret_value>::xor_array(&y[32*(j-nk)+i], &y[32*(j-1)+i]);
-                y[32*j+i] = value_to_pushed;
+                let value_to_pushed :<T as ret_value>::Elem = <T as ret_value>::xor_array(&y[((j-nk) << 5) + i], &y[((j-1) << 5) + i]);
+                y[(j << 5) + i] = value_to_pushed;
             }
         }
     }
@@ -63,14 +63,14 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
 
     for j in 0..S_ke{
         // first value in minues operation
-        let parameter_a  = x.get_slice(8*j,8*j+8);
-        let parameter_b = x_k.get_slice(i_wd+8*c,i_wd+8*c+8);
+        let parameter_a  = x.get_slice(j << 3,(j << 3) + 8);
+        let parameter_b = x_k.get_slice(i_wd + (c << 3),i_wd + (c << 3) + 8);
 
         let mut x_tilde : T = <T as ret_value>::xor_two_array(parameter_a, parameter_b);
 
         // The if statement
         if !mtag && rmvRcon && (c == 0) {
-            let rcon_table = setup_rcon_table(10);
+            let rcon_table = setup_rcon_table();
             let mut rcon_value = rcon_table[i_rcon];
             i_rcon += 1;
             for i in 0..8{
@@ -104,7 +104,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
         }
 
         for i in 0..8{
-            y[8 * j + i] = y_tilde.get_element(i);
+            y[(j << 3) + i] = y_tilde.get_element(i);
         }
 
 
@@ -137,14 +137,14 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
     let v_slice : &[[u8;16];320] = (&v[lambda..]).try_into().unwrap(); // make v a known size, 320 is l_ke-lambda
     let v_w: [[u8;16];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<[[u8;16];320],[[u8;16];1408]>(128, *v_slice, v_k, true, false, [0;16]); // v : l_ke-lambda = 448-128 = 320, v_k : 1408
 
-    let mut i_wd = 32 * (nk-1);
+    let mut i_wd = (nk-1) << 5;
 
     let mut do_rot_word = true;
 
     let mut A_0 : [[u8;16]; S_ke] = [[0;16];S_ke];
     let mut A_1 : [[u8;16]; S_ke] = [[0;16];S_ke];
 
-    for j in 0..(S_ke/4){
+    for j in 0..(S_ke >> 2){
         let mut k_hat : [[u8;16];4] = [[0;16];4];
         let mut v_k_hat : [[u8;16];4] = [[0;16];4];
         let mut w_hat: [[u8;16];4] = [[0;16];4];
@@ -153,10 +153,10 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         for r in 0..4 {
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
 
-            let k_hat_slice: &[u8;8] = (&k[(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)]).try_into().unwrap();
-            let v_k_hat_slice: &[[u8;16];8] = (&v_k[(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)]).try_into().unwrap();
-            let w_hat_slice : &[u8;8] = (&w_tilde[(32*j + 8*r)..(32*j + 8*r + 8)]).try_into().unwrap();
-            let v_w_hat_slice : &[[u8;16];8] = (&v_w   [(32*j + 8*r)..(32*j + 8*r + 8)]).try_into().unwrap();
+            let k_hat_slice: &[u8;8] = (&k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)]).try_into().unwrap();
+            let v_k_hat_slice: &[[u8;16];8] = (&v_k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)]).try_into().unwrap();
+            let w_hat_slice : &[u8;8] = (&w_tilde[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
+            let v_w_hat_slice : &[[u8;16];8] = (&v_w   [((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
 
             k_hat[r]   = byte_combine(*k_hat_slice);
             v_k_hat[r] = byte_combine(*v_k_hat_slice);
@@ -168,7 +168,7 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         for r in 0..4{
             A_0[4*j+r] = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
             let product = gf128_mul(&<[[u8;16];4] as ret_value>::xor_array(&k_hat[r],&v_k_hat[r]),&<[[u8;16];4] as ret_value>::xor_array(&w_hat[r],&v_w_hat[r]));
-            let xor = <[[u8;16];4] as ret_value>::xor_array(&<[[u8;16];4] as ret_value>::value_of_one,&A_0[4*j+r]);
+            let xor = <[[u8;16];4] as ret_value>::xor_array(&<[[u8;16];4] as ret_value>::value_of_one,&A_0[(j << 2) + r]);
             A_1[4*j+r] = <[[u8;16];4] as ret_value>::xor_array(&product,&xor);
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
@@ -186,16 +186,16 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
 
     let mut B : [[u8;16];S_ke] = [[0;16];S_ke];
 
-    let mut i_wd = 32 * (nk-1);
+    let mut i_wd = (nk-1) << 5;
     let mut do_rot_word = true;
-    for j in 0..(S_ke/4) {
+    for j in 0..(S_ke >> 2) {
         let mut q_hat_k : [[u8;16];4] = [[0;16];4];
         let mut q_hat_w : [[u8;16];4] = [[0;16];4];
         for r in 0..4 {
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
 
-            let q_hat_k_slice : &[[u8;16];8] = (&q_k    [(i_wd + 8*rotated)..(i_wd + 8*rotated + 8)]).try_into().unwrap();
-            let q_hat_w_slice : &[[u8;16];8] = (&q_w_flat[(32*j + 8*r)..(32*j + 8*r + 8)]).try_into().unwrap();
+            let q_hat_k_slice : &[[u8;16];8] = (&q_k    [(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)]).try_into().unwrap();
+            let q_hat_w_slice : &[[u8;16];8] = (&q_w_flat[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
 
             q_hat_k[r] = byte_combine(*q_hat_k_slice);
             q_hat_w[r] = byte_combine(*q_hat_w_slice);
@@ -203,7 +203,7 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
 
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
-            B[4*j+r] = <[[u8;16];4] as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
+            B[(j << 2) + r] = <[[u8;16];4] as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }

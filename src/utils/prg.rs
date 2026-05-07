@@ -1,4 +1,3 @@
-use libcrux::digest;
 use crate::utils::constants::{ell, tau, lambda};
 use crate::utils::math;
 use crate::protocols::aes;
@@ -19,7 +18,7 @@ pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
         let block = aes::encrypt(counter_state, &key_ex); // your existing function
         let block_arr= math::transform_state_to_array(&block);
 
-        let start = i * 16;
+        let start = i << 4;
 
         if i == num_blocks - 1 {
             let length_of_output = output.len();
@@ -44,6 +43,6 @@ pub fn prg_vole_commit_r(r: [u8;16], iv: [u8;16]) -> [u8; (tau*lambda)/8] {
     let mut input : [u8; 32] = [0u8; 32];
     input[..16].copy_from_slice(&r);
     input[16..].copy_from_slice(&iv);
-    const SIZE : usize = (tau*lambda)/8;
+    const SIZE : usize = (tau*lambda) >> 3;
     DigestProxy::shake128::<SIZE>(&mut input)
 }

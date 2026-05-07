@@ -48,7 +48,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
     let mut h_v_val : [u8;2304] = [0u8; 18 * (tau_0*k_0+tau_1*k_1)];
     for i in 0..(tau_0*k_0+tau_1*k_1) {
-        for j in 0..(18) {
+        for j in 0..18 {
             h_v_val[i * 18 + j] = v_tilde[i][j];
         }
     }

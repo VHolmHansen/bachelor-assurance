@@ -96,22 +96,7 @@ pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0],
     let value_of_b = num_rec_k0(&b);
 
     let leaves : sized_option_array<k_0_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);     //TODO: non-optional equivalent?
-    let mut i = 0;
-    for l in leaves {
-        match l {
-            Some(leaf) => {
-                let (sd, com) = h_0(leaf, iv);
-                sds[i] = sd;
-                coms[i] = com;
-                i += 1;
-            },
-            None => {
-                coms[i] = pdecom.1;
-                sds[i] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-                i += 1;
-            },
-        }
-    }
+    match_leaves::<k_0_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
 
     let h = h_1_k0(&coms);
 
@@ -130,28 +115,33 @@ pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_1],
     let value_of_b = num_rec_k1(&b);
 
     let leaves : sized_option_array<k_1_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);     //TODO: non-optional equivalent?
-    let mut i = 0;
-    for l in leaves {
-        match l {
-            Some(leaf) => {
-                let (sd, com) = h_0(leaf, iv);
-                sds[i] = sd;
-                coms[i] = com;
-                i += 1;
-            },
-            None => {
-                coms[i] = pdecom.1;
-                sds[i] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-                i += 1;
-            },
-        }
-    }
+    match_leaves::<k_1_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
 
     let h = h_1_k1(&coms);
 
     let seeds_to_return = sized_array_for_sds::sized_array_2(sds);
 
     (h, seeds_to_return)
+}
+
+//TODO: change name to something more explanatory
+fn match_leaves<const size: usize>(leaves: &sized_option_array<size>, sds: &mut [[u8; 16]; size], coms: &mut [[u8; 32]; size], iv: &[u8; 16], pdecom1: &[u8; 32]) {
+    let mut i = 0;
+    for l in 0..leaves.len() {
+        match leaves[l] {
+            Some(leaf) => {
+                let (sd, com) = h_0(leaf, *iv);
+                sds[i] = sd;
+                coms[i] = com;
+                i += 1;
+            },
+            None => {
+                coms[i] = *pdecom1;
+                sds[i] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+                i += 1;
+            },
+        }
+    }
 }
 
 

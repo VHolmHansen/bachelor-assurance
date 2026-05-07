@@ -34,12 +34,12 @@ where [T::Elem; 8]: ret_value<Elem = T::Elem>
         for j in 0..8 {
             if mtag { // do nothing
             } else if mkey {
-                x_in[j] = if in_out[8*i+j] == 1 {Delta.clone()} else {<T as ret_value>::dummy_value};
+                x_in[j] = if in_out[(i << 3) + j] == 1 {Delta.clone()} else {<T as ret_value>::dummy_value};
             } else {
-                x_in[j] = if in_out[8*i+j] == 1 {<T as ret_value>::value_of_one} else {<T as ret_value>::dummy_value};
+                x_in[j] = if in_out[(i << 3) + j] == 1 {<T as ret_value>::value_of_one} else {<T as ret_value>::dummy_value};
             }
         }
-        let x_k_slice_as_T: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x_k.get_slice(8*i, 8*i+8));
+        let x_k_slice_as_T: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x_k.get_slice(i << 3, (i << 3)+8));
         // let x_in_as_T = <T as ret_value>::turn_array_to_T(&x_in);
         let x_in_as_T: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(&x_in);
 
@@ -50,17 +50,17 @@ where [T::Elem; 8]: ret_value<Elem = T::Elem>
     }
     for j in 1..R{
         for c in 0..4{
-            let i_x = 128 * (j-1) + 32 * c;
-            let i_k = 128*j+32*c;
-            let i_y = 16*j+4*c;
+            let i_x = ((j-1) << 7) + (c << 5);
+            let i_k = (j << 7) + (c << 5);
+            let i_y = (j << 4) + (c << 2);
             let mut x_hat : [<[[u8;16];4] as ret_value>::Elem;4] = [<[[u8;16];4] as ret_value>::dummy_value;4];
             let mut x_hat_k : [<[[u8;16];4] as ret_value>::Elem;4] = [<[[u8;16];4] as ret_value>::dummy_value;4];
             for r in 0..4 {
                 // let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
-                let get_slice_of_x: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r,i_x+8*r+8));
+                let get_slice_of_x: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x.get_slice(i_x+(r << 3),i_x+(r << 3)+8));
                 x_hat[r] = byte_combine(get_slice_of_x);
                 // let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
-                let get_slice_of_x_k : [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
+                let get_slice_of_x_k : [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x_k.get_slice(i_k+(r << 3), i_k+(r << 3)+8));
 
                 x_hat_k[r] = byte_combine(get_slice_of_x_k);
             }
@@ -123,7 +123,7 @@ pub fn faest_aes_enc_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
     for j in 0..R{
         for c in 0..4{
             for r in 0..4{
-                let ird = 128*j + 32 * ((c as isize - (r as isize)).rem_euclid(4)) as usize + 8*r;
+                let ird = (j << 7) + ((c as isize - (r as isize)).rem_euclid(4) << 5) as usize + (r << 3);
                 let mut x_tilde : [<T as ret_value>::Elem;8] = [<T as ret_value>::dummy_value; 8];
                 if j < R-1{
                     for idx in 0..8{
@@ -134,9 +134,9 @@ pub fn faest_aes_enc_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
                     for i in 0..8{
                         if mtag { // do nothing
                         } else if mkey {
-                            x_out[i] = if in_out[ird - 128*j + i] == 1 {Delta.clone()} else {<T as ret_value>::dummy_value};
+                            x_out[i] = if in_out[ird - (j << 7) + i] == 1 {Delta.clone()} else {<T as ret_value>::dummy_value};
                         } else {
-                            x_out[i] = if in_out[ird - 128*j + i] == 1 {<T as ret_value>::value_of_one} else {<T as ret_value>::dummy_value};
+                            x_out[i] = if in_out[ird - (j << 7) + i] == 1 {<T as ret_value>::value_of_one} else {<T as ret_value>::dummy_value};
                         }
                     }
                     for idx in 0..8{
@@ -160,7 +160,7 @@ pub fn faest_aes_enc_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
                 y_tilde[0] = <T as ret_value>::xor_array(&y_tilde[0],&value_might_be_delta);
                 y_tilde[2] = <T as ret_value>::xor_array(&y_tilde[2],&value_might_be_delta);
 
-                y[16*j+4*c+r] = byte_combine(<[T::Elem; 8] as ret_value>::turn_array_to_T(&y_tilde));
+                y[(j << 4) + (c << 2) + r] = byte_combine(<[T::Elem; 8] as ret_value>::turn_array_to_T(&y_tilde));
             }
         }
     }
@@ -173,8 +173,8 @@ pub fn faest_aes_enc_cstrnts_prover(
     out_of_in_and_out : [u8; 128],
     w : [u8; l_enc], // l_enc stor
     v : [[u8;16]; l_enc],
-    k : [u8;128*(R+1)], // 1408 stor
-    v_k : [[u8;16];128*(R+1)],
+    k : [u8;(R+1) << 7], // 1408 stor
+    v_k : [[u8;16];(R+1) << 7],
     mkey : bool,
 ) -> ([[u8;16];160],[[u8;16];160])
 {
@@ -207,7 +207,7 @@ pub fn faest_aes_enc_cstrnts_verifier(
     in_of_in_and_out : &[u8; 128],
     out_of_in_and_out : &[u8; 128],
     q : &[[u8;16];l_enc],
-    q_k : &[[u8;16];128*(R+1)],
+    q_k : &[[u8;16];(R+1) << 7],     //(R+1)*128=(R+1) << 7
     delta : [u8;16],
     mkey : bool
 ) -> [[u8;16];s_enc]

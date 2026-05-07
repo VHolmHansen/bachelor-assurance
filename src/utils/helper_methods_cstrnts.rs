@@ -2,21 +2,7 @@ use crate::utils::galois_field::gf128_pow;
 use crate::utils::types::Word;
 use crate::utils::types::{ret_value};
 use crate::utils::constants::{alpha};
-//TODO: vec -> array (see below function)
-/*
-pub fn words_to_blocks(x: Vec<Word>) -> Vec<[u8; 16]> {
-    x.chunks(4)
-        .map(|chunk| {
-            let mut block = [0u8; 16];
-            for (i, word) in chunk.iter().enumerate() {
-                block[i * 4..(i + 1) * 4].copy_from_slice(word);
-            }
-            block
-        })
-        .collect()      //TODO: rewrite for hax compat
-}
 
- */
 // M is N/4
 pub fn words_to_blocks<const LEN: usize>(x: [Word; 44]) -> [[u8; 16]; LEN]
     //where [(); N / 4]: Sized
@@ -26,7 +12,7 @@ pub fn words_to_blocks<const LEN: usize>(x: [Word; 44]) -> [[u8; 16]; LEN]
         let mut acc: usize = 0;
         for j in 0..4 {
             for k in 0..4 { // word len
-                let word = x[i * 4 + j][k];
+                let word = x[(i << 2) + j][k];
                 a[i][acc] = word;
                 acc += 1
             }

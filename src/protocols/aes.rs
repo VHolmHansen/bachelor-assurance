@@ -1,28 +1,9 @@
 
-use crate::utils::libcrux_proxy::*;
 use crate::utils::{galois_field};
-use crate::utils::finite_field::{Field};
-use crate::utils::types::{ArrayMatrix, State, Word};
+use crate::utils::types::{Matrix, State, Word};
 use crate::utils::constants::{nk, nst, R};
 
-#[hax_lib::exclude]
-pub fn main(_field: Field) {
-    let mut rand_gen = RandGenProxy::get_rand_gen_sha256();
-    let mut key = [0; 16];
-    rand_gen.fill_bytes(&mut key);
-    let _expanded_key = key_expansion(key);
-
-    // dummy state
-    let mut state: State = [[0; nst]; nk];
-    for i in 0..nk {
-        for j in 0..nst {
-            state[i][j] = (i + j * i) as u8;
-        }
-    }
-
-}
-
-#[hax_lib::requires(key.len() == nst * (R + 1))]
+#[hax_lib::requires(key.len() == (R + 1) << 2)]    //<< 2 = * nst where nst = 4
 pub fn encrypt(state: State, key: &[Word]) -> State {
     let mut res_state = state;
     add_round_key(&mut res_state, key[0..nst].try_into().unwrap());
@@ -32,27 +13,27 @@ pub fn encrypt(state: State, key: &[Word]) -> State {
         sub_bytes(&mut res_state);
         shift_rows(&mut res_state);
         mix_columns(&mut res_state);
-        add_round_key(&mut res_state, key[(nst * r)..(nst*(r+1))].try_into().unwrap());
+        add_round_key(&mut res_state, key[(r << 2)..((r+1) << 2)].try_into().unwrap());     //nst * r = r << 2 & nst*(r+1) = (r+1) << 2
     }
 
     sub_bytes(&mut res_state);
     shift_rows(&mut res_state);
-    add_round_key(&mut res_state, key[nst*(R)..nst*(R+1)].try_into().unwrap());
+    add_round_key(&mut res_state, key[(R << 2)..(R+1) << 2].try_into().unwrap());     //nst * R = R << 2 & nst * (R+1) = (R+1) << 2
 
     res_state
 }
 
-pub fn key_expansion(key: [u8; 16]) -> [Word; nst * (R + 1)] {
-    let rcon = setup_rcon_table(nk + 6);
+pub fn key_expansion(key: [u8; 16]) -> [Word; (R + 1) << 2] {      // nst * (R+1) = (R+1) << 2
+    let rcon = setup_rcon_table();
     let mut result_key: [Word; 44] = [[0u8, 0u8, 0u8, 0u8]; 44];
 
     for i in 0..4 {
         for j in 0..4 {
-            result_key[i][j] = key[(i*4)+j];
+            result_key[i][j] = key[(i << 2)+j];        // i * 4 = i << 2
         }
     }
 
-    for i in nk..(nst * (R + 1)) {
+    for i in nk..((R + 1) << 2) {      // nst * (R+1) = (R+1) << 2
         let mut temp = result_key[i-1];
         if i.rem_euclid(nk) == 0 {
             let mut rotated = sub_word(rot_word(temp));
@@ -73,7 +54,7 @@ pub fn key_expansion(key: [u8; 16]) -> [Word; nst * (R + 1)] {
 }
 
 #[hax_lib::ensures(|result| result.len() == R)]
-pub fn setup_rcon_table(n: usize) -> [u8; R] {
+pub fn setup_rcon_table() -> [u8; R] {
     let mut rcon: [u8; R] = [0u8; R];
     let mut value: u8 = 0x01;
     for i in 0..R {
@@ -135,7 +116,7 @@ pub fn shift_rows(state: &mut State) {
 #[hax_lib::ensures(|state| state.len() == nk
                     && state[0].len() == nst)]
 pub fn mix_columns(state: &mut State) {
-    let a: ArrayMatrix<u8, nst, nk> =
+    let a: Matrix<u8, nst, nk> =
         [[2, 3, 1, 1],
         [1, 2, 3, 1],
         [1, 1, 2, 3],

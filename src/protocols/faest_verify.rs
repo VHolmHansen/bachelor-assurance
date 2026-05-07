@@ -7,6 +7,7 @@ use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
 use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell_bit_size};
 use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
+use crate::utils::preliminary_helper_methods::flatten;
 
 pub fn faest_verify(
     msg : &[u8],
@@ -97,12 +98,8 @@ pub fn faest_verify(
             }
         }
     }
-    let mut q_e_flat : [u8;2304] = [0u8; 18 * (tau_0*k_0+tau_1*k_1)];
-    for i in 0..(tau_0*k_0+tau_1*k_1) {
-        for j in 0..(18) {
-            q_e_flat[i * 18 + j] = q_e_xored[i][j];
-        }
-    }
+    let q_e_flat: [u8; 18 * (tau_0*k_0+tau_1*k_1)] = flatten::<{tau_0*k_0+tau_1*k_1}, 18, {18 * (tau_0*k_0+tau_1*k_1)}>(q_e_xored);
+
     // h_v value
     let h_v : [u8;56] = h_1_for_2304(&q_e_flat);
 

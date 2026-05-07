@@ -5,7 +5,7 @@ use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
 use crate::utils::hash_functions::{h_1_for_616};
 use crate::utils::math::xor_arrays;
-use crate::utils::preliminary_helper_methods::{num_rec_k0,num_rec_k1};
+use crate::utils::preliminary_helper_methods::{flatten, num_rec_k0, num_rec_k1};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
 use crate::utils::vector_commit::{vec_commit_k0, vec_commit_k1, vec_reconstruct_k0, vec_reconstruct_k1};
 use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow, tau_minus_one};
@@ -40,7 +40,7 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
     for j in 0..d {
         let i_range : usize = sds.len() >> (j + 1); // prev: sds.len() / 2_i32.pow(j + 1)
         for i in 0..i_range {
-            if let (Some(r1), Some(r2)) = (r[j][2*i], r[j][2*i+1]) {
+            if let (Some(r1), Some(r2)) = (r[j][i << 1], r[j][(i << 1) + 1]) {
                 v[j] = xor_arrays(&v[j], &r2);
 
                 let new_r: [u8; ell] = xor_arrays(&r1, &r2);
@@ -57,7 +57,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's
     let arr_of_rs: [[u8; 16]; 11] = std::array::from_fn(|i| {
-        new_r[i * 16..(i + 1) * 16].try_into().unwrap()
+        new_r[i << 4..(i + 1) << 4].try_into().unwrap()
     });
     // big V
     let mut big_v:  [sized_array_for_q_v;tau] = [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];
@@ -92,43 +92,10 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 56], [([u8;16], [u8
             big_c[i-1] = xor_arrays(&u_0, &big_u[i]);
         }
     }
-
-    let mut coms_flat = [0u8; 56 * tau];
-    for i in 0..tau {
-        for j in 0..56 {
-            coms_flat[i * 56 + j] = commitments[i][j];
-        }
-    }
+    let coms_flat: [u8; tau * 56] = flatten::<tau, 56, {tau * 56}>(commitments);
 
     let hash = h_1_for_616(&coms_flat);
     (hash, all_decoms, big_c, u_0, big_v)
-}
-
-//TODO: deprecated function?
-pub fn chall_dec(chall : [u8;16], i : usize) -> Vec<u8>{
-    if i > tau {
-        panic!("i is not in right index");
-    }
-    let lo : usize;
-    let hi : usize;
-    if i < tau_0 {
-        lo = i * k_0;
-        hi = (i+1)*k_0-1;
-    } else {
-        let t = i- tau_0;
-        lo = tau_0 * k_0 + t* k_1;
-        hi = tau_0 * k_0 + (t+1) * k_1 - 1;
-    }
-    let mut bits = Vec::with_capacity(hi - lo + 1);
-
-    for b in lo..=hi {
-        let byte_index = b / 8;
-        let bit_index = b % 8;
-
-        let bit = (chall[byte_index] >> bit_index) & 1;
-        bits.push(bit);
-    }
-    bits
 }
 
 pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
@@ -138,7 +105,7 @@ pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
 
     let mut bits = [0u8; k_0];
     for (idx, b) in (lo..(hi + 1)).enumerate() {     //inclusive range
-        let byte_index = b / 8;
+        let byte_index = b >> 3;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
     }
@@ -153,7 +120,7 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
 
     let mut bits = [0u8; k_1];
     for (idx, b) in (lo..(hi + 1)).enumerate() {     //inclusive range
-        let byte_index = b / 8;
+        let byte_index = b >> 3;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
     }
@@ -212,12 +179,9 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
 
         // println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
     }
-    let mut coms_flat = [0u8; 56 * tau];
-    for i in 0..tau {
-        for j in 0..56 {
-            coms_flat[i * 56 + j] = commitments[i][j];
-        }
-    }
+
+    let coms_flat: [u8; tau * 56] = flatten::<tau, 56, {tau * 56}>(commitments);
+
     let hash = h_1_for_616(&coms_flat);
     (hash, big_q)
 }

@@ -1,4 +1,4 @@
-use crate::utils::constants::{nk, nst, R};
+use crate::utils::constants::{nk, R};
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
 use crate::utils::constants::lambda;
@@ -23,7 +23,7 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         let mut plaintext: [u8; 16] = [0u8; 16];
         rng.fill_bytes(&mut plaintext);
 
-        let expanded_key: [Word; nst * (R + 1)] = key_expansion(key);
+        let expanded_key: [Word; (R + 1) << 2] = key_expansion(key);    // << 2 = * nst
 
         let plaintext_state = transform_byte_array_to_state(&plaintext);
         let ciphertext_state = encrypt(plaintext_state, &expanded_key);
@@ -44,15 +44,15 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         let one_gf8 : u8 = 0x01;
 
         for i in 0..S_ke{
-            let word_idx = i / 4;      // which SubWord word (0..10)
+            let word_idx = i >> 2;      // which SubWord word (0..10)
             let byte_idx = i % 4;      // which byte within word (0..4)
 
             // RotWord: byte 0 of output = byte 1 of input, etc.
             let rotated_idx = (byte_idx + 1) % 4;
 
-            let word_start = (nk - 1 + word_idx * nk) * 32;
-            let alpha_bits = &fwd_key[word_start + 8*rotated_idx..word_start + 8*rotated_idx + 8];
-            let gamma_bits = &bwd_key[i*8..(i+1)*8];
+            let word_start = (nk - 1 + (word_idx << 2)) << 5;   // << 2 = * nk
+            let alpha_bits = &fwd_key[word_start + (rotated_idx << 3)..word_start + (rotated_idx << 3) + 8];
+            let gamma_bits = &bwd_key[i << 3..(i+1) << 3];
 
             let w_alpha = bits_to_byte(alpha_bits);
             let w_gamma = bits_to_byte(gamma_bits);
@@ -69,7 +69,6 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         }
         // second fwd
         let mut expanded_key_flat = [0;1408];
-        //let blocks_of_expanded_key = words_to_blocks(expanded_key.to_vec()); //TODO: vec -> array
         let blocks_of_expanded_key: [[u8; 16]; R + 1] = words_to_blocks(expanded_key);      //size derived from (R + 1) * nst / wordsize, where nst = 4 and wordsize = 4
 
         let mut i = 0;

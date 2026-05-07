@@ -1,4 +1,6 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
+
+use crate::utils::constants::lambda;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::math::xor_arrays;
 
@@ -85,13 +87,11 @@ fn array_to_bits<const size: usize>(x: &[[u8; 16]], size: usize) -> [u8; size] {
 
 // funktion brugt af prove og verify
 pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {
-    let lambda = 128;
-
     // Step 2: Parse sd into r0, r1, s (lambda bits each) and t (64 bits)
     // sd is given as bits, each u8 is 0 or 1
     let r0_bits = &sd[0..lambda];
-    let r1_bits = &sd[lambda..2*lambda];
-    let s_bits  = &sd[2*lambda..3*lambda];
+    let r1_bits = &sd[lambda..lambda << 1];
+    let s_bits  = &sd[lambda << 1..3*lambda];
     let t_bits  = &sd[3*lambda..3*lambda+64];
 
     // Convert to field elements

@@ -11,22 +11,22 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
     let bytes_from_k_overline: [u8; 16] = flatten::<nk, 4, 16>(k_overline[0..nk].try_into().unwrap());     //INNER_LEN = word len
     let mut witness : [u8;ell_bit_size] = [0;ell_bit_size];
     let mut index = 0;
-    for b in bytes_from_k_overline{
-        let bits = byte_to_bits(b);
-        for bit in bits {
-            witness[index] = bit;
+    for b in 0..bytes_from_k_overline.len(){
+        let bits = byte_to_bits(bytes_from_k_overline[b]);
+        for bit in 0..bits.len() {
+            witness[index] = bits[bit];
             index += 1;
         }
     }
-    let k_overline_for_loops : [u8; (R+1) * 4 * 4] = flatten::<{(R+1)*4}, 4, {(R+1) * 4 * 4}>(k_overline);
+    let k_overline_for_loops : [u8; (R+1) << 4] = flatten::<{(R+1) << 2}, 4, {(R+1) << 4}>(k_overline);
 
     let mut ik = nk;
 
-    for _ in 0..(S_ke/4){
-        for byte in &k_overline_for_loops[ik*4..(ik+1)*4] {
-            let bits = byte_to_bits(*byte);
-            for bit in bits {
-                witness[index] = bit;
+    for _ in 0..(S_ke >> 2){       //S_ke / 4 = S_ke >> 2
+        for byte in (ik << 2)..((ik+1) << 2) {     //ik*4 = ik << 2 & (ik+1)*4=(ik+1) << 2
+            let bits = byte_to_bits(k_overline_for_loops[byte]);
+            for bit in 0..bits.len() {
+                witness[index] = bits[bit];
                 index += 1;
             }
         }
@@ -34,7 +34,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
 
         ik = if lambda == 192 { ik+6 } else { ik+4 };
     }
-    let Beta = lambda / 128;
+    let Beta = lambda >> 7;    //lambda / 128 = lambda >> 7
     for _ in 0..Beta{
         let mut state_new : State = in_aes;
         add_round_key(&mut state_new, k_overline[0..4].try_into().unwrap());
@@ -44,14 +44,14 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
             for col in 0..4 {
                 for row in 0..4 {
                     let bits = byte_to_bits(state_new[col][row]);
-                    for bit in bits{
-                        witness[index] = bit;
+                    for bit in 0..bits.len() {
+                        witness[index] = bits[bit];
                         index += 1;
                     }
                 }
             }
             mix_columns(&mut state_new);
-            add_round_key(&mut state_new, k_overline[4*j..4*j+4].try_into().unwrap());
+            add_round_key(&mut state_new, k_overline[(j << 2)..(j << 2)+4].try_into().unwrap());  //4*j = j << 2
         }
     }
 

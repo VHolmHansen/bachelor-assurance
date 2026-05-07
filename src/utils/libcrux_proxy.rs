@@ -1,17 +1,13 @@
 use libcrux::drbg::{Drbg, RngCore};
 use libcrux::digest;
 
-pub enum alg {
-    Sha256
-}
-
 pub struct RandGenProxy {
     rand_gen: Drbg
 }
 
 impl RandGenProxy{
     pub fn get_rand_gen_sha256() -> Self {
-        let mut rand_gen = match Drbg::new(libcrux::digest::Algorithm::Sha256) {
+        let rand_gen = match Drbg::new(digest::Algorithm::Sha256) {
             Ok(drbg) => drbg,
             Err(e) => panic!("{}", e)
         };
@@ -34,7 +30,7 @@ impl RandGenProxy{
 pub struct DigestProxy;
 
 impl DigestProxy {
-    pub fn shake128<const LEN: usize>(input: &[u8]) -> [u8; LEN] {     //TODO: nor sure if u8; 16
+    pub fn shake128<const LEN: usize>(input: &[u8]) -> [u8; LEN] {
         digest::shake128::<LEN>(&input)
     }
 }

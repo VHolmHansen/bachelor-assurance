@@ -18,7 +18,7 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_b
         for j in 0..k_b {
             // big_v[i][j] is one column of l_hat bits packed into 234 bytes
             for row in 0..(ell_bit_size+lambda) {
-                let byte_idx = row / 8;
+                let byte_idx = row >> 3;
                 let bit_idx  = row % 8;
                 v_rows[row][col] = (big_v[i].get(j)[byte_idx] >> bit_idx) & 1; // [j][byte_idx]
             }
@@ -34,7 +34,8 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_b
 pub fn u_to_1728_bits(u: &[u8; 234]) -> [u8; 1728] {
     let mut bits = [0u8; 1872];
     let mut idx = 0;
-    for &byte in u.iter() {     //TODO: might need rewrite for hax compat
+    for b in 0..u.len() {
+        let byte = u[b];
         for i in 0..8 {
             bits[idx] = (byte >> i) & 1;
             idx += 1;
@@ -74,9 +75,9 @@ pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
 // turn pk and sk into states:
 pub fn bits_to_state(text: &[u8; 128]) -> State {
     let mut state = [[0u8; 4]; 4];
-    for (i, chunk) in text.chunks(8).enumerate() {      //TODO: make sure func is in hax
+    for (i, chunk) in text.chunks(8).enumerate() {
         let byte = bits_to_byte(chunk);
-        let col = i / 4;
+        let col = i >> 2;
         let row = i % 4;
         state[col][row] = byte;  // ← swap col and row here
     }
@@ -95,16 +96,18 @@ pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8;18] {
     let t:  [u8; 8] = sd[80..88].try_into().unwrap();
 
     // pad x0 to multiple of lambda bits
-    let l_prime = lambda * ((x0.len() + lambda - 1) / lambda);
+    let l_prime = ((x0.len() + lambda - 1) >> 7) << 7;  // each shift is according to value of lambda = 128
     let mut x0_padded = x0.to_vec();        //TODO: vec -> array
-    x0_padded.resize(l_prime / 8, 0u8);     //TODO: make sure func is in hax
+    x0_padded.resize(l_prime << 3, 0u8);     //TODO: make sure func is in hax SEE BELOW
+    //let mut x0_padded = [0u8; l_prime << 3];
+    //x0_padded.copy_from_slice(&x0);    // might need index range
 
     // compute h0 as polynomial hash in F2^lambda
     // parse x0_padded as lambda-bit field elements
     let num_chunks_lambda = l_prime / lambda;
     let mut h0 = [0u8; 16];
     for i in 0..num_chunks_lambda {
-        let chunk: [u8;16] = x0_padded[i*16..(i+1)*16].try_into().unwrap();
+        let chunk: [u8;16] = x0_padded[i << 4..(i+1) << 4].try_into().unwrap();
         // h0 = h0 * s + chunk
         h0 = xor_arrays(&gf128_mul(&h0, &s), &chunk);
     }
@@ -113,7 +116,7 @@ pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8;18] {
     let num_chunks_64 = l_prime / 64;
     let mut h1 = [0u8; 8];
     for i in 0..num_chunks_64 {
-        let chunk: [u8;8] = x0_padded[i*8..(i+1)*8].try_into().unwrap();
+        let chunk: [u8;8] = x0_padded[i << 3..(i+1) << 3].try_into().unwrap();
         // h1 = h1 * t + chunk  (in F2^64)
         h1 = gf64_add(&gf64_mul(&h1, &t), &chunk);
     }

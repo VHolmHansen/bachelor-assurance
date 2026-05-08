@@ -28,7 +28,6 @@ pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16],
     (h, decom, sds_to_return)
 }
 pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
-    // println!("start of vec_commit_k1 - remaining stack: {:?}", stacker::remaining_stack());
     let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, d);
     let mut sds: [[u8; 16];k_1_pow] = [[0;16];k_1_pow];
     let mut coms: [[u8; 32];k_1_pow] = [[0;32];k_1_pow];
@@ -37,7 +36,6 @@ pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16],
         sds[i] = sd;
         coms[i] = com;
     }
-
     let h = h_1_k1(&coms);
     let coms_to_return = sized_array_for_coms::sized_array_2(coms);
     let sds_to_return = sized_array_for_sds::sized_array_2(sds);

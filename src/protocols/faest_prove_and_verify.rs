@@ -79,14 +79,7 @@ pub fn faest_aes_prove(
     
     let alpha_tilde : [u8;16] = zk_hash(&chall, &a_1, &u_star);
     let beta_tilde : [u8;16] = zk_hash(&chall, &a_0, &v_star);
-
-    println!("u_star: {:x?}", u_star);
-    println!("v_star: {:x?}", v_star);
-    println!("a_0 first element: {:x?}", a_0[0]);
-    println!("a_1 first element: {:x?}", a_1[0]);
-    println!("a_tilde (alpha_tilde): {:x?}", alpha_tilde);
-    println!("b_tilde (beta_tilde): {:x?}", beta_tilde);
-    println!("chall first 16: {:x?}", &chall[..16]);
+    
 
     (alpha_tilde, beta_tilde)
 }

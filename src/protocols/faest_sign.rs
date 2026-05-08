@@ -18,7 +18,6 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     if not_deterministic_test {rng.fill_bytes(&mut rho);}
 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho); // mention to bas, it is hard to check to their test vectors, because differences in random algorithm
-    let _vec_start = std::time::Instant::now();
     let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
     let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
 
@@ -85,7 +84,6 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let _prove_start = std::time::Instant::now();
     let (a_tilde , b_tilde) : ([u8;16],[u8;16]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), chall_2);
     // println!("prove took: {:?}", prove_start.elapsed());
-    println!("b_tilde: {:x?}", b_tilde);
     let chall_3 : [u8;16] = h_2_3(chall_2, a_tilde, b_tilde);
 
     let _open_start = std::time::Instant::now();

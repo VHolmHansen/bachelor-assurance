@@ -21,7 +21,6 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
     // the r structure:
     let mut r: Vec<Vec<Option<[u8; ell]>>> = vec![vec![None; sds.len()]; d + 1];    // keeping as vec, annoying rewrite, plus sugar for report
 
-
     // if we are verifier
     if sds[0] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {
         r[0][0] = Some([0u8;ell]);
@@ -34,6 +33,7 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
         r[0][i] = Some(prg_convert_to_vole(sds[i], iv));
 
     }
+
 
     let zero_v = [0;ell];
     let mut v: [[u8;ell]; d] = [zero_v; d];
@@ -67,7 +67,6 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8
     // iterate over r's
     // this loop should be made able to be threaded
     for i in 0..tau{
-        let _loop_start = std::time::Instant::now();
         let (h, decoms, u, v) = if i < tau_0 {
             let (h, decoms, seeds) = vec_commit_k0(arr_of_rs[i], iv, k_0 as i128);
             let (u,v) = convert_to_VOLE::<k_0>(&seeds, iv);
@@ -82,7 +81,6 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8
         big_u[i] = u;
         all_decoms[i] = decoms;
         commitments[i] = h;
-        // println!("end of loop_commit took: {:?}", loop_start.elapsed());
     }
     let u_0 = big_u[0];
 

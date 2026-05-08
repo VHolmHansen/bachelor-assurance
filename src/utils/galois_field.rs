@@ -71,7 +71,8 @@ pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     }
 
     // reduce modulo P128 = x^128 + x^7 + x^2 + x + 1
-    for i in (128..256).rev() {
+    let mut i = 255;
+    while i >= 128 {
         if get_bit(&result, i) == 1 {
             // x^i = x^(i-128) * (x^7 + x^2 + x + 1)
             flip_bit(&mut result, i - 128 + 7);
@@ -79,6 +80,7 @@ pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
             flip_bit(&mut result, i - 128 + 1);
             flip_bit(&mut result, i - 128);
         }
+        i -= 1;
     }
 
     // return lower 128 bits

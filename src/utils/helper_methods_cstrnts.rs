@@ -22,9 +22,6 @@ pub fn words_to_blocks<const LEN: usize>(x: [Word; 44]) -> [[u8; 16]; LEN]
 }
 
 pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
-    if x.len() % 8 != 0 {
-        panic!("invalid byte length")
-    }
     let mut res: [u8; 16] = [0; 16];
     for i in 0..8 {
         let alpha_pow_val = alpha_pow(i);

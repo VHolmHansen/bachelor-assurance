@@ -61,6 +61,7 @@ pub fn h_1_for_2304(coms: &[u8; 2304]) -> [u8; 32] {
     DigestProxy::shake128::<32>(&input)
 }
 
+#[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
 pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;32]{
     // Concatenate plaintext, ciphertext, and message
     // vi er nok nød til at sætte et upper bound på message size, problemet er nemlig at vi ikke ved hvor stor message er ved compile time, en overvejelse her om vi er nød til at bibeholde vec

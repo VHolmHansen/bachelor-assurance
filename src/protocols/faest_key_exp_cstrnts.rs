@@ -66,7 +66,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
         let parameter_a  = x.get_slice(j << 3,(j << 3) + 8);
         let parameter_b = x_k.get_slice(i_wd + (c << 3),i_wd + (c << 3) + 8);
 
-        let mut x_tilde : T = <T as ret_value>::xor_two_array(parameter_a, parameter_b);
+        let mut x_tilde : [T::Elem; 8] = <T as ret_value>::xor_two_array(parameter_a, parameter_b);
 
         // The if statement
         if !mtag && rmvRcon && (c == 0) {
@@ -79,8 +79,8 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
                     else {if mkey
                         {&Delta}
                         else {&<T as ret_value>::value_of_one}};
-                let existing = x_tilde.get_element(i);
-                x_tilde.set_element(i, &<T as ret_value>::xor_array(&existing, &r));
+                let existing = &x_tilde[i];
+                x_tilde[i] = <T as ret_value>::xor_array(&existing, &r);
                 rcon_value = rcon_value >> 1;
             }
         }
@@ -88,9 +88,9 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
         let mut y_tilde : T = <T as ret_value>::new_with_size(T::dummy_value); 
         for i in 0..8{
             // all three parameters
-            let parameter_a = x_tilde.get_element(((i+7) as i32).rem_euclid(8) as usize); // should be same for usize as -1
-            let parameter_b = x_tilde.get_element(((i+5) as i32).rem_euclid(8) as usize); // should be same for usize as -3
-            let parameter_c = x_tilde.get_element(((i+2) as i32).rem_euclid(8) as usize); // should be same for usize as -6
+            let parameter_a = &x_tilde[((i+7) as i32).rem_euclid(8) as usize]; // should be same for usize as -1
+            let parameter_b = &x_tilde[((i+5) as i32).rem_euclid(8) as usize]; // should be same for usize as -3
+            let parameter_c = &x_tilde[((i+2) as i32).rem_euclid(8) as usize]; // should be same for usize as -6
 
             let middle_result = <T as ret_value>::xor_array(&parameter_a, &parameter_b);
             let final_result = <T as ret_value>::xor_array(&middle_result, &parameter_c);

@@ -35,17 +35,29 @@ pub enum sized_array_for_q_v{
     sized_array_2(sized_array_234<k_1>)
 }
 
+#[hax_lib::attributes]
 impl sized_array_for_q_v {
+
+    #[allow(dead_code)]
+    fn len(&self) -> usize {
+        match self {
+            sized_array_for_q_v::sized_array_1(_) => 12,
+            sized_array_for_q_v::sized_array_2(_) => 11,
+        }
+    }
+    #[hax_lib::requires(index < self.len())]
     pub fn get(&self, index: usize) -> &[u8; ell] {
         match self {
             sized_array_for_q_v::sized_array_1(arr) => &arr[index],
             sized_array_for_q_v::sized_array_2(arr) => &arr[index],
         }
     }
-    pub fn set(&mut self, index: usize, value: [u8; ell]) {
+
+    #[hax_lib::requires(index < self.len())]
+    pub fn set(self, index: usize, value: [u8; ell]) -> Self {
         match self {
-            sized_array_for_q_v::sized_array_1(arr) => arr[index] = value,
-            sized_array_for_q_v::sized_array_2(arr) => arr[index] = value,
+            sized_array_for_q_v::sized_array_1(mut arr) => {arr[index] = value; sized_array_for_q_v::sized_array_1(arr)},
+            sized_array_for_q_v::sized_array_2(mut arr) => {arr[index] = value; sized_array_for_q_v::sized_array_2(arr)},
         }
     }
     pub fn get_all(&self) -> &[[u8; ell]] {
@@ -71,7 +83,11 @@ pub enum Log2Number {
     twothousandsandfortyeight
 }
 
+#[hax_lib::attributes]
 impl Log2Number {
+    #[hax_lib::ensures(|result| result == 1 || result == 2 || result == 4 || result == 8
+                        || result == 16 || result == 32 || result == 64 || result == 128
+                        || result == 256 || result == 512 || result == 1024 || result == 2048)]
     pub fn value(self) -> usize {
         match self {
             Self::one => 1,
@@ -89,6 +105,9 @@ impl Log2Number {
         }
     }
 
+    #[hax_lib::requires(n == 1 || n == 2 || n == 4 || n == 8
+                        || n == 16 || n == 32 || n == 64 || n == 128
+                        || n == 256 || n == 512 || n == 1024 || n == 2048)]
     pub fn wrap(n: usize) -> Log2Number {
         match n {
             1 => Self::one,
@@ -107,6 +126,7 @@ impl Log2Number {
         }
     }
 
+    #[hax_lib::requires(self.value() > 1)]
     pub fn log_reduce(&mut self) -> Self {
         Self::wrap(self.value() >> 1)
     }
@@ -123,47 +143,52 @@ pub trait ret_value {
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
     fn get_element(&self, x : usize) -> Self::Elem;
     fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self;
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> [Self::Elem; 8];
     fn set_element(&mut self, index : usize, value : &Self::Elem);
     fn new_with_size(value: Self::Elem) -> Self;
-    fn len(&self) -> usize;
     fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
     fn turn_array_to_T(x : &[Self::Elem]) -> Self;
 }
 
+#[hax_lib::attributes]
 impl<const N: usize> ret_value for [[u8;16]; N] {
     type Elem = [u8;16];
     const dummy_value : Self::Elem = [0;16];
     const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     const value_of_two : Self::Elem = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     const value_of_three : Self::Elem = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    #[hax_lib::requires(x < y && y < self.len())]
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
         &self[x..y]
     }
+    #[hax_lib::requires(x < self.len())]
     fn get_element(&self, x : usize) -> [u8;16] {
         self[x]
     }
     fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
-        xor_arrays(x, y)
+        xor_arrays::<16>(x, y)
     }
 
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
-        let mut res: [[u8;16]; N] = [[0u8; 16]; N];
-        for i in 0..8 {
-            let value_to_push = Self::xor_array(&x[i], &y[i]);
+    #[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
+    fn xor_two_array(x : &[[u8; 16]], y : &[[u8; 16]]) -> [[u8; 16]; 8] {
+        let mut res: [[u8;16]; 8] = [[0u8; 16]; 8];
+        for i in 0..8usize {
+            hax_lib::loop_invariant!(|i: usize| {
+                i <= 8
+            });
+            //let value_to_push: [u8; 16] = Self::xor_array(&x[i], &y[i]);
+            let value_to_push: [u8; 16] = xor_helper(&x[i], &y[i]);
             res[i] = value_to_push;
         }
         res
     }
 
-    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+    #[hax_lib::requires(index < self.len())]
+    fn set_element(&mut self, index : usize, value : &[u8; 16]) {
         self[index] = *value;
     }
     fn new_with_size(value: Self::Elem) -> Self {
         [value; N]
-    }
-    fn len(&self) -> usize{
-        <[_]>::len(self)
     }
     fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
         gf128_mul(&x, &alpha_val)
@@ -189,9 +214,12 @@ impl<const N: usize> ret_value for [u8; N] {
     fn xor_array(x : &u8, y : &u8) -> u8{
         x ^ y
     }
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> Self {
-        let mut res: [u8; N] = [0u8; N];
+    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> [Self::Elem; 8] {
+        let mut res: [u8; 8] = [0u8; 8];
         for i in 0..8 {
+            hax_lib::loop_invariant!(|i: usize| {
+                i <= 8
+            });
             let value_to_push = Self::xor_array(&x[i], &y[i]);
             res[i] = value_to_push;
         }
@@ -203,9 +231,6 @@ impl<const N: usize> ret_value for [u8; N] {
     }
     fn new_with_size(value: Self::Elem) -> Self {
         [value; N]
-    }
-    fn len(&self) -> usize{
-        <[_]>::len(self)
     }
 
     fn multiply_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
@@ -223,3 +248,25 @@ impl<const N: usize> ret_value for [u8; N] {
     }
 
 }
+
+/*
+#[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
+fn xor_helper<T: ret_value>(x : &[[u8; 16]], y : &[[u8; 16]]) -> [[u8; 16]; 8] {
+    let mut res: [[u8;16]; 8] = [[0u8; 16]; 8];
+    for i in 0..8 {
+        hax_lib::loop_invariant!(|i: usize| {
+                i <= 8
+            });
+        let value_to_push: [u8; 16] = T::xor_array(&x[i], &y[i]);
+        res[i] = value_to_push;
+    }
+    res
+}
+*/
+
+fn xor_helper(x : &[u8;16], y : &[u8;16]) -> [u8;16] {
+    xor_arrays::<16>(x, y)
+}
+
+
+

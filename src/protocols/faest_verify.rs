@@ -42,7 +42,7 @@ pub fn faest_verify(
                     for byte in 0..234 {
                         let mut row : [u8;234] = *q_corrected[i].get(j);
                         row[byte] ^= c_bytes[i-1][byte];
-                        q_corrected[i].set(j, row);
+                        q_corrected[i] = q_corrected[i].set(j, row);
                     }
                 }
             }
@@ -54,7 +54,7 @@ pub fn faest_verify(
                     for byte in 0..234 {
                         let mut row : [u8;234] = *q_corrected[i].get(j);
                         row[byte] ^= c_bytes[i-1][byte];
-                        q_corrected[i].set(j, row);
+                        q_corrected[i] = q_corrected[i].set(j, row);
                     }
                 }
             }

@@ -7,6 +7,7 @@ name = "Bachelor-Assurance"
 version = "0.1.0"
 dependencies = [
  "hax-lib",
+ "lib",
  "libcrux",
  "rand 0.10.0",
  "rayon",
@@ -276,6 +277,12 @@ name = "leb128fmt"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
+
+[[package]]
+name = "lib"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "086431138d6ff370fc5559b62138aa5c986df3b59413f6d4e26b1183f47857d5"
 
 [[package]]
 name = "libc"

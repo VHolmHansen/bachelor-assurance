@@ -23,8 +23,8 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
 
 
     // få u tilde
-    let u_x_0 : &[u8] = &u_bytes[0..216];
-    let u_x_1 : &[u8]= &u_bytes[216..234];
+    let u_x_0 : &[u8;216] = &u_bytes[0..216].try_into().unwrap();
+    let u_x_1 : &[u8;18]= &u_bytes[216..234].try_into().unwrap();
     let u_tilde: [u8;18] = vole_hash(&chall_1, u_x_0, u_x_1);
 
 
@@ -35,8 +35,8 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
         let k_b : usize = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
             let col : &[u8;234] = v_bytes[i].get(j); // [u8; 234]
-            let x0_col : &[u8] = &col[0..216];
-            let x1_col : &[u8] = &col[216..234];
+            let x0_col : &[u8;216] = &col[0..216].try_into().unwrap();
+            let x1_col : &[u8;18] = &col[216..234].try_into().unwrap();
             let col_hash : [u8;18] = vole_hash(&chall_1, x0_col, x1_col);
             let col_hash_arr: [u8; 18] = col_hash;
             v_tilde[index] = col_hash_arr;

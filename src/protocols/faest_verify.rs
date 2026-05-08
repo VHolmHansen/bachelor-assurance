@@ -68,7 +68,9 @@ pub fn faest_verify(
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
             let col : &[u8;234] = q_corrected[i].get(j);
-            let col_hash : [u8;18] = vole_hash(&chall_1, &col[0..216], &col[216..234]);
+            let col_0 : &[u8;216] = &col[0..216].try_into().unwrap();
+            let col_1 : &[u8;18] = &col[216..234].try_into().unwrap();
+            let col_hash : [u8;18] = vole_hash(&chall_1, col_0, col_1);
             q_e_columns[index] = col_hash.try_into().unwrap();
             index += 1;
         }

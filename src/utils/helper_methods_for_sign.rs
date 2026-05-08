@@ -83,7 +83,7 @@ pub fn bits_to_state(text: &[u8; 128]) -> State {
 }
 
 // vole hash function: den bruger som udgangspunkt tobits og tofield, men i specificationen forklarer de at man godt kan skip det, på baggrund af ens repræsentation af binary fields
-pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8; 18] {
+pub fn vole_hash(sd: &[u8;88], x0: &[u8;216], x1: &[u8;18]) -> [u8; 18] {
     // parse sd into r0,r1,r2,r3,s (16 bytes each) and t (8 bytes)
     let r0: [u8; 16] = sd[0..16].try_into().unwrap();
     let r1: [u8; 16] = sd[16..32].try_into().unwrap();
@@ -93,21 +93,21 @@ pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> [u8; 18] {
     let t:  [u8;  8] = sd[80..88].try_into().unwrap();
 
 
-    let lambda_bytes = 16usize; // 128 bits / 8
-    let chunk_64 = 8usize;      // 64 bits / 8
+    const lambda_bytes : usize = 16usize; // 128 bits / 8
+    const chunk_64 : usize = 8usize;      // 64 bits / 8
 
     // number of lambda-sized chunks (ceiling division)
-    let num_chunks_lambda = (x0.len() + lambda_bytes - 1) / lambda_bytes; // 14
+    const num_chunks_lambda : usize = (216 + lambda_bytes - 1) / lambda_bytes; // 14, 216 is len of x_0
 
     // number of 64-bit chunks (ceiling division)
-    let num_chunks_64 = (x0.len() + chunk_64 - 1) / chunk_64; // 27
+    const num_chunks_64 : usize = (216 + chunk_64 - 1) / chunk_64; // 27
 
     // pad x0 to multiple of lambda_bytes
-    let mut x0_padded_lambda = vec![0u8; num_chunks_lambda * lambda_bytes]; // 224 bytes
+    let mut x0_padded_lambda = [0u8; num_chunks_lambda * lambda_bytes]; // 224 bytes
     x0_padded_lambda[..x0.len()].copy_from_slice(x0);
 
     // pad x0 to multiple of 8 bytes
-    let mut x0_padded_64 = vec![0u8; num_chunks_64 * chunk_64]; // 216 bytes
+    let mut x0_padded_64 = [0u8; num_chunks_64 * chunk_64]; // 216 bytes
     x0_padded_64[..x0.len()].copy_from_slice(x0);
 
     // h0: polynomial hash over F_{2^128} using Horner's method

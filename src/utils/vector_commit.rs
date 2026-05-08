@@ -92,8 +92,8 @@ pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0],
     let mut coms: [[u8; 32]; k_0_pow] = [[0u8; 32]; k_0_pow];
     let value_of_b = num_rec_k0(&b);
 
-    let leaves : sized_option_array<k_0_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);     //TODO: non-optional equivalent?
-    match_leaves::<k_0_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
+    let leaves : sized_option_array<k_0_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);
+    regen_tree_from_pdecom::<k_0_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
 
     let h = h_1_k0(&coms);
 
@@ -111,8 +111,8 @@ pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_1],
     let mut coms: [[u8; 32]; k_1_pow] = [[0u8; 32]; k_1_pow];
     let value_of_b = num_rec_k1(&b);
 
-    let leaves : sized_option_array<k_1_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);     //TODO: non-optional equivalent?
-    match_leaves::<k_1_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
+    let leaves : sized_option_array<k_1_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);
+    regen_tree_from_pdecom::<k_1_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
 
     let h = h_1_k1(&coms);
 
@@ -121,8 +121,8 @@ pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_1],
     (h, seeds_to_return)
 }
 
-//TODO: change name to something more explanatory
-fn match_leaves<const size: usize>(leaves: &sized_option_array<size>, sds: &mut [[u8; 16]; size], coms: &mut [[u8; 32]; size], iv: &[u8; 16], pdecom1: &[u8; 32]) {
+
+fn regen_tree_from_pdecom<const size: usize>(leaves: &sized_option_array<size>, sds: &mut [[u8; 16]; size], coms: &mut [[u8; 32]; size], iv: &[u8; 16], pdecom1: &[u8; 32]) {
     let mut i = 0;
     for l in 0..leaves.len() {
         match leaves[l] {

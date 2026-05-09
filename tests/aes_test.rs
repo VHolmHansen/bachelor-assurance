@@ -1,10 +1,10 @@
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
     use bachelor_assurance::protocols::aes::{add_round_key, gf2_affine_transform, mix_columns, shift_rows, sub_bytes};
     use bachelor_assurance::protocols::aes;
     use bachelor_assurance::utils::types::*;
-    use bachelor_assurance::utils::galois_field::*;
     use bachelor_assurance::utils::math::{transform_byte_array_to_state, transform_state_to_array};
 
     #[test]
@@ -24,9 +24,13 @@ mod tests {
             [0xd8, 0xcd, 0xb7, 0x80], [0x70, 0xb4, 0xc5, 0x5a],
         ];
 
+        let timer = Instant::now();
         let key_mark = aes::key_expansion(key);
 
-        assert_eq!(aes::encrypt(plaintext, &key_mark), expected);
+        let res = aes::encrypt(plaintext, &key_mark);
+        println!("{:?}", timer.elapsed());
+
+        assert_eq!(res, expected);
     }
 
     #[test]

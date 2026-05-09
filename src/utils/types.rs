@@ -1,4 +1,6 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
+
+use hax_lib::requires;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::math::xor_arrays;
 
@@ -158,7 +160,7 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     const value_of_two : Self::Elem = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     const value_of_three : Self::Elem = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     #[hax_lib::requires(x < y && y < self.len())]
-    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+    fn get_slice(&self, x : usize, y: usize) -> &[[u8; 16]] {
         &self[x..y]
     }
     #[hax_lib::requires(x < self.len())]
@@ -193,40 +195,47 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
         gf128_mul(&x, &alpha_val)
     }
-    fn turn_array_to_T(x : &[Self::Elem]) -> [[u8; 16]; N] {
+    #[hax_lib::requires(x.len() == N)]
+    fn turn_array_to_T(x : &[[u8; 16]]) -> [[u8; 16]; N] {
         x.try_into().unwrap()
     }
 
 }
 
+#[hax_lib::attributes]
 impl<const N: usize> ret_value for [u8; N] {
     type Elem = u8;
     const dummy_value : Self::Elem = 0;
     const value_of_one : Self::Elem = 1;
     const value_of_two: Self::Elem = 2;
     const value_of_three : Self::Elem = 3;
-    fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem] {
+    #[hax_lib::requires(x < y && y < self.len())]
+    fn get_slice(&self, x : usize, y: usize) -> &[u8] {
         &self[x..y]
     }
+    #[hax_lib::requires(x < self.len())]
     fn get_element(&self, x : usize) -> u8 {
         self[x]
     }
     fn xor_array(x : &u8, y : &u8) -> u8{
         x ^ y
     }
-    fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> [Self::Elem; 8] {
+    #[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
+    fn xor_two_array(x : &[u8], y : &[u8]) -> [u8; 8] {
         let mut res: [u8; 8] = [0u8; 8];
         for i in 0..8 {
             hax_lib::loop_invariant!(|i: usize| {
                 i <= 8
             });
-            let value_to_push = Self::xor_array(&x[i], &y[i]);
+            //let value_to_push = Self::xor_array(&x[i], &y[i]);
+            let value_to_push: u8 = xor_helper(&x[i], &y[i]);
             res[i] = value_to_push;
         }
         res
     }
 
-    fn set_element(&mut self, index : usize, value : &Self::Elem) {
+    #[hax_lib::requires(index < self.len())]
+    fn set_element(&mut self, index : usize, value : &u8) {
         self[index] = *value;
     }
     fn new_with_size(value: Self::Elem) -> Self {
@@ -243,7 +252,8 @@ impl<const N: usize> ret_value for [u8; N] {
         }
     }
 
-    fn turn_array_to_T(x : &[Self::Elem]) -> [u8; N] {
+    #[hax_lib::requires(x.len() == N)]
+    fn turn_array_to_T(x : &[u8]) -> [u8; N] {
         x.try_into().unwrap()
     }
 
@@ -264,9 +274,44 @@ fn xor_helper<T: ret_value>(x : &[[u8; 16]], y : &[[u8; 16]]) -> [[u8; 16]; 8] {
 }
 */
 
-fn xor_helper(x : &[u8;16], y : &[u8;16]) -> [u8;16] {
-    xor_arrays::<16>(x, y)
+trait XorHelper: Sized {
+    fn xor_helper(x: &Self, y: &Self) -> Self;
+
+    fn length(&self) -> usize;
 }
 
+impl XorHelper for u8 {
+    #[hax_lib::opaque]
+    fn xor_helper(x: &u8, y: &u8) -> u8 {
+        x^y
+    }
+
+    fn length(&self) -> usize {
+        1
+    }
+}
+
+impl XorHelper for [u8; 16] {
+    #[hax_lib::opaque]
+    fn xor_helper(x: &[u8; 16], y: &[u8; 16]) -> [u8; 16] {
+        xor_arrays::<16>(x, y)
+    }
+
+    fn length(&self) -> usize {self.len()}
+}
+
+//TODO: non-trivial refactor to make non-opaque
+#[hax_lib::opaque]
+fn xor_helper<T: XorHelper>(x : &T, y : &T) -> T {
+    T::xor_helper(x, y)
+}
+
+
+
+/*
+fn turn_array_to<const N: usize, T: ret_value>(&[T::Elem]) -> [[u8; 16]; N] {
+
+}
+ */
 
 

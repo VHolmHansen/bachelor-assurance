@@ -1,5 +1,5 @@
 use crate::utils::types::sized_array_for_q_v;
-use crate::utils::constants::{big_b, ell_bit_size, k_0, k_1, lambda, tau, tau_0};
+use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau, tau_0};
 use crate::utils::galois_field::{gf128_mul, gf64_add, gf64_mul};
 use crate::utils::helper_methods_cstrnts::bits_to_byte;
 use crate::utils::math::xor_arrays;
@@ -82,6 +82,7 @@ pub fn bits_to_state(text: &[u8; 128]) -> State {
     state
 }
 
+#[allow(non_upper_case_globals)]
 // vole hash function: den bruger som udgangspunkt tobits og tofield, men i specificationen forklarer de at man godt kan skip det, på baggrund af ens repræsentation af binary fields
 pub fn vole_hash(sd: &[u8;88], x0: &[u8;216], x1: &[u8;18]) -> [u8; 18] {
     // parse sd into r0,r1,r2,r3,s (16 bytes each) and t (8 bytes)

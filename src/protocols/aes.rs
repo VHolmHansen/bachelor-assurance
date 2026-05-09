@@ -1,9 +1,9 @@
-use hax_lib::Prop as prop;
+use hax_lib::*;
 use crate::utils::{galois_field};
 use crate::utils::types::{Matrix, State, Word};
 use crate::utils::constants::{nk, nst, R};
 
-#[hax_lib::requires(key.len() == (R + 1) << 2)]    //<< 2 = * nst where nst = 4
+#[requires(key.len() == (R + 1) << 2)]    //<< 2 = * nst where nst = 4
 pub fn encrypt(state: State, key: &[Word]) -> State {
     let mut res_state = state;
     add_round_key(&mut res_state, key[0..nst].try_into().unwrap());
@@ -53,7 +53,7 @@ pub fn key_expansion(key: [u8; 16]) -> [Word; (R + 1) * 4] {      // nst * (R+1)
     result_key
 }
 
-#[hax_lib::ensures(|result| result.len() == R)]
+#[ensures(|result| result.len() == R)]
 pub fn setup_rcon_table() -> [u8; R] {
     let mut rcon: [u8; R] = [0u8; R];
     let mut value: u8 = 0x01;
@@ -65,7 +65,7 @@ pub fn setup_rcon_table() -> [u8; R] {
 
 }
 
-#[cfg(not(hax))]
+#[cfg(not(feature = "hax"))]
 pub fn sub_bytes(state: &mut State) {
     for i in 0..nk {
         for j in 0..nst {
@@ -74,11 +74,11 @@ pub fn sub_bytes(state: &mut State) {
     }
 }
 
-#[cfg(hax)]
-#[hax_lib::requires(prop::from(state.len() == nk)
+#[cfg(feature = "hax")]
+#[hax_lib::requires(Prop::from(state.len() == nk)
                     .and(hax_lib::forall(|i: usize| i >= state.len()
                         || state[i].len() == nst)))]
-#[hax_lib::ensures(|state| prop::from(state.len() == nk)
+#[hax_lib::ensures(|state| Prop::from(state.len() == nk)
                     .and(hax_lib::forall(|i: usize| i >= state.len()
                         || state[i].len() == nst)))]
 pub fn sub_bytes(state: &mut State) {
@@ -89,15 +89,15 @@ pub fn sub_bytes(state: &mut State) {
     }
 }
 
-#[hax_lib::ensures(|result| result <= u8::MAX)]
+#[ensures(|result| result <= u8::MAX)]
 fn s_box(b: u8) -> u8{
     gf2_affine_transform(galois_field::gf28_inverse(b))
 }
 
 
-#[hax_lib::requires(prop::from(keys.len() >= nk)
+#[requires(Prop::from(keys.len() >= nk)
                     .and(hax_lib::forall(|i: usize| i >= keys.len() || keys[i].len() >= nst)))]
-#[hax_lib::ensures(|state| prop::from(state.len() == nk)
+#[ensures(|state| Prop::from(state.len() == nk)
                     .and(hax_lib::forall(|i: usize| i >= state.len() || state[i].len() == nst)))]
 pub fn add_round_key(state: &mut State, keys: [Word; nst]) {
     for row in 0..4 {
@@ -108,9 +108,9 @@ pub fn add_round_key(state: &mut State, keys: [Word; nst]) {
 }
 
 // doesn't work for nst = 8
-#[hax_lib::requires(state.len() == nk
+#[requires(state.len() == nk
                     && state[0].len() == nst)]
-#[hax_lib::ensures(|state| prop::from(state.len() == nk)
+#[ensures(|state| Prop::from(state.len() == nk)
                     .and(hax_lib::forall(|i: usize| i >= state.len() || state[i].len() == nst)))]
 pub fn shift_rows(state: &mut State) {
     let temp_state = state.clone();
@@ -121,9 +121,9 @@ pub fn shift_rows(state: &mut State) {
     }
 }
 
-#[hax_lib::requires(state.len() == nk
+#[requires(state.len() == nk
                     && state[0].len() == nst)]
-#[hax_lib::ensures(|state| state.len() == nk
+#[ensures(|state| state.len() == nk
                     && state[0].len() == nst)]
 pub fn mix_columns(state: &mut State) {
     let a: Matrix<u8, nst, nk> =
@@ -145,20 +145,20 @@ pub fn mix_columns(state: &mut State) {
 
 }
 
-#[hax_lib::requires(word.len() == 4)]
-#[hax_lib::ensures(|result| result.len() == 4)]
+#[requires(word.len() == 4)]
+#[ensures(|result| result.len() == 4)]
 fn rot_word(word: Word) -> Word {
     [word[1], word[2], word[3], word[0]]
 }
 
-#[cfg(not(hax))]
+#[cfg(not(feature = "hax"))]
 fn sub_word(word: Word) -> Word {
     [S_BOX_ARRAY[word[0] as usize],S_BOX_ARRAY[word[1] as usize],S_BOX_ARRAY[word[2] as usize],S_BOX_ARRAY[word[3] as usize]]
 }
 
-#[cfg(hax)]
-#[hax_lib::requires(word.len() == 4)]
-#[hax_lib::ensures(|result| result.len() == 4)]
+#[cfg(feature = "hax")]
+#[requires(word.len() == 4)]
+#[ensures(|result| result.len() == 4)]
 fn sub_word(word: Word) -> Word {
     let mut result: Word = [0; 4];
     for i in 0..4 {
@@ -167,14 +167,14 @@ fn sub_word(word: Word) -> Word {
     result
 }
 
-#[hax_lib::requires(w <= u8::MAX)]
-#[hax_lib::ensures(|result| result <= u8::MAX)]
+#[requires(w <= u8::MAX)]
+#[ensures(|result| result <= u8::MAX)]
 pub fn gf2_affine_transform(w: u8) -> u8 {
     let mut result = 0u8;
     let c = 0x63;
 
     for i in 0u8..8u8 {
-        hax_lib::loop_invariant!(|i: u8| {
+        loop_invariant!(|i: u8| {
             i <= u8::BITS as u8
         });
 
@@ -192,15 +192,15 @@ pub fn gf2_affine_transform(w: u8) -> u8 {
     result
 }
 
-#[hax_lib::requires(n <= u8::MAX && modu <= u8::BITS as u8)]
-#[hax_lib::ensures(|result| result < u8::BITS as u8)]
+#[requires(n <= u8::MAX && modu <= u8::BITS as u8)]
+#[ensures(|result| result < u8::BITS as u8)]
 fn bitand_mod(n: u8, modu: u8) -> u8 {
     hax_lib::assume!(n & modu < u8::BITS as u8);    //TODO: make lemma?
     n & modu
 }
 const RCON_TABLE : [u8;10] = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54];
 
-#[cfg(not(hax))]
+#[cfg(not(feature = "hax"))]
 const S_BOX_ARRAY : [u8;256] =
     [99, 124, 119, 123, 242, 107, 111, 197,
         48, 1, 103, 43, 254, 215, 171, 118,

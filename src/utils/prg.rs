@@ -1,7 +1,6 @@
 use crate::utils::constants::{ell, tau, lambda};
 use crate::utils::math;
 use crate::protocols::aes;
-use crate::utils::libcrux_proxy::DigestProxy;
 
 // should have an extra parameter based on size, but we know size is 2 \lambda, which for us is 256
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode

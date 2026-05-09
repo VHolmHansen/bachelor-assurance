@@ -17,3 +17,6 @@ lib = "0.0.2"
 [target."cfg(hax)".dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
 
+[features]
+hax = []
+

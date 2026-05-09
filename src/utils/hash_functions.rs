@@ -1,5 +1,4 @@
 #![allow(non_upper_case_globals)]
-use crate::utils::constants::lambda;
 use crate::utils::libcrux_proxy::DigestProxy;
 
 // takes a k and the iv

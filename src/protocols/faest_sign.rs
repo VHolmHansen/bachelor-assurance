@@ -3,11 +3,10 @@ use crate::utils::types::{sized_array_for_coms, sized_array_for_cop, sized_array
 use crate::utils::vector_commit::{vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
-use crate::utils::types::{ret_value};
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1, FAEST_VOLE_commit};
 use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, not_deterministic_test, tau, tau_0, tau_1, tau_minus_one};
 use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
-use crate::utils::helper_methods_for_sign::{bits_to_state, expand_bits_56, u_to_1728_bits, vole_hash, vole_to_row_major};
+use crate::utils::helper_methods_for_sign::{bits_to_state, u_to_1728_bits, vole_hash, vole_to_row_major};
 use crate::utils::libcrux_proxy::RandGenProxy;
 
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]

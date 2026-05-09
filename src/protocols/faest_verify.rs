@@ -6,7 +6,7 @@ use crate::protocols::faest_prove_and_verify::faest_aes_verify;
 use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
 use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell_bit_size};
 use crate::utils::hash_functions::{bits_to_bytes_for_d, h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
-use crate::utils::helper_methods_for_sign::{chall3_to_bits, expand_bits_56, vole_hash, vole_to_row_major};
+use crate::utils::helper_methods_for_sign::{chall3_to_bits, vole_hash, vole_to_row_major};
 use crate::utils::preliminary_helper_methods::flatten;
 
 pub fn faest_verify(

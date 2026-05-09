@@ -1,4 +1,6 @@
 #![allow(non_upper_case_globals)]
+
+use hax_lib::loop_invariant;
 use crate::utils::libcrux_proxy::DigestProxy;
 
 // takes a k and the iv
@@ -23,7 +25,15 @@ pub fn h_1_k0(coms: &[[u8; 32]; 4096]) -> [u8; 32] {
     let mut input = [0u8; SIZE];
     let mut i = 0;
     for j in 0..4096 {
+        loop_invariant!(|j: usize| {
+            j <= 4096 &&
+            i == j * 32
+        });
         for k in 0..32 {
+            loop_invariant!(|k: usize| {
+                k <= 32 &&
+                i == j * 32 + k
+            });
             input[i] = coms[j][k];
             i += 1;
         }
@@ -37,7 +47,15 @@ pub fn h_1_k1(coms: &[[u8; 32]; 2048]) -> [u8; 32] {
     let mut input = [0u8; SIZE];
     let mut i = 0;
     for j in 0..2048 {
+        loop_invariant!(|j: usize| {
+            j <= 2048 &&
+            i == j * 32
+        });
         for k in 0..32 {
+            loop_invariant!(|k: usize| {
+                k <= 32 &&
+                i == j * 32 + k
+            });
             input[i] = coms[j][k];
             i += 1;
         }
@@ -103,19 +121,21 @@ pub fn h_3(sk : [u8;16], my : [u8;32], rho : [u8;16]) -> ([u8;16], [u8;16]){
     (r, iv)
 }
 
-pub fn h_2_1(my : [u8;32], hcom : [u8;32], cs : &[[u8;234]], iv : [u8;16]) -> [u8;88]{
+pub fn h_2_1(my : [u8;32], hcom : [u8;32], cs : &[[u8;234]; 10], iv : [u8;16]) -> [u8;88]{
     const size_of_input : usize = 32+32+10*234+16+1;
     let mut input: [u8;size_of_input] = [0;size_of_input];
     let mut offset = 0;
-
-
 
     input[offset..offset+32].copy_from_slice(&my);
     offset += 32;
     input[offset..offset + 32].copy_from_slice(&hcom);
     offset += 32;
-    for c in cs {
-        input[offset..offset + 234].copy_from_slice(c);
+    for c in 0..cs.len() {
+        loop_invariant!(|c: usize| {
+            c <= cs.len() &&
+            offset == 32 + 32 + (c*234)
+        });
+        input[offset..offset + 234].copy_from_slice(&cs[c]);
         offset += 234;
     }
     input[offset..offset + 16].copy_from_slice(&iv);

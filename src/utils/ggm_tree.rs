@@ -3,6 +3,7 @@ use crate::utils::prg::prg;
 use crate::utils::constants::{k_1};
 use crate::utils::types::{sized_array_16, sized_option_array, Log2Number};
 
+#[hax_lib::requires(size_pow > 0)]
 pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 16], d: i128) -> sized_array_16<size_pow>{
     let mut leaves = [[0u8;16]; size_pow];
     leaves[0] = *r;
@@ -120,7 +121,8 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
 }
 
 
-
+//TODO: should be deleted?
+#[cfg(not(hax))]
 pub fn main(){
     const pow_of_k_1 : usize = 2048;
     let leaves1 = get_leaves_node_from_root::<pow_of_k_1>(&[1;16], [0;16], k_1 as i128);

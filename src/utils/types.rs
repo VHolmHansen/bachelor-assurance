@@ -41,7 +41,7 @@ pub enum sized_array_for_q_v{
 impl sized_array_for_q_v {
 
     #[allow(dead_code)]
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         match self {
             sized_array_for_q_v::sized_array_1(_) => 12,
             sized_array_for_q_v::sized_array_2(_) => 11,
@@ -142,6 +142,7 @@ pub trait ret_value {
     const value_of_one : Self::Elem;
     const value_of_two : Self::Elem;
     const value_of_three : Self::Elem;
+    fn get_len(&self) -> usize;
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
     fn get_element(&self, x : usize) -> Self::Elem;
     fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
@@ -159,6 +160,9 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     const value_of_two : Self::Elem = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     const value_of_three : Self::Elem = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+    fn get_len(&self) -> usize {
+        N
+    }
     #[hax_lib::requires(x < y && y < self.len())]
     fn get_slice(&self, x : usize, y: usize) -> &[[u8; 16]] {
         &self[x..y]
@@ -209,6 +213,9 @@ impl<const N: usize> ret_value for [u8; N] {
     const value_of_one : Self::Elem = 1;
     const value_of_two: Self::Elem = 2;
     const value_of_three : Self::Elem = 3;
+    fn get_len(&self) -> usize {
+        N
+    }
     #[hax_lib::requires(x < y && y < self.len())]
     fn get_slice(&self, x : usize, y: usize) -> &[u8] {
         &self[x..y]

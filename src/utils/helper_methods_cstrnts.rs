@@ -1,18 +1,30 @@
+use hax_lib::loop_invariant;
 use crate::utils::galois_field::gf128_pow;
 use crate::utils::types::Word;
 use crate::utils::types::{ret_value};
 use crate::utils::constants::{alpha};
 
-// M is N/4
-pub fn words_to_blocks<const LEN: usize>(x: [Word; 44]) -> [[u8; 16]; LEN]
-    //where [(); N / 4]: Sized
+// len of res is 1 / 4 * len of input
+pub fn words_to_blocks(x: [Word; 44]) -> [[u8; 16]; 11]
 {
-    let mut a: [[u8; 16]; LEN] = [[0u8; 16]; LEN];
-    for i in 0..LEN {
+    let mut a: [[u8; 16]; 11] = [[0u8; 16]; 11];
+    for i in 0..11 {
+        loop_invariant!(|i: usize| {
+            i <= 11
+        });
         let mut acc: usize = 0;
         for j in 0..4 {
+            loop_invariant!(|j: usize| {
+                j <= 4 &&
+                acc == j * 4
+            });
             for k in 0..4 { // word len
-                let word = x[(i << 2) + j][k];
+                loop_invariant!(|k: usize| {
+                    k <= 4 &&
+                    acc == j * 4 + k
+                });
+                let index = (i << 2) + j;
+                let word = x[index][k];
                 a[i][acc] = word;
                 acc += 1
             }
@@ -21,11 +33,16 @@ pub fn words_to_blocks<const LEN: usize>(x: [Word; 44]) -> [[u8; 16]; LEN]
     a
 }
 
+#[hax_lib::requires(x.get_len() == 8)]
 pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
     let mut res: [u8; 16] = [0; 16];
-    for i in 0..8 {
-        let alpha_pow_val = alpha_pow(i);
-        let elem = x.get_element(i as usize);
+    for i in 0..x.get_len() {
+        loop_invariant!(|i: usize| {
+            i <= x.get_len()
+        });
+        let alpha_pow_val = alpha_pow(i as i32);
+        hax_lib::assert!(i < x.get_len());
+        let elem = x.get_element(i);
 
         // multiply_with_alpha must behave as:
         // - if elem is a scalar bit (0 or 1): return alpha_pow_val if bit=1, else [0;16]

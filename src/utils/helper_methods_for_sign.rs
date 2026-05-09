@@ -1,5 +1,6 @@
+use hax_lib::loop_invariant;
 use crate::utils::types::sized_array_for_q_v;
-use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau, tau_0};
+use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau, tau_0, ell};
 use crate::utils::galois_field::{gf128_mul, gf64_add, gf64_mul};
 use crate::utils::helper_methods_cstrnts::bits_to_byte;
 use crate::utils::math::xor_arrays;
@@ -8,19 +9,37 @@ use crate::utils::types::State;
 // funktioner der bruges til at omdanne vores V og u, i sign til bits, skal nok slettes senere efte refactor
 pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_bit_size+lambda] {
     let mut v_rows: [[u8; lambda];ell_bit_size+lambda] = [[0u8; lambda]; ell_bit_size + lambda];
-
     // flatten all columns across tau instances
     // big_v[0] has k_0 columns, big_v[1..tau_0] have k_0 columns
     // big_v[tau_0..tau] have k_1 columns
     let mut col = 0;
     for i in 0..tau {
+        loop_invariant!(|i: usize| {
+            i <= tau &&
+            col == if i <= tau_0 {i * k_0}
+            else {tau_0 * k_0 + (i - tau_0) * k_1}
+        });
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
+            loop_invariant!(|j: usize| {
+                j <= k_b &&
+                big_v[i].len() == k_b &&
+                col == if i <= tau_0 {i * k_0 + j}
+                else {tau_0 * k_0 + (i - tau_0) * k_1 + j}
+            });
             // big_v[i][j] is one column of l_hat bits packed into 234 bytes
             for row in 0..(ell_bit_size+lambda) {
+                loop_invariant!(|row: usize| {
+                    row <= (ell_bit_size+lambda)
+                });
                 let byte_idx = row >> 3;
                 let bit_idx  = row % 8;
-                v_rows[row][col] = (big_v[i].get(j)[byte_idx] >> bit_idx) & 1; // [j][byte_idx]
+                hax_lib::assert!(i < big_v.len());
+                hax_lib::assert!(j < big_v[i].len());
+                let val = (big_v[i].get(j)[byte_idx] >> bit_idx) & 1;
+                hax_lib::assert!(row < v_rows.len());
+                hax_lib::assert!(col < v_rows[row].len());
+                v_rows[row][col] = val; // [j][byte_idx]
             }
             col += 1;
         }

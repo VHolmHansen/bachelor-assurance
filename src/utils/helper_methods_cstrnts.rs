@@ -1,6 +1,6 @@
 use hax_lib::loop_invariant;
 use crate::utils::galois_field::gf128_pow;
-use crate::utils::types::Word;
+use crate::utils::types::{AlphaMul, Word, XorHelper};
 use crate::utils::types::{ret_value};
 use crate::utils::constants::{alpha};
 
@@ -33,26 +33,27 @@ pub fn words_to_blocks(x: [Word; 44]) -> [[u8; 16]; 11]
     a
 }
 
-#[hax_lib::requires(x.get_len() == 8)]
-pub fn byte_combine<T: ret_value>(x: T) -> [u8; 16] {
+pub fn byte_combine<T>(x: [T; 8]) -> [u8; 16] where
+    T: AlphaMul + XorHelper {
     let mut res: [u8; 16] = [0; 16];
-    for i in 0..x.get_len() {
+    for i in 0..x.len() {
         loop_invariant!(|i: usize| {
-            i <= x.get_len()
+            i <= x.len()
         });
         let alpha_pow_val = alpha_pow(i as i32);
-        hax_lib::assert!(i < x.get_len());
-        let elem = x.get_element(i);
+        hax_lib::assert!(i < x.len());
+        let elem = x[i];
 
         // multiply_with_alpha must behave as:
         // - if elem is a scalar bit (0 or 1): return alpha_pow_val if bit=1, else [0;16]
         // - if elem is a field element [u8;16]: return gf128_mul(elem, alpha_pow_val)
-        let contribution = <T as ret_value>::multiply_with_alpha(elem, alpha_pow_val);
-        res = <[[u8;16];4] as ret_value>::xor_array(&res, &contribution); // 4 is a dummy value
+        let contribution = <T>::multiply_with_alpha(elem, alpha_pow_val);
+        res = <[u8; 16]>::xor_array(&res, &contribution); // 4 is a dummy value
     }
     res
 }
 
+//TODO: make u32 > u32
 pub fn alpha_pow(i : i32) -> [u8;16] {
     if i == 0 {
         [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]

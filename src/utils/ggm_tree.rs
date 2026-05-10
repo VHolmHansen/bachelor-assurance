@@ -3,6 +3,7 @@ use crate::utils::prg::prg;
 use crate::utils::constants::{k_1};
 use crate::utils::types::{sized_array_16, sized_option_array, Log2Number};
 
+//TODO: make i128 > u64
 #[hax_lib::requires(size_pow > 0)]
 pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 16], d: i128) -> sized_array_16<size_pow>{
     let mut leaves = [[0u8;16]; size_pow];
@@ -29,6 +30,7 @@ pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 1
     leaves
 }
 
+//TODO: make i128 > u64
 pub fn get_cop<const size: usize>(r: [u8;16], iv: [u8;16], b: u64, d: i128) -> sized_array_16<size> {
     let mut cop = [[0u8; 16]; size];
     let mut current_node = r;
@@ -59,6 +61,7 @@ pub fn get_cop<const size: usize>(r: [u8;16], iv: [u8;16], b: u64, d: i128) -> s
 }
 
 // ensure level < tree size
+//TODO: make i128 > u64
 pub fn get_if_left(level : i128, index : i128) -> bool{
     let mut index = index;
     let mut i = level;

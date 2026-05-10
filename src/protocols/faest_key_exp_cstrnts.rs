@@ -1,7 +1,7 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{setup_rcon_table};
-use crate::utils::types::{ret_value};
+use crate::utils::types::{ret_value, XorHelper};
 use crate::utils::helper_methods_cstrnts::{byte_combine};
 use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lambda, R, l_ke};
 
@@ -32,7 +32,7 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(_m : usize, x: T, mtag : bool, mkey 
         }  else {
             // same change made here, we are not pushing bits, we are pushing words, so for every 32 bits to be pushed, push one word
             for i in 0..32{
-                let value_to_pushed :<T as ret_value>::Elem = <T as ret_value>::xor_array(&y[((j-nk) << 5) + i], &y[((j-1) << 5) + i]);
+                let value_to_pushed :<T as ret_value>::Elem = <T::Elem>::xor_array(&y[((j-nk) << 5) + i], &y[((j-1) << 5) + i]);
                 y[(j << 5) + i] = value_to_pushed;
             }
         }
@@ -43,7 +43,16 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(_m : usize, x: T, mtag : bool, mkey 
 
 // x is 320
 // x_k is 1408
-pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m : usize, x: T, x_k : TK, mtag: bool, mkey : bool, Delta : <T as ret_value>::Elem) -> [<T as ret_value>::Elem;ret_size_exp_bwd] {
+pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
+    _m : usize,
+    x: T,
+    x_k : TK,
+    mtag: bool,
+    mkey : bool,
+    Delta : <T as ret_value>::Elem)
+    -> [<T as ret_value>::Elem;ret_size_exp_bwd] where
+    T::Elem: XorHelper
+{
     if mtag && mkey{
         panic!("invalid tags")
     }
@@ -66,7 +75,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
         let parameter_a  = x.get_slice(j << 3,(j << 3) + 8);
         let parameter_b = x_k.get_slice(i_wd + (c << 3),i_wd + (c << 3) + 8);
 
-        let mut x_tilde : [T::Elem; 8] = <T as ret_value>::xor_two_array(parameter_a, parameter_b);
+        let mut x_tilde : [T::Elem; 8] = <T::Elem>::xor_two_array(parameter_a, parameter_b);
 
         // The if statement
         if !mtag && rmvRcon && (c == 0) {
@@ -80,7 +89,7 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
                         {&Delta}
                         else {&<T as ret_value>::value_of_one}};
                 let existing = &x_tilde[i];
-                x_tilde[i] = <T as ret_value>::xor_array(&existing, &r);
+                x_tilde[i] = <T::Elem>::xor_array(&existing, &r);
                 rcon_value = rcon_value >> 1;
             }
         }
@@ -92,15 +101,15 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(_m 
             let parameter_b = &x_tilde[((i+5) as i32).rem_euclid(8) as usize]; // should be same for usize as -3
             let parameter_c = &x_tilde[((i+2) as i32).rem_euclid(8) as usize]; // should be same for usize as -6
 
-            let middle_result = <T as ret_value>::xor_array(&parameter_a, &parameter_b);
-            let final_result = <T as ret_value>::xor_array(&middle_result, &parameter_c);
+            let middle_result = <T::Elem>::xor_array(&parameter_a, &parameter_b);
+            let final_result = <T::Elem>::xor_array(&middle_result, &parameter_c);
 
             y_tilde.set_element(i, &final_result);
         }
         if !mtag {
             let delta_or_1 = if mkey {&Delta} else {&<T as ret_value>::value_of_one};
-            y_tilde.set_element(0, &<T as ret_value>::xor_array(&y_tilde.get_element(0), delta_or_1));
-            y_tilde.set_element(2, &<T as ret_value>::xor_array(&y_tilde.get_element(2), delta_or_1));
+            y_tilde.set_element(0, &<T::Elem>::xor_array(&y_tilde.get_element(0), delta_or_1));
+            y_tilde.set_element(2, &<T::Elem>::xor_array(&y_tilde.get_element(2), delta_or_1));
         }
 
         for i in 0..8{
@@ -158,18 +167,18 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
             let w_hat_slice : &[u8;8] = (&w_tilde[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
             let v_w_hat_slice : &[[u8;16];8] = (&v_w   [((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
 
-            k_hat[r]   = byte_combine(*k_hat_slice);
-            v_k_hat[r] = byte_combine(*v_k_hat_slice);
-            w_hat[r]   = byte_combine(*w_hat_slice);
-            v_w_hat[r] = byte_combine(*v_w_hat_slice);
+            k_hat[r]   = byte_combine::<u8>(*k_hat_slice);
+            v_k_hat[r] = byte_combine::<[u8;16]>(*v_k_hat_slice);
+            w_hat[r]   = byte_combine::<u8>(*w_hat_slice);
+            v_w_hat[r] = byte_combine::<[u8;16]>(*v_w_hat_slice);
         }
 
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
             A_0[4*j+r] = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
-            let product = gf128_mul(&<[[u8;16];4] as ret_value>::xor_array(&k_hat[r],&v_k_hat[r]),&<[[u8;16];4] as ret_value>::xor_array(&w_hat[r],&v_w_hat[r]));
-            let xor = <[[u8;16];4] as ret_value>::xor_array(&<[[u8;16];4] as ret_value>::value_of_one,&A_0[(j << 2) + r]);
-            A_1[4*j+r] = <[[u8;16];4] as ret_value>::xor_array(&product,&xor);
+            let product = gf128_mul(&<[u8;16]>::xor_array(&k_hat[r],&v_k_hat[r]),&<[u8;16]>::xor_array(&w_hat[r],&v_w_hat[r]));
+            let xor = <[u8;16]>::xor_array(&<[[u8;16];4] as ret_value>::value_of_one,&A_0[(j << 2) + r]);
+            A_1[4*j+r] = <[u8;16]>::xor_array(&product,&xor);
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }
@@ -197,13 +206,13 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
             let q_hat_k_slice : &[[u8;16];8] = (&q_k    [(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)]).try_into().unwrap();
             let q_hat_w_slice : &[[u8;16];8] = (&q_w_flat[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
 
-            q_hat_k[r] = byte_combine(*q_hat_k_slice);
-            q_hat_w[r] = byte_combine(*q_hat_w_slice);
+            q_hat_k[r] = byte_combine::<[u8;16]>(*q_hat_k_slice);
+            q_hat_w[r] = byte_combine::<[u8;16]>(*q_hat_w_slice);
         }
 
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
-            B[(j << 2) + r] = <[[u8;16];4] as ret_value>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
+            B[(j << 2) + r] = <[u8;16]>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
     }

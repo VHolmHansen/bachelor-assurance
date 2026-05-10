@@ -2,7 +2,7 @@
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::helper_methods_cstrnts::byte_combine;
 use crate::utils::math::xor_arrays;
-use crate::utils::types::{ret_value};
+use crate::utils::types::{ret_value, XorHelper};
 use crate::utils::constants::{l_enc, lambda, s_enc, R};
 
 // m is size of elements
@@ -22,8 +22,9 @@ pub fn faest_aes_enc_fwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
     mtag : bool,
     mkey : bool,
     Delta : <T as ret_value>::Elem
-) -> [[u8;16]; s_enc]
-where [T::Elem; 8]: ret_value<Elem = T::Elem>
+) -> [[u8;16]; s_enc] where
+    [T::Elem; 8]: ret_value<Elem = T::Elem>,
+    T::Elem: XorHelper
 {
     if mtag && mkey {
         panic!("called with wrong values")
@@ -43,10 +44,10 @@ where [T::Elem; 8]: ret_value<Elem = T::Elem>
         // let x_in_as_T = <T as ret_value>::turn_array_to_T(&x_in);
         let x_in_as_T: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(&x_in);
 
-        let parameter_1 : [u8;16] = byte_combine(x_in_as_T);
-        let parameter_2 : [u8;16] = byte_combine(x_k_slice_as_T);
+        let parameter_1 : [u8;16] = byte_combine::<T::Elem>(x_in_as_T);
+        let parameter_2 : [u8;16] = byte_combine::<T::Elem>(x_k_slice_as_T);
 
-        y[i] = <[[u8;16];4] as ret_value>::xor_array(&parameter_1, &parameter_2);
+        y[i] = <[u8;16]>::xor_array(&parameter_1, &parameter_2);
     }
     for j in 1..R{
         for c in 0..4{
@@ -58,11 +59,11 @@ where [T::Elem; 8]: ret_value<Elem = T::Elem>
             for r in 0..4 {
                 // let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
                 let get_slice_of_x: [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x.get_slice(i_x+(r << 3),i_x+(r << 3)+8));
-                x_hat[r] = byte_combine(get_slice_of_x);
+                x_hat[r] = byte_combine::<T::Elem>(get_slice_of_x);
                 // let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
                 let get_slice_of_x_k : [T::Elem; 8] = <[T::Elem; 8] as ret_value>::turn_array_to_T(x_k.get_slice(i_k+(r << 3), i_k+(r << 3)+8));
 
-                x_hat_k[r] = byte_combine(get_slice_of_x_k);
+                x_hat_k[r] = byte_combine::<T::Elem>(get_slice_of_x_k);
             }
             let mut one = [<[[u8;16];4] as ret_value>::dummy_value;8];
             let mut two = [<[[u8;16];4] as ret_value>::dummy_value;8];
@@ -73,9 +74,9 @@ where [T::Elem; 8]: ret_value<Elem = T::Elem>
             three[0] = <[[u8;16];4] as ret_value>::value_of_one;
             three[1] = <[[u8;16];4] as ret_value>::value_of_one;
 
-            let value_of_one = byte_combine(one);
-            let value_of_two = byte_combine(two);
-            let value_of_three = byte_combine(three);
+            let value_of_one = byte_combine::<[u8;16]>(one);
+            let value_of_two = byte_combine::<[u8;16]>(two);
+            let value_of_three = byte_combine::<[u8;16]>(three);
 
             let x_hat_0_2 = gf128_mul(&x_hat[0],&value_of_two);
             let x_hat_1_3 = gf128_mul(&x_hat[1],&value_of_three);
@@ -117,7 +118,9 @@ pub fn faest_aes_enc_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
     mtag : bool,
     mkey : bool,
     Delta : <T as ret_value>::Elem
-) -> [[u8;16];160] where [T::Elem; 8]: ret_value<Elem = T::Elem>
+) -> [[u8;16];160] where
+    [T::Elem; 8]: ret_value<Elem = T::Elem>,
+    T::Elem: XorHelper
 {
     let mut y : [<[[u8;16];4] as ret_value>::Elem;s_enc] = [<[[u8;16];4] as ret_value>::dummy_value;s_enc]; // 4 is a dummy value
     for j in 0..R{
@@ -140,7 +143,7 @@ pub fn faest_aes_enc_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
                         }
                     }
                     for idx in 0..8{
-                        x_tilde[idx] = <T as ret_value>::xor_array(&x_out[idx], &x_k.get_element(128+ird+idx));
+                        x_tilde[idx] = <T::Elem>::xor_array(&x_out[idx], &x_k.get_element(128+ird+idx));
                     }
                 }
                 let mut y_tilde : [<T as ret_value>::Elem;8] = [<T as ret_value>::dummy_value; 8];
@@ -149,18 +152,18 @@ pub fn faest_aes_enc_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
                     let parameter_b = &x_tilde[((i+5) as i32).rem_euclid(8) as usize]; // should be same for usize as -3
                     let parameter_c = &x_tilde[((i+2) as i32).rem_euclid(8) as usize]; // should be same for usize as -6
 
-                    let middle_result = <T as ret_value>::xor_array(parameter_a, parameter_b);
-                    let final_result = <T as ret_value>::xor_array(&middle_result, parameter_c);
+                    let middle_result = <T::Elem>::xor_array(parameter_a, parameter_b);
+                    let final_result = <T::Elem>::xor_array(&middle_result, parameter_c);
 
                     y_tilde[i] = final_result;
                 }
                 let value_might_be_delta = if mtag {<T as ret_value>::dummy_value} else {
                     if mkey {Delta.clone()} else {<T as ret_value>::value_of_one}
                 };
-                y_tilde[0] = <T as ret_value>::xor_array(&y_tilde[0],&value_might_be_delta);
-                y_tilde[2] = <T as ret_value>::xor_array(&y_tilde[2],&value_might_be_delta);
+                y_tilde[0] = <T::Elem>::xor_array(&y_tilde[0],&value_might_be_delta);
+                y_tilde[2] = <T::Elem>::xor_array(&y_tilde[2],&value_might_be_delta);
 
-                y[(j << 4) + (c << 2) + r] = byte_combine(<[T::Elem; 8] as ret_value>::turn_array_to_T(&y_tilde));
+                y[(j << 4) + (c << 2) + r] = byte_combine::<T::Elem>(<[T::Elem; 8] as ret_value>::turn_array_to_T(&y_tilde));
             }
         }
     }

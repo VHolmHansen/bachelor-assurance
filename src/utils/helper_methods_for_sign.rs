@@ -16,7 +16,7 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_b
     for i in 0..tau {
         loop_invariant!(|i: usize| {
             i <= tau &&
-            col == if i <= tau_0 {i * k_0}
+            col == if i < tau_0 {i * k_0}
             else {tau_0 * k_0 + (i - tau_0) * k_1}
         });
         let k_b = if i < tau_0 { k_0 } else { k_1 };
@@ -24,7 +24,7 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_b
             loop_invariant!(|j: usize| {
                 j <= k_b &&
                 big_v[i].len() == k_b &&
-                col == if i <= tau_0 {i * k_0 + j}
+                col == if i < tau_0 {i * k_0 + j}
                 else {tau_0 * k_0 + (i - tau_0) * k_1 + j}
             });
             // big_v[i][j] is one column of l_hat bits packed into 234 bytes

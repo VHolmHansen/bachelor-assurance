@@ -1,4 +1,5 @@
 use crate::protocols::aes;
+use crate::utils::constants::{lambda, lambda_bytes};
 
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
@@ -88,19 +89,71 @@ pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     // return lower 128 bits
     result[0..16].try_into().unwrap()
 }
+pub fn gf256_mul(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
+    let mut result = [0u8; 64];
 
-pub fn gf128_pow(base: &[u8; 16], pow_of: i32) -> [u8; 16] {
+    for i in 0..256 {
+        if get_bit(a, i) == 1 {
+            for j in 0..256 {
+                if get_bit(b, j) == 1 {
+                    flip_bit(&mut result, i + j);
+                }
+            }
+        }
+    }
+
+    // reduce modulo P256 = x^256 + x^10 + x^5 + x^2 + 1
+    let mut i = 511;
+    while i >= 256 {
+        if get_bit(&result, i) == 1 {
+            flip_bit(&mut result, i - 256 + 10);
+            flip_bit(&mut result, i - 256 + 5);
+            flip_bit(&mut result, i - 256 + 2);
+            flip_bit(&mut result, i - 256);
+        }
+        i -= 1;
+    }
+
+    result[0..32].try_into().unwrap()
+}
+
+pub fn gf_lambda_pow(base: &[u8; lambda_bytes], pow_of: i32) -> [u8; lambda_bytes] {
     if pow_of == 0 {
-        return [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+        let mut result = [0u8; lambda_bytes];
+        result[0] = 1;
+        return result;
     }
     if pow_of == 1 {
         return *base;
     }
     let mut res = *base;
-    for _ in 2..(pow_of + 1) {      // range inclusive
-        res = gf128_mul(&res, base);
+    for _ in 2..(pow_of + 1) {
+        res = gf_lambda_mul(&res, base);
     }
     res
+}
+pub fn gf_lambda_mul(a: &[u8; lambda_bytes], b: &[u8; lambda_bytes]) -> [u8; lambda_bytes] {
+    let mut result = [0u8; lambda_bytes];
+    if lambda == 128 {
+        gf128_mul_into(a.as_slice(), b.as_slice(), &mut result);
+    } else {
+        gf256_mul_into(a.as_slice(), b.as_slice(), &mut result);
+    }
+    result
+}
+
+fn gf128_mul_into(a: &[u8], b: &[u8], out: &mut [u8]) {
+    let a: &[u8; 16] = a.try_into().unwrap();
+    let b: &[u8; 16] = b.try_into().unwrap();
+    let res = gf128_mul(a, b);
+    out.copy_from_slice(&res);
+}
+
+fn gf256_mul_into(a: &[u8], b: &[u8], out: &mut [u8]) {
+    let a: &[u8; 32] = a.try_into().unwrap();
+    let b: &[u8; 32] = b.try_into().unwrap();
+    let res = gf256_mul(a, b);
+    out.copy_from_slice(&res);
 }
 
 #[hax_lib::requires(i >> 3 < a.len())]

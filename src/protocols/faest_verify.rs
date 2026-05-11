@@ -1,10 +1,11 @@
+use crate::utils::constants::chall3_bytes;
 use crate::utils::constants::{tau_1, tau_minus_one};
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1};
 use crate::utils::types::sized_array_for_q_v;
 use crate::utils::types::sized_array_for_cop;
 use crate::protocols::faest_prove_and_verify::faest_aes_verify;
 use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
-use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell_bit_size};
+use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell};
 use crate::utils::hash_functions::{bits_to_bytes_for_d, h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, vole_hash, vole_to_row_major};
 use crate::utils::preliminary_helper_methods::flatten;
@@ -12,15 +13,15 @@ use crate::utils::preliminary_helper_methods::flatten;
 pub fn faest_verify(
     msg : &[u8],
     pk : &([u8;lambda], [u8;lambda]),
-    sig : &([[u8;234];tau_minus_one], [u8;18],[u8;ell_bit_size], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]))
+    sig : &([[u8;234];tau_minus_one], [u8;18], [u8; ell], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]))
     -> bool
 {
     let c_bytes : &[[u8;234];tau_minus_one] = &sig.0;
     let u_tilde: &[u8;18] = &sig.1;
-    let d : &[u8;ell_bit_size]= &sig.2;
+    let d : &[u8; ell]= &sig.2;
     let a_tilde : &[u8; 16]= &sig.3;
     let pdcoms: &[(sized_array_for_cop, [u8; 32]); 11] = &sig.4;
-    let chall_3 : &[u8; 16] = &sig.5;
+    let chall_3 : &[u8; chall3_bytes] = &sig.5;
     let iv : &[u8; 16]= &sig.6;
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
@@ -112,7 +113,7 @@ pub fn faest_verify(
 
     // et lille fix til hvordan q den hænger sammen, samme check som til prove
     let q_rows : [[u8; 128]; 1728] = vole_to_row_major(q_corrected);
-    let q_arr: [[u8; lambda]; ell_bit_size + lambda] = q_rows.try_into().unwrap();
+    let q_arr: [[u8; lambda]; ell + lambda] = q_rows.try_into().unwrap();
 
 
 

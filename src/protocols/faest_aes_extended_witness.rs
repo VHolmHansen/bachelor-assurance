@@ -2,14 +2,14 @@
 use crate::protocols::aes::{add_round_key, key_expansion, mix_columns, shift_rows, sub_bytes};
 use crate::utils::helper_methods_cstrnts::{byte_to_bits};
 use crate::utils::types::{State};
-use crate::utils::constants::{lambda, S_ke, nk, R, ell_bit_size};
+use crate::utils::constants::{lambda, S_ke, nk, R, ell, lambda_bytes};
 use crate::utils::preliminary_helper_methods::flatten;
 
-pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit_size]{
+pub fn faest_aes_extend_witness(k :[u8;lambda_bytes], pk : (State, State)) -> [u8; ell]{
     let (in_aes, _out_aes) = pk;
     let k_overline = key_expansion(k);
     let bytes_from_k_overline: [u8; 16] = flatten::<nk, 4, 16>(k_overline[0..nk].try_into().unwrap());     //INNER_LEN = word len
-    let mut witness : [u8;ell_bit_size] = [0;ell_bit_size];
+    let mut witness : [u8; ell] = [0; ell];
     let mut index = 0;
     for b in 0..bytes_from_k_overline.len(){
         let bits = byte_to_bits(bytes_from_k_overline[b]);
@@ -34,7 +34,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
 
         ik = if lambda == 192 { ik+6 } else { ik+4 };
     }
-    let Beta = lambda >> 7;    //lambda / 128 = lambda >> 7
+    let Beta = lambda >> 7;    //lambda / 128 = lambda >> 7 => 
     for _ in 0..Beta{
         let mut state_new : State = in_aes;
         add_round_key(&mut state_new, k_overline[0..4].try_into().unwrap());

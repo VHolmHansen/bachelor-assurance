@@ -1,4 +1,5 @@
 use hax_lib::*;
+use crate::utils::constants::lambda_bytes;
 use crate::utils::{galois_field};
 use crate::utils::types::{Matrix, State, Word};
 use crate::utils::constants::{nk, nst, R};
@@ -23,9 +24,9 @@ pub fn encrypt(state: State, key: &[Word]) -> State {
     res_state
 }
 
-pub fn key_expansion(key: [u8; 16]) -> [Word; (R + 1) * 4] {      // nst * (R+1) = (R+1) << 2
+pub fn key_expansion(key: [u8; lambda_bytes]) -> [Word; (R + 1) * 4] {      // nst * (R+1) = (R+1) << 2
     // let rcon = setup_rcon_table();
-    let mut result_key: [Word; 44] = [[0u8, 0u8, 0u8, 0u8]; 44];
+    let mut result_key: [Word; (R + 1) * 4] = [[0u8, 0u8, 0u8, 0u8]; (R + 1) * 4];
 
     for i in 0..4 {
         for j in 0..4 {
@@ -67,8 +68,8 @@ pub fn setup_rcon_table() -> [u8; R] {
 
 #[cfg(not(feature = "hax"))]
 pub fn sub_bytes(state: &mut State) {
-    for i in 0..nk {
-        for j in 0..nst {
+    for i in 0..4 {
+        for j in 0..4 {
             state[i][j] = S_BOX_ARRAY[state[i][j] as usize]; // switched to using an array with precomputed values
         }
     }
@@ -126,7 +127,7 @@ pub fn shift_rows(state: &mut State) {
 #[ensures(|state| state.len() == nk
                     && state[0].len() == nst)]
 pub fn mix_columns(state: &mut State) {
-    let a: Matrix<u8, nst, nk> =
+    let a: Matrix<u8, 4, 4> =
         [[2, 3, 1, 1],
         [1, 2, 3, 1],
         [1, 1, 2, 3],
@@ -199,7 +200,7 @@ pub fn bitand_mod(n: u8, modu: u8) -> u8 {
     hax_lib::assume!(n & modu < u8::BITS as u8);    //TODO: make lemma?
     n & modu
 }
-const RCON_TABLE : [u8;10] = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54];
+const RCON_TABLE : [u8;11] = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54, 108];
 
 #[cfg(not(feature = "hax"))]
 const S_BOX_ARRAY : [u8;256] =

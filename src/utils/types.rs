@@ -4,17 +4,17 @@ use hax_lib::requires;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::math::xor_arrays;
 
-use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow, ell};
+use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow, ell_hat_bytes, lambda_bytes};
 
 pub type Word = [u8; 4];
 pub type Matrix<T, const N: usize, const M: usize> = [[T; M]; N];
 
-pub type State = [[u8; nst]; nk];
-pub type sized_array_16<const size: usize> = [[u8;16];size];
-pub type sized_array_32<const size: usize> = [[u8;32];size];
-pub type sized_array_234<const size: usize> = [[u8;ell];size];
+pub type State = [[u8; 4]; 4];
+pub type sized_array_16<const size: usize> = [[u8;lambda_bytes];size];
+pub type sized_array_32<const size: usize> = [[u8;2*lambda_bytes];size];
+pub type sized_array_234<const size: usize> = [[u8; ell_hat_bytes];size];
 
-pub type sized_option_array<const size: usize> = [Option<[u8;16]>;size];
+pub type sized_option_array<const size: usize> = [Option<[u8;lambda_bytes]>;size];
 
 #[derive(Clone, Copy, Debug)]
 pub enum sized_array_for_cop {
@@ -48,7 +48,7 @@ impl sized_array_for_q_v {
         }
     }
     #[hax_lib::requires(index < self.len())]
-    pub fn get(&self, index: usize) -> &[u8; ell] {
+    pub fn get(&self, index: usize) -> &[u8; ell_hat_bytes] {
         match self {
             sized_array_for_q_v::sized_array_1(arr) => &arr[index],
             sized_array_for_q_v::sized_array_2(arr) => &arr[index],
@@ -56,13 +56,13 @@ impl sized_array_for_q_v {
     }
 
     #[hax_lib::requires(index < self.len())]
-    pub fn set(self, index: usize, value: [u8; ell]) -> Self {
+    pub fn set(self, index: usize, value: [u8; ell_hat_bytes]) -> Self {
         match self {
             sized_array_for_q_v::sized_array_1(mut arr) => {arr[index] = value; sized_array_for_q_v::sized_array_1(arr)},
             sized_array_for_q_v::sized_array_2(mut arr) => {arr[index] = value; sized_array_for_q_v::sized_array_2(arr)},
         }
     }
-    pub fn get_all(&self) -> &[[u8; ell]] {
+    pub fn get_all(&self) -> &[[u8; ell_hat_bytes]] {
         match self {
             sized_array_for_q_v::sized_array_1(arr) => arr,
             sized_array_for_q_v::sized_array_2(arr) => arr,

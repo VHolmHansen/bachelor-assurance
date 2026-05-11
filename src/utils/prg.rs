@@ -1,10 +1,11 @@
-use crate::utils::constants::{ell, tau, lambda};
+use crate::utils::constants::{iv_bytes, lambda_bytes};
+use crate::utils::constants::{ell_hat_bytes, tau, lambda};
 use crate::utils::math;
 use crate::protocols::aes;
 
 // should have an extra parameter based on size, but we know size is 2 \lambda, which for us is 256
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
-pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
+pub fn prg(k: [u8; lambda_bytes], iv: [u8; iv_bytes], output: &mut [u8]) {
     let num_blocks = (output.len() + 15) >> 4; // ceiling division
 
     let iv_int = u128::from_be_bytes(iv);
@@ -31,13 +32,13 @@ pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
     }
 }
 
-pub fn prg_convert_to_vole(sd: [u8;16], iv: [u8; 16]) -> [u8; ell]{
-    let mut output = [0u8; ell];
+pub fn prg_convert_to_vole(sd: [u8;lambda_bytes], iv: [u8; iv_bytes]) -> [u8; ell_hat_bytes]{
+    let mut output = [0u8; ell_hat_bytes];
     prg(sd, iv, &mut output);
     output
 }
 
-pub fn prg_vole_commit_r(r: [u8;16], iv: [u8;16]) -> [u8; (tau*lambda)/8] {
+pub fn prg_vole_commit_r(r: [u8;lambda_bytes], iv: [u8;iv_bytes]) -> [u8; (tau*lambda)/8] {
     let mut output  = [0u8; (tau * lambda) >> 3];
     prg(r, iv, &mut output);
     output

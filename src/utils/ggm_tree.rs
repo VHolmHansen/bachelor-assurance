@@ -1,12 +1,12 @@
 #![allow(non_upper_case_globals)]
 use crate::utils::prg::prg;
-use crate::utils::constants::{k_1};
+use crate::utils::constants::{iv_bytes, k_1, lambda_bytes, lambda_bytes_times_two};
 use crate::utils::types::{sized_array_16, sized_option_array, Log2Number};
 
 //TODO: make i128 > u64
 #[hax_lib::requires(size_pow > 0)]
-pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 16], d: i128) -> sized_array_16<size_pow>{
-    let mut leaves = [[0u8;16]; size_pow];
+pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; lambda_bytes], iv: [u8; iv_bytes], d: i128) -> sized_array_16<size_pow>{
+    let mut leaves = [[0u8;lambda_bytes]; size_pow];
     leaves[0] = *r;
     for i in 1..(d + 1) {
         let current_leaves = leaves;
@@ -14,12 +14,12 @@ pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 1
             // get parent value for prg
             let ran_value = current_leaves[j as usize];
 
-            let mut nodes = [0u8; 32];
+            let mut nodes = [0u8; lambda_bytes_times_two];
             prg(ran_value, iv, &mut nodes);
 
             // get child values for left and right
-            let left_node_value : [u8;16]= nodes[..16].try_into().unwrap();
-            let right_node_value : [u8;16] = nodes[16..].try_into().unwrap();
+            let left_node_value : [u8;lambda_bytes]= nodes[..lambda_bytes].try_into().unwrap();
+            let right_node_value : [u8;lambda_bytes] = nodes[lambda_bytes..].try_into().unwrap();
 
             // insert child values
             leaves[(j << 1) as usize].copy_from_slice(&left_node_value);
@@ -31,8 +31,8 @@ pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 1
 }
 
 //TODO: make i128 > u64
-pub fn get_cop<const size: usize>(r: [u8;16], iv: [u8;16], b: u64, d: i128) -> sized_array_16<size> {
-    let mut cop = [[0u8; 16]; size];
+pub fn get_cop<const size: usize>(r: [u8;lambda_bytes], iv: [u8;iv_bytes], b: u64, d: i128) -> sized_array_16<size> {
+    let mut cop = [[0u8; lambda_bytes]; size];
     let mut current_node = r;
 
     let mut i = d-1;
@@ -40,12 +40,12 @@ pub fn get_cop<const size: usize>(r: [u8;16], iv: [u8;16], b: u64, d: i128) -> s
     while i >= 0 {
         let is_left = get_if_left(i, b as i128);
 
-        let mut nodes = [0u8; 32];
+        let mut nodes = [0u8; lambda_bytes_times_two];
         prg(current_node, iv, &mut nodes);
 
         // get child values for left and right
-        let left_node_value : [u8;16]= nodes[..16].try_into().unwrap();
-        let right_node_value : [u8;16] = nodes[16..].try_into().unwrap();
+        let left_node_value : [u8;lambda_bytes]= nodes[..lambda_bytes].try_into().unwrap();
+        let right_node_value : [u8;lambda_bytes] = nodes[lambda_bytes..].try_into().unwrap();
 
         // move right direction
         if is_left {
@@ -81,13 +81,13 @@ pub fn get_if_left(level : i128, index : i128) -> bool{
     }
 }
 
-pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop : &sized_array_16<size>, iv : [u8;16], b: u64) -> sized_option_array<size_pow> {
+pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop : &sized_array_16<size>, iv : [u8;iv_bytes], b: u64) -> sized_option_array<size_pow> {
     let mut leaves = [None; size_pow];
     let mut current_start = 0;
     let mut current_end = size_pow;
     let mut match_value = Log2Number::wrap(size_pow >> 1);
 
-    fn cop_helper<const N: usize, const size_pow: usize>(c: &[u8; 16], leaves: &mut [Option<[u8; 16]>; size_pow], iv: [u8; 16], b: u64, current_start: &mut usize, current_end: &mut usize) {
+    fn cop_helper<const N: usize, const size_pow: usize>(c: &[u8; lambda_bytes], leaves: &mut [Option<[u8; lambda_bytes]>; size_pow], iv: [u8; iv_bytes], b: u64, current_start: &mut usize, current_end: &mut usize) {
         let d = N.ilog2() as i128;
         let leaves_to_add = get_leaves_node_from_root::<N>(c, iv, d);
         if get_if_left(d, b as i128){
@@ -123,7 +123,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
     leaves
 }
 
-
+/*
 //TODO: should be deleted?
 #[cfg(not(hax))]
 pub fn main(){
@@ -145,3 +145,5 @@ pub fn main(){
     }
 
 }
+
+ */

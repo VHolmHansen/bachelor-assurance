@@ -6,7 +6,7 @@ mod tests {
     use bachelor_assurance::utils::galois_field::{gf28_multiply};
     use bachelor_assurance::utils::helper_methods_cstrnts::bits_to_byte;
     use bachelor_assurance::utils::math::{transform_byte_array_to_state};
-    use bachelor_assurance::utils::constants::{nk, ell, k_0, k_1, lambda, tau, tau_0, S_ke};
+    use bachelor_assurance::utils::constants::{nk, ell_hat_bytes, k_0, k_1, lambda, tau, tau_0, S_ke};
     
 
     #[test]
@@ -128,10 +128,10 @@ mod tests {
     }
 
 
-    fn flatten_vole_columns(big_v: &Vec<Vec<[u8; ell]>>) -> Vec<Vec<u8>> {
+    fn flatten_vole_columns(big_v: &Vec<Vec<[u8; ell_hat_bytes]>>) -> Vec<Vec<u8>> {
         // Each row of the final V matrix is lambda bits wide
         // big_v[i][j] contributes k_b bits to column block i
-        let num_rows = ell * 8; // ell bytes = lambda bits per row? adjust to your ell
+        let num_rows = ell_hat_bytes * 8; // ell bytes = lambda bits per row? adjust to your ell
         let mut result: Vec<Vec<u8>> = vec![vec![]; num_rows];
 
         for i in 0..tau {

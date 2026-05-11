@@ -1,35 +1,43 @@
 #![allow(non_upper_case_globals)]
 
 use hax_lib::loop_invariant;
+use crate::utils::constants::h_v_size;
+use crate::utils::constants::{iv_bytes, k_0_pow, k_1_pow, lambda, lambda_plus_iv, lambda_bytes_times_three, lambda_bytes_times_two, tau};
+use crate::utils::constants::lambda_bytes;
 use crate::utils::libcrux_proxy::DigestProxy;
 
 // takes a k and the iv
 // and returns a sd of size 128 bits and a commitment of size 256 bits
 // this should be okay since we are supposed to use shake128 specified by the paper
-pub fn h_0(k: [u8; 16], iv: [u8; 16]) -> ([u8; 16], [u8; 32]) {
-    let mut input : [u8; 33] = [0u8; 33];
-    input[..16].copy_from_slice(&k);
-    input[16..32].copy_from_slice(&iv);
-    input[32] = 0;
+pub fn h_0(k: [u8; lambda_bytes], iv: [u8; iv_bytes]) -> ([u8; lambda_bytes], [u8; lambda_bytes_times_two]) {
+    let mut input : [u8; lambda_bytes+iv_bytes+1] = [0u8; lambda_bytes+iv_bytes+1];
+    input[..lambda_bytes].copy_from_slice(&k);
+    input[lambda_bytes..lambda_bytes+iv_bytes].copy_from_slice(&iv);
+    input[lambda_bytes+iv_bytes] = 0;
 
-    let output = DigestProxy::shake128::<48>(&input);
+    let output = if lambda == 128 {
+        DigestProxy::shake128::<lambda_bytes_times_three>(&input)
+    }
+    else {
+        DigestProxy::shake256::<lambda_bytes_times_three>(&input)
+    };
 
-    let sd:  [u8; 16] = output[..16].try_into().unwrap();
-    let com: [u8; 32] = output[16..48].try_into().unwrap();
+    let sd:  [u8; lambda_bytes] = output[..lambda_bytes].try_into().unwrap();
+    let com: [u8; lambda_bytes_times_two] = output[lambda_bytes..lambda_bytes_times_three].try_into().unwrap();
     // return sd and commitment
     (sd, com)
 }
 
-pub fn h_1_k0(coms: &[[u8; 32]; 4096]) -> [u8; 32] {
-    const SIZE: usize = (4096 << 5) + 1;
+pub fn h_1_k0(coms: &[[u8; lambda_bytes_times_two]; k_0_pow]) -> [u8; lambda_bytes_times_two] {
+    const SIZE: usize = k_0_pow * 2 * lambda_bytes + 1;
     let mut input = [0u8; SIZE];
     let mut i = 0;
-    for j in 0..4096 {
+    for j in 0..k_0_pow {
         loop_invariant!(|j: usize| {
             j <= 4096 &&
             i == j * 32
         });
-        for k in 0..32 {
+        for k in 0..lambda_bytes_times_two {
             loop_invariant!(|k: usize| {
                 k <= 32 &&
                 i == j * 32 + k
@@ -39,19 +47,23 @@ pub fn h_1_k0(coms: &[[u8; 32]; 4096]) -> [u8; 32] {
         }
     }
     input[SIZE - 1] = 0x01;
-    DigestProxy::shake128::<32>(&input)
+    if lambda == 128 {
+        DigestProxy::shake128::<lambda_bytes_times_two>(&input)
+    } else {
+        DigestProxy::shake256::<lambda_bytes_times_two>(&input)
+    }
 }
 
-pub fn h_1_k1(coms: &[[u8; 32]; 2048]) -> [u8; 32] {
-    const SIZE: usize = (2048 << 5) + 1;
+pub fn h_1_k1(coms: &[[u8; lambda_bytes_times_two]; k_1_pow]) -> [u8; lambda_bytes_times_two] {
+    const SIZE: usize = k_1_pow * lambda_bytes_times_two + 1;
     let mut input = [0u8; SIZE];
     let mut i = 0;
-    for j in 0..2048 {
+    for j in 0..k_1_pow {
         loop_invariant!(|j: usize| {
             j <= 2048 &&
             i == j * 32
         });
-        for k in 0..32 {
+        for k in 0..lambda_bytes_times_two {
             loop_invariant!(|k: usize| {
                 k <= 32 &&
                 i == j * 32 + k
@@ -61,25 +73,37 @@ pub fn h_1_k1(coms: &[[u8; 32]; 2048]) -> [u8; 32] {
         }
     }
     input[SIZE - 1] = 0x01;
-    DigestProxy::shake128::<32>(&input)
+    if lambda == 128 {
+        DigestProxy::shake128::<lambda_bytes_times_two>(&input)
+    } else {
+        DigestProxy::shake256::<lambda_bytes_times_two>(&input)
+    }
 }
 
-pub fn h_1_for_352(coms: &[u8; 352]) -> [u8; 32] {
-    let mut input = [0u8; 353];
-    input[..352].copy_from_slice(coms);
-    input[352] = 0x01;
-    DigestProxy::shake128::<32>(&input)
+pub fn h_1_for_352(coms: &[u8; tau * lambda_bytes_times_two]) -> [u8; lambda_bytes_times_two] {
+    let mut input = [0u8; tau * lambda_bytes_times_two+1];
+    input[..tau * lambda_bytes_times_two].copy_from_slice(coms);
+    input[tau * lambda_bytes_times_two] = 0x01;
+    if lambda == 128 {
+        DigestProxy::shake128::<lambda_bytes_times_two>(&input)
+    } else {
+        DigestProxy::shake256::<lambda_bytes_times_two>(&input)
+    }
 }
 
-pub fn h_1_for_2304(coms: &[u8; 2304]) -> [u8; 32] {
-    let mut input = [0u8; 2305];
-    input[..2304].copy_from_slice(coms);
-    input[2304] = 0x01; // domain separation byte for H1
-    DigestProxy::shake128::<32>(&input)
+pub fn h_1_for_2304(coms: &[u8; h_v_size]) -> [u8; lambda_bytes_times_two] {
+    let mut input = [0u8; h_v_size+1];
+    input[..h_v_size].copy_from_slice(coms);
+    input[h_v_size] = 0x01; // domain separation byte for H1
+    if lambda == 128 {
+        DigestProxy::shake128::<lambda_bytes_times_two>(&input)    
+    } else {
+        DigestProxy::shake256::<lambda_bytes_times_two>(&input)
+    }
 }
 
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
-pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;32]{
+pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;lambda_bytes_times_two]{
     // Concatenate plaintext, ciphertext, and message
     // vi er nok nød til at sætte et upper bound på message size, problemet er nemlig at vi ikke ved hvor stor message er ved compile time, en overvejelse her om vi er nød til at bibeholde vec
     // plaintext
@@ -101,22 +125,25 @@ pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;32]{
     DigestProxy::shake128::<32>(&input)
 }
 
-pub fn h_3(sk : [u8;16], my : [u8;32], rho : [u8;16]) -> ([u8;16], [u8;16]){
-    const size_of_input : usize = 16+32+16+1;
+pub fn h_3(sk : [u8;lambda_bytes], my : [u8;lambda_bytes_times_two], rho : [u8;lambda_bytes]) -> ([u8;lambda_bytes], [u8;iv_bytes]){
+    const size_of_input : usize = lambda_bytes+lambda_bytes_times_two+lambda_bytes+1;
 
     let mut input: [u8;size_of_input] = [0;size_of_input];
     let mut offset = 0;
-    input[offset..offset+16].copy_from_slice(&sk);
-    offset += 16;
-    input[offset..offset+32].copy_from_slice(&my);
-    offset += 32;
-    input[offset..offset+16].copy_from_slice(&rho);
+    input[offset..offset+lambda_bytes].copy_from_slice(&sk);
+    offset += lambda_bytes;
+    input[offset..offset+(lambda_bytes_times_two)].copy_from_slice(&my);
+    offset += lambda_bytes_times_two;
+    input[offset..offset+lambda_bytes].copy_from_slice(&rho);
     input[size_of_input-1] = 0x03;
+    let output = if lambda == 128 {
+        DigestProxy::shake128::<lambda_plus_iv>(&input)
+    } else {
+        DigestProxy::shake128::<lambda_plus_iv>(&input)
+    };
 
-    let output = DigestProxy::shake128::<32>(&input);
-
-    let r: [u8; 16]  = output[..16].try_into().unwrap();
-    let iv: [u8; 16] = output[16..].try_into().unwrap();
+    let r: [u8; lambda_bytes]  = output[..lambda_bytes].try_into().unwrap();
+    let iv: [u8; iv_bytes] = output[iv_bytes..].try_into().unwrap();
 
     (r, iv)
 }

@@ -2,13 +2,13 @@
 
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_cstrnts_prover, faest_aes_enc_cstrnts_verifier};
 use crate::protocols::faest_key_exp_cstrnts::{faest_aes_exp_cstrnts_qDelta, faest_aes_exp_cstrnts_wv};
-use crate::utils::constants::{ell_bit_size, l_ke, lambda, l_enc, S_ke};
+use crate::utils::constants::{ell, l_ke, lambda, l_enc, S_ke};
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::helper_methods_prove_verify::{to_field, zk_hash};
 use crate::utils::math::{field_pow, xor_arrays};
 
 pub fn faest_aes_prove(
-    w : [u8; ell_bit_size],
+    w : [u8; ell],
     u : &[u8; 1728],
     V : &[[u8; 128]; 1728],
     pk : ([u8;lambda], [u8;lambda]),
@@ -17,8 +17,8 @@ pub fn faest_aes_prove(
 {
 
     // nyt v, lidt rodet, basically V|_i betyder kolonne i, og vi skal tage og sige to_field for kolonne i
-    let mut v: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
-    for i in 0..ell_bit_size+lambda {
+    let mut v: [[u8; 16]; ell + lambda] = [[0u8; 16]; ell +lambda];
+    for i in 0..ell +lambda {
         v[i] = to_field::<128,128,1>(&V[i])[0] // k=lambda
     }
 
@@ -54,7 +54,7 @@ pub fn faest_aes_prove(
 
     let mut new_u : [[u8;16];lambda] = [[0;16];lambda];
     for i in 0..lambda {
-        new_u[i] = to_field::<1,1,1>(&[u[ell_bit_size+i]])[0]; // k = 1
+        new_u[i] = to_field::<1,1,1>(&[u[ell +i]])[0]; // k = 1
     }
     
 
@@ -72,7 +72,7 @@ pub fn faest_aes_prove(
     let mut v_star : [u8;16] = [0u8; 16];
     for i in 0..lambda {
         let alpha_pow : [u8;16] = field_pow(&alpha, i);
-        let term : [u8;16] = gf128_mul(&v[ell_bit_size + i], &alpha_pow);
+        let term : [u8;16] = gf128_mul(&v[ell + i], &alpha_pow);
         v_star = xor_arrays(&v_star, &term);
     }
 
@@ -84,7 +84,7 @@ pub fn faest_aes_prove(
     (alpha_tilde, beta_tilde)
 }
 
-pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+lambda], chall_2 : [u8; 56], chall_3 : [u8;lambda], a_tilde : [u8;16],pk : ([u8;lambda], [u8;lambda])) -> [u8;16]
+pub fn faest_aes_verify(d : [u8; ell], Q : [[u8; lambda]; ell +lambda], chall_2 : [u8; 56], chall_3 : [u8;lambda], a_tilde : [u8;16], pk : ([u8;lambda], [u8;lambda])) -> [u8;16]
 {
     let delta : [u8;16] = to_field::<128,128,1>(&chall_3)[0]; // k = lambda
     let in_of_in_and_out : [u8;128] = pk.0;
@@ -96,7 +96,7 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
 
     
     
-    for row in 0..ell_bit_size {
+    for row in 0..ell {
         if d[row] == 1 {
             for col in 0..lambda {
                 Q_mut[row][col] ^= chall_3[col]; // chall_3[col] is already a bit (0 or 1)
@@ -106,8 +106,8 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     
 
     // After correction - row 0 should now equal v[0] from sign since d[0]=w[0] XOR u[0]
-    let mut q: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
-    for i in 0..ell_bit_size+lambda {
+    let mut q: [[u8; 16]; ell + lambda] = [[0u8; 16]; ell +lambda];
+    for i in 0..ell +lambda {
         q[i] = to_field::<128,128,1>(&Q_mut[i])[0] // k = lambda
     }
 
@@ -139,7 +139,7 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     let mut q_star = [0u8; 16];
     for i in 0..lambda {
         let alpha_pow : [u8;16] = field_pow(&alpha, i);
-        let term : [u8;16] = gf128_mul(&q[ell_bit_size + i], &alpha_pow);
+        let term : [u8;16] = gf128_mul(&q[ell + i], &alpha_pow);
         q_star = xor_arrays(&q_star, &term);
     }
 

@@ -1,8 +1,8 @@
 use hax_lib::loop_invariant;
-use crate::utils::galois_field::gf128_pow;
+use crate::utils::galois_field::{gf_lambda_pow};
 use crate::utils::types::{AlphaMul, Word, XorHelper};
 use crate::utils::types::{ret_value};
-use crate::utils::constants::{alpha};
+use crate::utils::constants::{alpha, lambda_bytes};
 
 // len of res is 1 / 4 * len of input
 pub fn words_to_blocks(x: [Word; 44]) -> [[u8; 16]; 11]
@@ -54,16 +54,17 @@ pub fn byte_combine<T>(x: [T; 8]) -> [u8; 16] where
 }
 
 //TODO: make u32 > u32
-pub fn alpha_pow(i : i32) -> [u8;16] {
+pub fn alpha_pow(i: i32) -> [u8; lambda_bytes] {
     if i == 0 {
-        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        let mut result = [0u8; lambda_bytes];
+        result[0] = 1;
+        result
     } else if i == 1 {
         alpha
     } else {
-        gf128_pow(&alpha, i)
+        gf_lambda_pow(&alpha, i)
     }
 }
-
 
 
 pub fn byte_to_bits(byte: u8) -> [u8; 8] {

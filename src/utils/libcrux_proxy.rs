@@ -82,4 +82,7 @@ impl DigestProxy {
     pub fn shake128<const LEN: usize>(input: &[u8]) -> [u8; LEN] {
         libcrux::digest::shake128::<LEN>(&input)
     }
+    pub fn shake256<const LEN: usize>(input: &[u8]) -> [u8; LEN] {
+        libcrux::digest::shake256::<LEN>(&input)
+    }
 }

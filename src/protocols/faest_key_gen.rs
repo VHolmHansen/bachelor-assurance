@@ -1,3 +1,5 @@
+use crate::utils::constants::{ell, key_schedule_bits, l_enc, l_ke, w_lambda_size};
+use crate::utils::constants::{lambda_bytes, ret_size_exp_bwd, ret_size_exp_fwd};
 use crate::utils::constants::{nk, R};
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
@@ -10,18 +12,18 @@ use crate::utils::types::{State, Word};
 use crate::protocols::aes::{encrypt, key_expansion};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::utils::constants::s_enc;
-use crate::utils::galois_field::gf128_mul;
+use crate::utils::galois_field::gf_lambda_mul;
 use crate::utils::libcrux_proxy::RandGenProxy;
 use crate::utils::math::transform_byte_array_to_state;
 
-pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
+pub fn faest_key_gen() -> ([u8;lambda_bytes],([u8;128],[u8;128]))
 {
     let mut rng = RandGenProxy::get_rand_gen_sha256();
     loop {
-        let mut key: [u8; 16] = [0u8; 16];
+        let mut key: [u8; lambda_bytes] = [0u8; lambda_bytes];
         rng.fill_bytes(&mut key);
         let mut plaintext: [u8; 16] = [0u8; 16];
-        rng.fill_bytes(&mut plaintext);
+        rng.fill_bytes_plaintext(&mut plaintext);
 
         let expanded_key: [Word; (R + 1) << 2] = key_expansion(key);    // << 2 = * nst
 
@@ -36,9 +38,9 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 
 
         // first fwd
-        let fwd_key = faest_aes_key_exp_fwd(1, w, false, false, [0;16]);
-        let w_lambda : [u8; 1472] = w[lambda..].try_into().unwrap(); // 1600-128 = 1472
-        let bwd_key : [u8;320]= faest_aes_key_exp_bkwd(1, w_lambda, fwd_key, false, false, 0);
+        let fwd_key = faest_aes_key_exp_fwd(1, w, false, false, [0;lambda_bytes]);
+        let w_lambda : [u8; w_lambda_size] = w[lambda..].try_into().unwrap(); // 1600-128 = 1472
+        let bwd_key : [u8;ret_size_exp_bwd]= faest_aes_key_exp_bkwd(1, w_lambda, fwd_key, false, false, 0);
         let mut valid = true;
 
         let one_gf8 : u8 = 0x01;
@@ -68,7 +70,7 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
             continue;
         }
         // second fwd
-        let mut expanded_key_flat = [0;1408];
+        let mut expanded_key_flat = [0;key_schedule_bits];
         let blocks_of_expanded_key: [[u8; 16]; R + 1] = words_to_blocks(expanded_key);      //size derived from (R + 1) * nst / wordsize, where nst = 4 and wordsize = 4
 
         let mut i = 0;
@@ -79,15 +81,16 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
                 i += 1;
             }
         }
-        let w_enc: [u8;1152] = w[448..1600].try_into().unwrap();
+        let w_enc: [u8;l_enc] = w[l_ke..ell].try_into().unwrap();
 
         let enc_fwd = faest_aes_enc_fwd(1, &w_enc, &expanded_key_flat, &plain_text_flat, false,false, 0);
         let enc_bwd = faest_aes_enc_bkwd(
             1, &w_enc, &expanded_key_flat,
             &cipher_text_flat, false, false, 0
         );
-        let one = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0u8];
-        let zero = [0u8;16];
+        let mut one = [0u8; lambda_bytes];
+        one[0] = 1;
+        let zero = [0u8; lambda_bytes];
 
         for i in 0..s_enc {
             if enc_fwd[i] == zero || enc_bwd[i] == zero {
@@ -95,7 +98,7 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
                 break;
             }
             // also verify the inversion holds
-            let product = gf128_mul(&enc_fwd[i], &enc_bwd[i]);
+            let product = gf_lambda_mul(&enc_fwd[i], &enc_bwd[i]);
             if product != one {
                 valid = false;
                 break;
@@ -123,8 +126,8 @@ fn blocks_to_u8(x : [u8;16]) -> [u8;128]{
     x_flat
 }
 
-fn turn_states_to_bits(x : State) -> [u8; lambda] {
-    let mut res = [0; lambda];
+fn turn_states_to_bits(x : State) -> [u8; 128] {
+    let mut res = [0; 128];
     let mut word_index = 0;
     for word in x {
         for byte in word {

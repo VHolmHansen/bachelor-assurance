@@ -10,7 +10,7 @@ use crate::utils::helper_methods_for_sign::{bits_to_state, u_to_1728_bits, vole_
 use crate::utils::libcrux_proxy::RandGenProxy;
 
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
-pub fn faest_sign(msg : &[u8], sk : &[u8;lambda_bytes], pk : &([u8;lambda], [u8;lambda])) -> ([[u8; ell_hat_bytes]; tau_minus_one], [u8; x1_bytes], [u8; ell], [u8; lambda_bytes], [(sized_array_for_cop, [u8; 2*lambda_bytes]); tau], [u8; chall3_bytes], [u8; iv_bytes]) {
+pub fn faest_sign(msg : &[u8], sk : &[u8;lambda_bytes], pk : &([u8;128], [u8;128])) -> ([[u8; ell_hat_bytes]; tau_minus_one], [u8; x1_bytes], [u8; ell], [u8; lambda_bytes], [(sized_array_for_cop, [u8; 2*lambda_bytes]); tau], [u8; chall3_bytes], [u8; iv_bytes]) {
     let mut rng = RandGenProxy::get_rand_gen_sha256();
 
     let my : [u8;2*lambda_bytes]= h_1_for_sign(pk.clone(), msg);

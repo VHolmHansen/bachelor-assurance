@@ -1,5 +1,6 @@
 use hax_lib::{assume, loop_invariant, Int, ToInt};
-use crate::utils::galois_field::gf128_mul;
+use crate::utils::constants::lambda_bytes;
+use crate::utils::galois_field::{gf128_mul, gf_lambda_mul};
 use crate::utils::types::State;
 /*
 #[hax_lib::include]
@@ -148,21 +149,21 @@ pub fn transform_state_to_array(state: &State) -> [u8; 16] {
     bytes
 }
 
-pub fn field_pow(base: &[u8; 16], exp: usize) -> [u8; 16] {
+pub fn field_pow(base: &[u8; lambda_bytes], exp: usize) -> [u8; lambda_bytes] {
     if exp == 0 {
-        let mut one = [0u8; 16];
+        let mut one = [0u8; lambda_bytes];
         one[0] = 0x01;
         return one;
     }
-    let mut result = [0u8; 16];
+    let mut result = [0u8; lambda_bytes];
     result[0] = 0x01;
     let mut b = *base;
     let mut e = exp;
     while e > 0 {
         if e & 1 == 1 {
-            result = gf128_mul(&result, &b);
+            result = gf_lambda_mul(&result, &b);
         }
-        b = gf128_mul(&b, &b);
+        b = gf_lambda_mul(&b, &b);
         e >>= 1;
     }
     result

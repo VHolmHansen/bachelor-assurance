@@ -1,5 +1,6 @@
 #[cfg(not(hax))]
 use libcrux;
+use crate::utils::constants::lambda_bytes;
 
 #[cfg(hax)]
 mod libcrux {
@@ -59,12 +60,15 @@ impl RandGenProxy{
     }
 
     #[hax_lib::opaque]
-    pub fn fill_bytes(&mut self, key: &mut [u8; 16]) {
+    pub fn fill_bytes(&mut self, key: &mut [u8; lambda_bytes]) {
+        libcrux::drbg::RngCore::fill_bytes(&mut self.rand_gen, key)
+    }
+    pub fn fill_bytes_plaintext(&mut self, key: &mut [u8; 16]) {
         libcrux::drbg::RngCore::fill_bytes(&mut self.rand_gen, key)
     }
 
     #[hax_lib::opaque]
-    pub fn generate(&mut self, mut rand_bytes: [u8; 16]) {
+    pub fn generate(&mut self, mut rand_bytes: [u8; lambda_bytes]) {
         match self.rand_gen.generate(&mut rand_bytes) {
                 Ok(_) => (),
                 Err(e) => panic!("{}", e)

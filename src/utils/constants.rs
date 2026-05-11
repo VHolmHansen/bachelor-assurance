@@ -59,7 +59,7 @@ pub const not_deterministic_test : bool = false;
 // ============================================
 // FIELD ELEMENT SIZES
 // ============================================
-pub const ret_size_exp_fwd : usize = lambda * (R + 1);
+pub const ret_size_exp_fwd : usize = (R + 1) << 7;
 pub const ret_size_exp_bwd : usize = S_ke << 3;
 
 
@@ -82,3 +82,10 @@ pub type State = [[u8; 4]; 4]; // always 4x4 for AES, nst=4 always
 pub const lambda_plus_iv : usize = lambda_bytes+iv_bytes;
 pub const lambda_bytes_times_three : usize = lambda_bytes * 3;
 pub const lambda_bytes_times_two : usize = lambda_bytes * 2;
+pub const key_schedule_bits: usize = (R + 1) << 7;  // (R+1) * 128 bits
+pub const aes_block_bits: usize = 128;  // AES block is always 128 bits
+pub const l_ke_minus_lambda: usize = l_ke - lambda;
+pub const w_lambda_size: usize = ell - lambda;      // 1600-128=1472
+pub const w_enc_start: usize = l_ke;                // 448
+pub const w_enc_size: usize = l_enc;                // 1152
+pub const ell_bytes: usize = ell / 8;

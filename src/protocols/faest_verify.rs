@@ -3,7 +3,7 @@ use crate::utils::constants::iv_bytes;
 use crate::utils::constants::{chall3_bytes, ell_hat_bytes, lambda_bytes, lambda_bytes_times_two, x1_bytes};
 use crate::utils::constants::{tau_1, tau_minus_one};
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1};
-use crate::utils::types::sized_array_for_q_v;
+use crate::utils::types::{sized_array_for_q_v, Pk};
 use crate::utils::types::sized_array_for_cop;
 use crate::protocols::faest_prove_and_verify::faest_aes_verify;
 use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
@@ -14,7 +14,7 @@ use crate::utils::preliminary_helper_methods::flatten;
 
 pub fn faest_verify(
     msg : &[u8],
-    pk : &([u8;lambda], [u8;lambda]),
+    pk : &Pk,
     sig : &([[u8;ell_hat_bytes];tau_minus_one], [u8;x1_bytes], [u8; ell], [u8; lambda_bytes], [(sized_array_for_cop, [u8; lambda_bytes_times_two]); tau], [u8; chall3_bytes], [u8; iv_bytes]))
     -> bool
 {
@@ -26,7 +26,7 @@ pub fn faest_verify(
     let chall_3 : &[u8; chall3_bytes] = &sig.5;
     let iv : &[u8; iv_bytes]= &sig.6;
 
-    let my : [u8;lambda_bytes_times_two]= h_1_for_sign(pk.clone(), msg);
+    let my : [u8;lambda_bytes_times_two]= h_1_for_sign(*pk, msg);
     let _rec_start = std::time::Instant::now();
     let (h_com, q_mark) : ([u8; lambda_bytes_times_two], [sized_array_for_q_v; tau])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
     // println!("reconstruct took: {:?}", rec_start.elapsed());
@@ -126,7 +126,7 @@ pub fn faest_verify(
         chall_2,
         chall3_to_bits(&chall_3),
         *a_tilde,
-        (pk.0.try_into().unwrap(), pk.1.try_into().unwrap())
+        *pk
     );
     // println!("verify took: {:?}", verify_start.elapsed());
 

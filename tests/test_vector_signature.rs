@@ -1,40 +1,33 @@
 mod tests{
     use bachelor_assurance::protocols::faest_sign::faest_sign;
     use bachelor_assurance::utils::hash_functions::bits_to_bytes_for_d;
-    use bachelor_assurance::utils::types::sized_array_for_cop;
+    use bachelor_assurance::utils::types::{sized_array_for_cop, Pk};
 
     #[test]
-    fn test_vector_signature(){
-        let builder = std::thread::Builder::new().stack_size(32 * 1024 * 1024); // 64MB
+    fn test_vector_signature() {
+        let builder = std::thread::Builder::new().stack_size(32 * 1024 * 1024);
         let handler = builder.spawn(|| {
-            let pk : [u8;32] = [0xc0, 0xcd, 0x0b, 0xed, 0xbe, 0x6a, 0x4c, 0x04, 0xb3, 0x75, 0x89, 0x7d, 0x36, 0x9b, 0x7e, 0x62,
-            0x48, 0xf3, 0x63, 0x29, 0x08, 0x45, 0xaa, 0xdf, 0x51, 0x7f, 0x82, 0x4c, 0x91, 0xfb, 0x57, 0xf5];
-            let sk : [u8;16] = [0xaa, 0x6a, 0x6f, 0x17, 0x13, 0xd2, 0x7a, 0x71, 0xfe, 0x98, 0x9e, 0x93, 0xdc, 0x79, 0xd2, 0x7d];
-            let pk = pk_to_bits(&pk);
+            let pk_bytes: [u8;32] = [
+                0xc0, 0xcd, 0x0b, 0xed, 0xbe, 0x6a, 0x4c, 0x04, 0xb3, 0x75, 0x89, 0x7d, 0x36, 0x9b, 0x7e, 0x62,
+                0x48, 0xf3, 0x63, 0x29, 0x08, 0x45, 0xaa, 0xdf, 0x51, 0x7f, 0x82, 0x4c, 0x91, 0xfb, 0x57, 0xf5
+            ];
+            let sk: [u8;16] = [0xaa, 0x6a, 0x6f, 0x17, 0x13, 0xd2, 0x7a, 0x71, 0xfe, 0x98, 0x9e, 0x93, 0xdc, 0x79, 0xd2, 0x7d];
+            let pk: Pk = pk_to_bits(&pk_bytes);
             let msg = b"This document describes and specifies the FAEST digital signature algorithm.";
 
             let sig = faest_sign(msg, &sk, &pk);
             let (c_bytes, u_tilde, d, a_tilde, pdecoms, chall_3, iv) = sig;
 
-            // serialize signature to bytes
             let mut serialized = Vec::new();
 
-            // c_bytes: 10 * 234 = 2340 bytes
             for c in &c_bytes {
                 serialized.extend_from_slice(c);
             }
-
-            // u_tilde: 18 bytes
             serialized.extend_from_slice(&u_tilde);
-
-            // d: convert bits to bytes = 200 bytes
             let d_bytes = bits_to_bytes_for_d(&d);
             serialized.extend_from_slice(&d_bytes);
-
-            // a_tilde: 16 bytes
             serialized.extend_from_slice(&a_tilde);
 
-            // pdecoms: serialize each pdecom
             for pdecom in &pdecoms {
                 match &pdecom.0 {
                     sized_array_for_cop::sized_array_1(s) => {
@@ -44,42 +37,33 @@ mod tests{
                         for arr in s { serialized.extend_from_slice(arr); }
                     }
                 }
-                serialized.extend_from_slice(&pdecom.1); // com
+                serialized.extend_from_slice(&pdecom.1);
             }
 
-            // chall_3: 16 bytes
             serialized.extend_from_slice(&chall_3);
-
-            // iv: 16 bytes
             serialized.extend_from_slice(&iv);
 
             assert_eq!(serialized.len(), 5006, "signature length mismatch");
             assert_eq!(serialized.as_slice(), &faest_sig, "signature mismatch");
-
-
         }).unwrap();
         handler.join().unwrap();
     }
 
-
-
-    fn pk_to_bits(pk: &[u8; 32]) -> ([u8; 128], [u8; 128]) {
+    fn pk_to_bits(pk: &[u8; 32]) -> Pk {
         let mut first = [0u8; 128];
         let mut second = [0u8; 128];
 
         for (i, &byte) in pk[..16].iter().enumerate() {
             for bit in 0..8 {
-                first[i * 8 + bit] = (byte >> bit) & 1;  // little-endian, not (7 - bit)
+                first[i * 8 + bit] = (byte >> bit) & 1;
             }
         }
-
         for (i, &byte) in pk[16..].iter().enumerate() {
             for bit in 0..8 {
-                second[i * 8 + bit] = (byte >> bit) & 1;  // little-endian, not (7 - bit)
+                second[i * 8 + bit] = (byte >> bit) & 1;
             }
         }
-
-        (first, second)
+        [(first, second)]  // wrap in Pk array
     }
     const faest_sig : [u8;5006] = [0xd4, 0x6e, 0xf2, 0x12, 0x27, 0x87, 0x83, 0x44, 0x33, 0x53, 0x0d, 0x3c, 0x25, 0x2b, 0x9d,
         0x08, 0xc4, 0x1d, 0x5c, 0x8a, 0x88, 0x95, 0x42, 0x1d, 0x26, 0xf0, 0x09, 0x9f, 0x3e, 0x90,

@@ -8,3 +8,4 @@ pub fn run() {
     let sig = faest_sign(msg, &sk, &pk);
     faest_verify(msg, &pk, &sig);
 }
+

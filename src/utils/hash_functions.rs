@@ -1,10 +1,11 @@
 #![allow(non_upper_case_globals)]
 
 use hax_lib::loop_invariant;
-use crate::utils::constants::{chall1_bytes, chall2_bytes, chall3_bytes, ell, ell_bytes, ell_hat_bytes, h_v_size, tau_minus_one, x1_bytes};
+use crate::utils::constants::{beta, chall1_bytes, chall2_bytes, chall3_bytes, ell, ell_bytes, ell_hat_bytes, h_v_size, tau_minus_one, x1_bytes};
 use crate::utils::constants::{iv_bytes, k_0_pow, k_1_pow, lambda, lambda_plus_iv, lambda_bytes_times_three, lambda_bytes_times_two, tau};
 use crate::utils::constants::lambda_bytes;
 use crate::utils::libcrux_proxy::DigestProxy;
+use crate::utils::types::Pk;
 
 // takes a k and the iv
 // and returns a sd of size 128 bits and a commitment of size 256 bits
@@ -103,26 +104,33 @@ pub fn h_1_for_2304(coms: &[u8; h_v_size]) -> [u8; lambda_bytes_times_two] {
 }
 
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
-pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;lambda_bytes_times_two]{
-    // Concatenate plaintext, ciphertext, and message
-    // vi er nok nød til at sætte et upper bound på message size, problemet er nemlig at vi ikke ved hvor stor message er ved compile time, en overvejelse her om vi er nød til at bibeholde vec
-    // plaintext
-    let mut owf_input = [0u8; 16];
-    let mut owf_output = [0u8; 16];
-
-    for i in 0..16 {
-        for bit in 0..8 {
-            owf_input[i] |= pk.0[i * 8 + bit] << bit;
-            owf_output[i] |= pk.1[i * 8 + bit] << bit;
-        }
-    }
+pub fn h_1_for_sign(pk: Pk, msg: &[u8]) -> [u8; lambda_bytes_times_two] {
     let mut input: Vec<u8> = Vec::new();
-    input.extend_from_slice(&owf_input);
-    input.extend_from_slice(&owf_output);
-    input.extend_from_slice(msg);
-    input.push(0x01); // domain separation byte for H1
 
-    DigestProxy::shake128::<32>(&input)
+    // process all beta blocks
+    for b in 0..beta {
+        let (in_block, out_block) = pk[b];
+        // convert bits to bytes for each block
+        let mut owf_input = [0u8; 16];
+        let mut owf_output = [0u8; 16];
+        for i in 0..16 {
+            for bit in 0..8 {
+                owf_input[i] |= in_block[i * 8 + bit] << bit;
+                owf_output[i] |= out_block[i * 8 + bit] << bit;
+            }
+        }
+        input.extend_from_slice(&owf_input);
+        input.extend_from_slice(&owf_output);
+    }
+
+    input.extend_from_slice(msg);
+    input.push(0x01);
+
+    if lambda == 128 {
+        DigestProxy::shake128::<lambda_bytes_times_two>(&input)
+    } else {
+        DigestProxy::shake256::<lambda_bytes_times_two>(&input)
+    }
 }
 
 pub fn h_3(sk : [u8;lambda_bytes], my : [u8;lambda_bytes_times_two], rho : [u8;lambda_bytes]) -> ([u8;lambda_bytes], [u8;iv_bytes]){

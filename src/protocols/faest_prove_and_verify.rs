@@ -6,12 +6,13 @@ use crate::utils::constants::{ell, l_ke, lambda, l_enc, S_ke, ell_plus_lambda, c
 use crate::utils::galois_field::gf_lambda_mul;
 use crate::utils::helper_methods_prove_verify::{to_field, zk_hash};
 use crate::utils::math::{field_pow, xor_arrays};
+use crate::utils::types::Pk;
 
 pub fn faest_aes_prove(
     w : [u8; ell],
     u : &[u8; ell_plus_lambda],
     V : &[[u8; lambda]; ell_plus_lambda],
-    pk : ([u8;128], [u8;128]),
+    pk : Pk,
     chall : [u8;chall2_bytes]) -> ([u8;lambda_bytes],[u8;lambda_bytes]
 )
 {
@@ -22,8 +23,8 @@ pub fn faest_aes_prove(
         v[i] = to_field::<lambda,lambda,1>(&V[i])[0] // k=lambda
     }
 
-    let in_of_in_and_out : [u8;128] = pk.0;
-    let out_of_in_and_out : [u8;128]= pk.1;
+    let in_of_in_and_out : [u8;128] = pk[0].0;
+    let out_of_in_and_out : [u8;128]= pk[0].1;
 
     let w_tilde_exp: [u8;l_ke] = w[0..l_ke].try_into().unwrap();
     let v_tilde_exp: [[u8;lambda_bytes];l_ke]  = v[0..l_ke].try_into().unwrap();
@@ -84,11 +85,11 @@ pub fn faest_aes_prove(
     (alpha_tilde, beta_tilde)
 }
 
-pub fn faest_aes_verify(d : [u8; ell], Q : [[u8; lambda]; ell +lambda], chall_2 : [u8; chall2_bytes], chall_3 : [u8;lambda], a_tilde : [u8;lambda_bytes], pk : ([u8;128], [u8;128])) -> [u8;lambda_bytes]
+pub fn faest_aes_verify(d : [u8; ell], Q : [[u8; lambda]; ell +lambda], chall_2 : [u8; chall2_bytes], chall_3 : [u8;lambda], a_tilde : [u8;lambda_bytes], pk : Pk) -> [u8;lambda_bytes]
 {
     let delta : [u8;lambda_bytes] = to_field::<lambda,lambda,1>(&chall_3)[0]; // k = lambda
-    let in_of_in_and_out : [u8;128] = pk.0;
-    let out_of_in_and_out : [u8;128] = pk.1;
+    let in_of_in_and_out : [u8;128] = pk[0].0;
+    let out_of_in_and_out : [u8;128] = pk[0].1;
 
     // linje 5
     // Det her skal forstås som en reconstruction af det Q (en matrix), som er blevet sendt rundt på et tidligere tidspunkt

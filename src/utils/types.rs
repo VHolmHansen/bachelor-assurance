@@ -4,11 +4,12 @@ use hax_lib::requires;
 use crate::utils::galois_field::{gf128_mul, gf_lambda_mul};
 use crate::utils::math::xor_arrays;
 
-use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow, ell_hat_bytes, lambda_bytes};
+use crate::utils::constants::{nst, nk, k_0, k_1, k_0_pow, k_1_pow, ell_hat_bytes, lambda_bytes, beta};
 
 pub type Word = [u8; 4];
 pub type Matrix<T, const N: usize, const M: usize> = [[T; M]; N];
-
+pub type PkBlock = ([u8; 128], [u8; 128]);  // (plaintext_bits, ciphertext_bits)
+pub type Pk = [PkBlock; beta];               // beta blocks
 pub type State = [[u8; 4]; 4];
 pub type sized_array_16<const size: usize> = [[u8;lambda_bytes];size];
 pub type sized_array_32<const size: usize> = [[u8;2*lambda_bytes];size];

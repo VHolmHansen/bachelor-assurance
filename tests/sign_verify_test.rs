@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn sign_verify_test_random_key() {
-        let builder = std::thread::Builder::new().stack_size(9 * 1024 * 1024);
+        let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024);
         let handler = builder.spawn(|| {
             let start = std::time::Instant::now();
             let (key, pk) = faest_key_gen();

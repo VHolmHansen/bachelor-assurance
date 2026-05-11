@@ -66,13 +66,7 @@ pub const ret_size_exp_bwd : usize = S_ke << 3;
 // ============================================
 // GENERATOR ELEMENT - changes per lambda (Appendix A)
 // ============================================
-pub const alpha : [u8; lambda_bytes] = match lambda {
-    128 => [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1,
-        0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05],
-    // 192 and 256 would go here when needed
-    _   => [0x0d, 0xce, 0x60, 0x55, 0xac, 0xe8, 0x3f, 0xa1,
-        0x1c, 0x9a, 0x97, 0xa9, 0x55, 0x85, 0x3d, 0x05],
-};
+
 // made into a function, because of having to return differnt sizes
 pub fn get_alpha() -> [u8; lambda_bytes] {
     let mut alpha_1 = [0u8; lambda_bytes];
@@ -112,3 +106,7 @@ pub const w_lambda_size: usize = ell - lambda;      // 1600-128=1472
 pub const w_enc_start: usize = l_ke;                // 448
 pub const w_enc_size: usize = l_enc;                // 1152
 pub const ell_bytes: usize = ell / 8;
+pub const x0_padded_lambda_size: usize = (x0_bytes + lambda_bytes - 1) / lambda_bytes * lambda_bytes;
+pub const x0_padded_64_size    : usize = (x0_bytes + 7) / 8 * 8;
+pub const num_chunks_lambda     : usize = x0_padded_lambda_size / lambda_bytes;
+pub const num_chunks_64         : usize = x0_padded_64_size / 8;

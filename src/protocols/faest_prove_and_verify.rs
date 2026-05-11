@@ -2,7 +2,7 @@
 
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_cstrnts_prover, faest_aes_enc_cstrnts_verifier};
 use crate::protocols::faest_key_exp_cstrnts::{faest_aes_exp_cstrnts_qDelta, faest_aes_exp_cstrnts_wv};
-use crate::utils::constants::{ell, l_ke, lambda, l_enc, S_ke, ell_plus_lambda, chall2_bytes, lambda_bytes, key_schedule_bits, s_enc, big_C};
+use crate::utils::constants::{ell, l_ke, lambda, l_enc, S_ke, ell_plus_lambda, chall2_bytes, lambda_bytes, key_schedule_bits, s_enc, big_C, beta};
 use crate::utils::galois_field::gf_lambda_mul;
 use crate::utils::helper_methods_prove_verify::{to_field, zk_hash};
 use crate::utils::math::{field_pow, xor_arrays};
@@ -23,9 +23,6 @@ pub fn faest_aes_prove(
         v[i] = to_field::<lambda,lambda,1>(&V[i])[0] // k=lambda
     }
 
-    let in_of_in_and_out : [u8;128] = pk[0].0;
-    let out_of_in_and_out : [u8;128]= pk[0].1;
-
     let w_tilde_exp: [u8;l_ke] = w[0..l_ke].try_into().unwrap();
     let v_tilde_exp: [[u8;lambda_bytes];l_ke]  = v[0..l_ke].try_into().unwrap();
 
@@ -39,15 +36,21 @@ pub fn faest_aes_prove(
         .try_into()
         .unwrap();
 
-    let (a_tilde_0_enc, a_tilde_1_enc) : ([[u8;lambda_bytes]; s_enc],[[u8;lambda_bytes]; s_enc])= faest_aes_enc_cstrnts_prover(
-        1, in_of_in_and_out,
-        out_of_in_and_out,
-        w_tilde_enc,
-        v_tilde_enc,
-        k,
-        v_k,
-        false
-    );
+    let mut a_tilde_0_enc = [[0u8; lambda_bytes]; big_C - S_ke];
+    let mut a_tilde_1_enc = [[0u8; lambda_bytes]; big_C - S_ke];
+    for b in 0..beta {
+        let w_enc_start = l_ke + b * l_enc;
+        let w_enc: [u8; l_enc] = w[w_enc_start..w_enc_start + l_enc].try_into().unwrap();
+        let v_tilde_enc: [[u8; lambda_bytes]; l_enc] = v[w_enc_start..w_enc_start + l_enc].try_into().unwrap();
+        let (a0, a1) = faest_aes_enc_cstrnts_prover(
+            1, pk[b].0, pk[b].1,
+            w_enc, v_tilde_enc, k, v_k, false
+        );
+        for i in 0..s_enc {
+            a_tilde_0_enc[b * s_enc + i] = a0[i];
+            a_tilde_1_enc[b * s_enc + i] = a1[i];
+        }
+    }
 
 
     let a_0 : [[u8;lambda_bytes];big_C] = concat_arrays(a_tilde_0_exp, a_tilde_0_enc);
@@ -121,14 +124,19 @@ pub fn faest_aes_verify(d : [u8; ell], Q : [[u8; lambda]; ell +lambda], chall_2 
         .try_into()
         .unwrap();
 
-    let b2 : [[u8;lambda_bytes];s_enc]= faest_aes_enc_cstrnts_verifier(
-            128, &in_of_in_and_out,
-            &out_of_in_and_out,
-            &q_for_enc_cstrnts,
-            &q_k,
-            delta,
-            true
-            );
+    // Replace the single enc_cstrnts_verifier call with:
+    let mut b2 = [[0u8; lambda_bytes]; big_C - S_ke];
+    for b in 0..beta {
+        let q_enc_start = l_ke + b * l_enc;
+        let q_for_enc: [[u8; lambda_bytes]; l_enc] = q[q_enc_start..q_enc_start + l_enc].try_into().unwrap();
+        let b2_block = faest_aes_enc_cstrnts_verifier(
+            128, &pk[b].0, &pk[b].1,
+            &q_for_enc, &q_k, delta, true
+        );
+        for i in 0..s_enc {
+            b2[b * s_enc + i] = b2_block[i];
+        }
+    }
 
 
     let b: [[u8;lambda_bytes]; big_C] = concat_arrays(b1, b2);

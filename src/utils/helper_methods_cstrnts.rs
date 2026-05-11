@@ -1,8 +1,9 @@
 use hax_lib::loop_invariant;
+use crate::utils::constants::get_alpha;
 use crate::utils::galois_field::{gf_lambda_pow};
 use crate::utils::types::{AlphaMul, Word, XorHelper};
 use crate::utils::types::{ret_value};
-use crate::utils::constants::{alpha, lambda, lambda_bytes, R};
+use crate::utils::constants::{lambda, lambda_bytes, R};
 
 // len of res is 1 / 4 * len of input
 pub fn words_to_blocks(x: [Word; (R+1)*4]) -> [[u8; 16];  R+1]
@@ -60,9 +61,9 @@ pub fn alpha_pow(i: i32) -> [u8; lambda_bytes] {
         result[0] = 1;
         result
     } else if i == 1 {
-        alpha
+        get_alpha()
     } else {
-        gf_lambda_pow(&alpha, i)
+        gf_lambda_pow(&get_alpha(), i)
     }
 }
 

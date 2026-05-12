@@ -1,3 +1,4 @@
+use std::array;
 use crate::utils::constants::{nk, R};
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
@@ -6,7 +7,7 @@ use crate::utils::constants::S_ke;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits, words_to_blocks};
-use crate::utils::types::{State, Word};
+use crate::utils::types::{ByteElem, ByteOrBytesElem, BytesElem, State, Word};
 use crate::protocols::aes::{encrypt, key_expansion};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::utils::constants::s_enc;
@@ -80,11 +81,19 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
             }
         }
         let w_enc: [u8;1152] = w[448..1600].try_into().unwrap();
+        let bobe_w_enc: [ByteOrBytesElem; 1152] = array::from_fn(|i| {
+            ByteOrBytesElem::Byte(ByteElem(w_enc[i]))
+        });
+        let bobe_expanded_key_flat: [ByteOrBytesElem; 1408] = array::from_fn(|i| {
+            ByteOrBytesElem::Byte(ByteElem(
+                expanded_key_flat[i]
+            ))
+        });
 
-        let enc_fwd = faest_aes_enc_fwd(1, &w_enc, &expanded_key_flat, &plain_text_flat, false,false, 0);
+        let enc_fwd = faest_aes_enc_fwd(1, &bobe_w_enc, &bobe_expanded_key_flat, &plain_text_flat, false,false, ByteOrBytesElem::Byte(ByteElem(0)));
         let enc_bwd = faest_aes_enc_bkwd(
-            1, &w_enc, &expanded_key_flat,
-            &cipher_text_flat, false, false, 0
+            1, &bobe_w_enc, &bobe_expanded_key_flat,
+            &cipher_text_flat, false, false, &ByteOrBytesElem::Byte(ByteElem(0))
         );
         let one = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0u8];
         let zero = [0u8;16];

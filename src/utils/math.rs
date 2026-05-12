@@ -124,6 +124,7 @@ pub fn xor_arrays<const N: usize>(a: &[u8; N], b: &[u8; N]) -> [u8; N] {
     result
 }
 
+#[hax_lib::requires(a.len() >= 16)]
 pub fn transform_byte_array_to_state(a: &[u8]) -> State {
     let mut state = [[0u8; 4]; 4];
 
@@ -159,6 +160,7 @@ pub fn field_pow(base: &[u8; 16], exp: usize) -> [u8; 16] {
     let mut b = *base;
     let mut e = exp;
     while e > 0 {
+        hax_lib::loop_decreases!(e);
         if e & 1 == 1 {
             result = gf128_mul(&result, &b);
         }

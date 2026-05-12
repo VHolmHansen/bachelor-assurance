@@ -1,7 +1,9 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
+
+use std::array;
 use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{setup_rcon_table};
-use crate::utils::types::{ret_value, XorHelper};
+use crate::utils::types::{ret_value, ByteElem, ByteOrBytesElem, BytesElem, XorHelper};
 use crate::utils::helper_methods_cstrnts::{byte_combine};
 use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lambda, R, l_ke};
 
@@ -162,15 +164,35 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         for r in 0..4 {
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
 
-            let k_hat_slice: &[u8;8] = (&k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)]).try_into().unwrap();
-            let v_k_hat_slice: &[[u8;16];8] = (&v_k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)]).try_into().unwrap();
-            let w_hat_slice : &[u8;8] = (&w_tilde[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
-            let v_w_hat_slice : &[[u8;16];8] = (&v_w   [((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
+            let k_hat_slice: [ByteOrBytesElem;8] =
+                array::from_fn(|i| {
+                    ByteOrBytesElem::Byte(ByteElem(
+                        k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)][i])
+                    )
+                });
+            let v_k_hat_slice: [ByteOrBytesElem;8] =
+                array::from_fn(|i| {
+                    ByteOrBytesElem::Bytes(BytesElem(
+                        v_k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)][i])
+                    )
+                });
+            let w_hat_slice : [ByteOrBytesElem;8] =
+                array::from_fn(|i| {
+                    ByteOrBytesElem::Byte(ByteElem(
+                        w_tilde[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)][i])
+                    )
+                });
+            let v_w_hat_slice : [ByteOrBytesElem;8] =
+                array::from_fn(|i| {
+                    ByteOrBytesElem::Bytes(BytesElem(
+                        v_w[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)][i])
+                    )
+                });
 
-            k_hat[r]   = byte_combine::<u8>(*k_hat_slice);
-            v_k_hat[r] = byte_combine::<[u8;16]>(*v_k_hat_slice);
-            w_hat[r]   = byte_combine::<u8>(*w_hat_slice);
-            v_w_hat[r] = byte_combine::<[u8;16]>(*v_w_hat_slice);
+            k_hat[r]   = byte_combine(k_hat_slice);
+            v_k_hat[r] = byte_combine(v_k_hat_slice);
+            w_hat[r]   = byte_combine(w_hat_slice);
+            v_w_hat[r] = byte_combine(v_w_hat_slice);
         }
 
         if lambda == 256 {do_rot_word = ! do_rot_word}
@@ -203,11 +225,19 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
         for r in 0..4 {
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
 
-            let q_hat_k_slice : &[[u8;16];8] = (&q_k    [(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)]).try_into().unwrap();
-            let q_hat_w_slice : &[[u8;16];8] = (&q_w_flat[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)]).try_into().unwrap();
+            let q_hat_k_slice : [ByteOrBytesElem;8] =
+                array::from_fn(|i| {
+                    ByteOrBytesElem::Bytes(BytesElem(q_k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)][i])
+                    )
+                });
+            let q_hat_w_slice : [ByteOrBytesElem;8] =
+                array::from_fn(|i| {
+                    ByteOrBytesElem::Bytes(BytesElem(q_w_flat[((j << 5) + (r << 3))..((j << 5) + (r << 3) + 8)][i])
+                    )
+                });
 
-            q_hat_k[r] = byte_combine::<[u8;16]>(*q_hat_k_slice);
-            q_hat_w[r] = byte_combine::<[u8;16]>(*q_hat_w_slice);
+            q_hat_k[r] = byte_combine(q_hat_k_slice);
+            q_hat_w[r] = byte_combine(q_hat_w_slice);
         }
 
         if lambda == 256 {do_rot_word = ! do_rot_word}

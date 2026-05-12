@@ -16,6 +16,10 @@ pub type sized_array_234<const size: usize> = [[u8;ell];size];
 
 pub type sized_option_array<const size: usize> = [Option<[u8;16]>;size];
 
+pub const value_of_one_in_bytes: [u8; 16] = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+pub const value_of_two_in_bytes: [u8; 16] = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+pub const value_of_three_in_bytes: [u8; 16] = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+
 #[derive(Clone, Copy, Debug)]
 pub enum sized_array_for_cop {
     sized_array_1(sized_array_16<k_0>),
@@ -137,16 +141,13 @@ impl Log2Number {
 
 
 pub trait ret_value {
-    type Elem: Copy + AlphaMul + XorHelper;
+    type Elem: RetElem;
     const dummy_value : Self::Elem;
     const value_of_one : Self::Elem;
     const value_of_two : Self::Elem;
     const value_of_three : Self::Elem;
-    fn get_len(&self) -> usize;
     fn get_slice(&self, x : usize, y: usize) -> &[Self::Elem];
     fn get_element(&self, x : usize) -> Self::Elem;
-    //fn xor_array(x : &Self::Elem, y : &Self::Elem) -> Self::Elem;
-    //fn xor_two_array(x : &[Self::Elem], y : &[Self::Elem]) -> [Self::Elem; 8];
     fn set_element(&mut self, index : usize, value : &Self::Elem);
     fn new_with_size(value: Self::Elem) -> Self;
     //fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16];
@@ -160,9 +161,6 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     const value_of_one : Self::Elem = [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     const value_of_two : Self::Elem = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
     const value_of_three : Self::Elem = [0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
-    fn get_len(&self) -> usize {
-        N
-    }
     #[hax_lib::requires(x < y && y < self.len())]
     fn get_slice(&self, x : usize, y: usize) -> &[[u8; 16]] {
         &self[x..y]
@@ -171,29 +169,6 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     fn get_element(&self, x : usize) -> [u8;16] {
         self[x]
     }
-    /*
-    fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
-        xor_arrays::<16>(x, y)
-    }
-
-     */
-    /*
-    #[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
-    fn xor_two_array(x : &[[u8; 16]], y : &[[u8; 16]]) -> [[u8; 16]; 8] {
-        let mut res: [[u8;16]; 8] = [[0u8; 16]; 8];
-        for i in 0..8usize {
-            hax_lib::loop_invariant!(|i: usize| {
-                i <= 8
-            });
-            //let value_to_push: [u8; 16] = <[[u8;16]; N]>::xor_array(&x[i], &y[i]);
-            let value_to_push: [u8; 16] = xor_helper(&x[i], &y[i]);
-            res[i] = value_to_push;
-        }
-        res
-    }
-
-     */
-
     #[hax_lib::requires(index < self.len())]
     fn set_element(&mut self, index : usize, value : &[u8; 16]) {
         self[index] = *value;
@@ -201,11 +176,6 @@ impl<const N: usize> ret_value for [[u8;16]; N] {
     fn new_with_size(value: Self::Elem) -> Self {
         [value; N]
     }
-    /*
-    fn multiply_with_alpha(x : Self::Elem, alpha_val : [u8;16]) -> [u8;16]{
-        gf128_mul(&x, &alpha_val)
-    }
-     */
     #[hax_lib::requires(x.len() == N)]
     fn turn_array_to_T(x : &[[u8; 16]]) -> [[u8; 16]; N] {
         x.try_into().unwrap()
@@ -220,9 +190,6 @@ impl<const N: usize> ret_value for [u8; N] {
     const value_of_one : Self::Elem = 1;
     const value_of_two: Self::Elem = 2;
     const value_of_three : Self::Elem = 3;
-    fn get_len(&self) -> usize {
-        N
-    }
     #[hax_lib::requires(x < y && y < self.len())]
     fn get_slice(&self, x : usize, y: usize) -> &[u8] {
         &self[x..y]
@@ -231,29 +198,6 @@ impl<const N: usize> ret_value for [u8; N] {
     fn get_element(&self, x : usize) -> u8 {
         self[x]
     }
-    /*
-    fn xor_array(x : &u8, y : &u8) -> u8{
-        x ^ y
-    }
-
-     */
-    /*
-    #[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
-    fn xor_two_array(x : &[u8], y : &[u8]) -> [u8; 8] {
-        let mut res: [u8; 8] = [0u8; 8];
-        for i in 0..8 {
-            hax_lib::loop_invariant!(|i: usize| {
-                i <= 8
-            });
-            //let value_to_push = <[u8; N]>::xor_array(&x[i], &y[i]);
-            let value_to_push: u8 = xor_helper(&x[i], &y[i]);
-            res[i] = value_to_push;
-        }
-        res
-    }
-
-     */
-
     #[hax_lib::requires(index < self.len())]
     fn set_element(&mut self, index : usize, value : &u8) {
         self[index] = *value;
@@ -261,18 +205,6 @@ impl<const N: usize> ret_value for [u8; N] {
     fn new_with_size(value: Self::Elem) -> Self {
         [value; N]
     }
-    /*
-    fn multiply_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
-        // x is a scalar bit (0 or 1)
-        // result is either 0 or alpha_val
-        if x == 0 {
-            [0u8; 16]
-        } else {
-            alpha_val
-        }
-    }
-     */
-
     #[hax_lib::requires(x.len() == N)]
     fn turn_array_to_T(x : &[u8]) -> [u8; N] {
         x.try_into().unwrap()
@@ -280,80 +212,63 @@ impl<const N: usize> ret_value for [u8; N] {
 
 }
 
+pub trait RetElem: Copy + XorHelper + AlphaMul {}
+
+impl RetElem for u8 {}
+impl RetElem for [u8; 16] {}
+
 pub trait XorHelper: Sized {
     fn xor_array(x : &Self, y : &Self) -> Self;
     fn xor_two_array(x: &[Self], y: &[Self]) -> [Self; 8];
-
-    fn length(&self) -> usize;
 }
 
+#[hax_lib::attributes]
 impl XorHelper for u8 {
     fn xor_array(x : &u8, y : &u8) -> u8{
         x ^ y
     }
-    //#[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
+    #[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
     fn xor_two_array(x : &[u8], y : &[u8]) -> [u8; 8] {
         let mut res: [u8; 8] = [0u8; 8];
         for i in 0..8 {
             hax_lib::loop_invariant!(|i: usize| {
                 i <= 8
             });
-            let value_to_push = <u8>::xor_array(&x[i], &y[i]);
+            let value_to_push = x[i] ^ y[i];
             //let value_to_push: u8 = xor_helper(&x[i], &y[i]);
             res[i] = value_to_push;
         }
         res
     }
-    fn length(&self) -> usize {
-        1
-    }
 }
-
+#[hax_lib::attributes]
 impl XorHelper for [u8; 16] {
     fn xor_array(x : &[u8;16], y : &[u8;16]) -> [u8;16]{
         xor_arrays::<16>(x, y)
     }
 
     #[hax_lib::opaque]
-    //#[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
+    #[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
     fn xor_two_array(x : &[[u8; 16]], y : &[[u8; 16]]) -> [[u8; 16]; 8] {
         let mut res: [[u8;16]; 8] = [[0u8; 16]; 8];
         for i in 0..8usize {
             hax_lib::loop_invariant!(|i: usize| {
                 i <= 8
             });
-            let value_to_push: [u8; 16] = <[u8;16]>::xor_array(&x[i], &y[i]);
+            let value_to_push: [u8; 16] = xor_arrays(&x[i], &y[i]);
             //let value_to_push: [u8; 16] = xor_helper(&x[i], &y[i]);
             res[i] = value_to_push;
         }
         res
     }
-
-    fn length(&self) -> usize {self.len()}
 }
-/*
-//TODO: non-trivial refactor to make non-opaque
-#[hax_lib::opaque]
-fn xor_helper<T: XorHelper>(x : &T, y : &T) -> T {
-    T::xor_helper(x, y)
-}
-
- */
-
-
-/*
-fn turn_array_to<const N: usize, T: ret_value>(&[T::Elem]) -> [[u8; 16]; N] {
-
-}
- */
-
-
 pub trait AlphaMul: Copy {
-    fn multiply_with_alpha(x : Self, alpha_val : [u8;16]) -> [u8;16];
+    fn mul_with_alpha(x : Self, alpha_val : [u8;16]) -> [u8;16];
 }
+
 
 impl AlphaMul for u8 {
-    fn multiply_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
+    fn mul_with_alpha(x: u8, alpha_val: [u8; 16]) -> [u8; 16] {
         // x is a scalar bit (0 or 1)
         // result is either 0 or alpha_val
         if x == 0 {
@@ -365,8 +280,140 @@ impl AlphaMul for u8 {
 }
 
 impl AlphaMul for [u8; 16] {
-    fn multiply_with_alpha(x : Self, alpha_val : [u8;16]) -> [u8;16] {
+    fn mul_with_alpha(x : Self, alpha_val : [u8;16]) -> [u8;16] {
         gf128_mul(&x, &alpha_val)
     }
 }
+
+#[derive(Clone, Copy)]
+pub enum ByteOrBytesElem {
+    Byte(ByteElem),
+    Bytes(BytesElem),
+}
+#[derive(Clone, Copy)]
+pub struct ByteElem(pub u8);
+#[derive(Clone, Copy)]
+pub struct BytesElem(pub [u8; 16]);
+#[hax_lib::attributes]
+impl ByteOrBytesElem {
+
+    #[hax_lib::requires(matches!(x, ByteOrBytesElem::Byte(_)))]
+    pub fn get_byte(x: &Self) -> u8 {
+        match x {
+            ByteOrBytesElem::Byte(ByteElem(y)) => *y,
+            _ => panic!("get_byte called on non-byte elem")
+        }
+    }
+
+    #[hax_lib::requires(matches!(x, ByteOrBytesElem::Bytes(_)))]
+    pub fn get_bytes(x: &Self) -> [u8; 16] {
+        match x {
+            ByteOrBytesElem::Bytes(BytesElem(y)) => *y,
+            _ => panic!("get_bytes called on non-bytes elem")
+        }
+    }
+    pub fn dummy(x: &Self) -> Self {
+        match x {
+            ByteOrBytesElem::Byte(_) => ByteOrBytesElem::Byte(ByteElem(0)),
+            ByteOrBytesElem::Bytes(_) => ByteOrBytesElem::Bytes(BytesElem([0u8; 16]))
+        }
+
+    }
+
+    #[hax_lib::ensures(|result| matches!(result, ByteOrBytesElem::Bytes(_)))]
+    pub fn zero_bytes() -> Self {
+        ByteOrBytesElem::Bytes(BytesElem([0u8; 16]))
+    }
+
+    pub fn ones(x: &Self) -> Self {
+        match x {
+            ByteOrBytesElem::Byte(_) => ByteOrBytesElem::Byte(ByteElem(1)),
+            ByteOrBytesElem::Bytes(_) => ByteOrBytesElem::Bytes(BytesElem([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+        }
+    }
+
+    pub fn one_bytes() -> Self {
+        ByteOrBytesElem::Bytes(BytesElem([0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]))
+    }
+
+    #[hax_lib::requires(ByteOrBytesElem::same_variant(x, y))]
+    pub fn xor_array(x : &ByteOrBytesElem, y : &ByteOrBytesElem) -> ByteOrBytesElem {
+        match (x, y) {
+            (ByteOrBytesElem::Byte(x), ByteOrBytesElem::Byte(y)) => ByteOrBytesElem::Byte(ByteElem(u8::xor_array(&x.0, &y.0))),
+            (ByteOrBytesElem::Bytes(x), ByteOrBytesElem::Bytes(y)) => ByteOrBytesElem::Bytes(BytesElem(<[u8; 16]>::xor_array(&x.0, &y.0))),
+            _ => panic!("type mismatch for xor_array")
+        }
+    }
+    #[hax_lib::ensures(|result| matches!(x, y))]
+    pub fn same_variant(x: &Self, y: &Self) -> bool {
+        matches!(
+            (x, y),
+            (ByteOrBytesElem::Byte(_), ByteOrBytesElem::Byte(_))
+            | (ByteOrBytesElem::Bytes(_), ByteOrBytesElem::Bytes(_))
+        )
+    }
+
+    /*
+    pub fn turn_array_to_T(x: &Self) -> Self {
+        match x {
+            ByteOrBytesElem::Byte(y) => y.try_into().unwrap(),
+            ByteOrBytesElem::Bytes(y) => ByteOrBytesElem::Bytes(BytesElem([1u8; 16]))
+        }
+    }
+
+     */
+
+    /*
+    pub fn get_slice(self, from: usize, to: usize) -> ByteOrBytesElem {
+        match self {
+            ByteOrBytesElem::Byte(x) => ByteOrBytesElem::Byte(x[from..to]),
+            ByteOrBytesElem::Bytes(x) => ByteOrBytesElem::Bytes(x),
+        }
+    }
+
+     */
+    pub fn multiply_with_alpha(self, alpha: [u8;16]) -> [u8;16] {
+        match self {
+            ByteOrBytesElem::Byte(x) => <u8 as AlphaMul>::mul_with_alpha(x.0, alpha),
+            ByteOrBytesElem::Bytes(x) => <[u8;16] as AlphaMul>::mul_with_alpha(x.0, alpha),
+        }
+    }
+
+    #[hax_lib::requires(N > 0)]
+    #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= N || matches!(result[i], ByteOrBytesElem::Byte(_))))]
+    pub fn from_byte_array<const N: usize>(x: &[u8; N]) -> [ByteOrBytesElem; N] {
+        let mut res: [ByteOrBytesElem; N] = [ByteOrBytesElem::Byte(ByteElem(0)); N];
+        for i in 0..N {
+            hax_lib::loop_invariant!(|i: usize| {
+                hax_lib::Prop::from(i <= N).and(
+                hax_lib::forall(|i: usize| i >= N || matches!(res[i], ByteOrBytesElem::Byte(_))))
+            });
+            ByteOrBytesElem::set_elem(&mut res, i, ByteOrBytesElem::Byte(ByteElem(x[i])));
+        };
+        res
+    }
+
+    #[hax_lib::requires(N > 0)]
+    #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= N || matches!(result[i], ByteOrBytesElem::Bytes(_))))]
+    pub fn from_bytes_array<const N: usize>(x: &[[u8; 16]; N]) -> [ByteOrBytesElem; N] {
+        let mut res: [ByteOrBytesElem; N] = [ByteOrBytesElem::Bytes(BytesElem([0u8; 16])); N];
+        for i in 0..N {
+            hax_lib::loop_invariant!(|i: usize| {
+                hax_lib::Prop::from(i <= N).and(
+                hax_lib::forall(|i: usize| i >= N || matches!(res[i], ByteOrBytesElem::Bytes(_))))
+            });
+            ByteOrBytesElem::set_elem(&mut res, i, ByteOrBytesElem::Bytes(BytesElem(x[i])));
+        };
+        res
+    }
+
+    #[hax_lib::requires(hax_lib::Prop::from(index < N)
+                        .and(hax_lib::forall(|i: usize| i >= N || matches!(arr[i], elem))))]
+    #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= N || matches!(arr[i], elem)))]
+    pub fn set_elem<const N: usize>(arr: &mut [ByteOrBytesElem; N], index: usize, elem : ByteOrBytesElem) {
+        arr[index] = elem
+    }
+
+}
+
 

@@ -1,6 +1,6 @@
 use hax_lib::loop_invariant;
 use crate::utils::galois_field::gf128_pow;
-use crate::utils::types::{AlphaMul, Word, XorHelper};
+use crate::utils::types::{AlphaMul, ByteOrBytesElem, Word, XorHelper};
 use crate::utils::types::{ret_value};
 use crate::utils::constants::{alpha};
 
@@ -33,8 +33,7 @@ pub fn words_to_blocks(x: [Word; 44]) -> [[u8; 16]; 11]
     a
 }
 
-pub fn byte_combine<T>(x: [T; 8]) -> [u8; 16] where
-    T: AlphaMul + XorHelper {
+pub fn byte_combine(x: [ByteOrBytesElem; 8]) -> [u8; 16] {
     let mut res: [u8; 16] = [0; 16];
     for i in 0..x.len() {
         loop_invariant!(|i: usize| {
@@ -47,7 +46,7 @@ pub fn byte_combine<T>(x: [T; 8]) -> [u8; 16] where
         // multiply_with_alpha must behave as:
         // - if elem is a scalar bit (0 or 1): return alpha_pow_val if bit=1, else [0;16]
         // - if elem is a field element [u8;16]: return gf128_mul(elem, alpha_pow_val)
-        let contribution = <T>::multiply_with_alpha(elem, alpha_pow_val);
+        let contribution = elem.multiply_with_alpha(alpha_pow_val);
         res = <[u8; 16]>::xor_array(&res, &contribution); // 4 is a dummy value
     }
     res
@@ -73,7 +72,7 @@ pub fn byte_to_bits(byte: u8) -> [u8; 8] {
     }
     bits
 }
-
+#[hax_lib::requires(bits.len() >= 8)]
 pub fn bits_to_byte(bits: &[u8]) -> u8 {
     let mut result = 0u8;
     for i in 0..8 {

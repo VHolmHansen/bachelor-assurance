@@ -1,4 +1,4 @@
-#[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests {
     use bachelor_assurance::utils::galois_field::gf_lambda_mul;
     use bachelor_assurance::utils::helper_methods_prove_verify::{gf_lambda_mul_64, zk_hash};

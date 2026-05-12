@@ -1,4 +1,4 @@
-#[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests {
     use bachelor_assurance::protocols::fs_vole::{chall_dec_k0, chall_dec_k1, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
     use bachelor_assurance::utils::constants::{chall3_bytes, ell_hat, ell_hat_bytes, iv_bytes, k_0, k_1, lambda_bytes, tau, tau_0, tau_minus_one};

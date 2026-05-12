@@ -1,7 +1,7 @@
 use bachelor_assurance::protocols::faest_key_gen::faest_key_gen;
 use bachelor_assurance::protocols::faest_verify::faest_verify;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests{
     use bachelor_assurance::protocols::faest_key_gen::faest_key_gen;
     use bachelor_assurance::protocols::faest_sign::faest_sign;

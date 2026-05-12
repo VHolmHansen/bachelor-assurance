@@ -1,4 +1,4 @@
-#[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests {
     use bachelor_assurance::utils::prg;
 

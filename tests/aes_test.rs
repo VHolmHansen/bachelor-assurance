@@ -1,5 +1,5 @@
 
-#[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests {
     use std::time::Instant;
     use bachelor_assurance::protocols::aes::{add_round_key, gf2_affine_transform, mix_columns, shift_rows, sub_bytes};

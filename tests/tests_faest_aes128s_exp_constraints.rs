@@ -1,4 +1,4 @@
-#[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests{
     use bachelor_assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
     use bachelor_assurance::protocols::faest_key_exp_cstrnts::{faest_aes_exp_cstrnts_qDelta, faest_aes_exp_cstrnts_wv};

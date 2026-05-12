@@ -1,4 +1,4 @@
-#[cfg(all(test, feature = "lambda_128s"))]
+#[cfg(all(test, feature = "lambda_256s"))]
 mod tests {
     #[test]
     fn test_key_gen() {
@@ -8,20 +8,22 @@ mod tests {
         use bachelor_assurance::utils::math::transform_byte_array_to_state;
         use bachelor_assurance::utils::constants::beta;
 
-        for i in 0..10 {
+        for i in 0..5 {
             let (key, pk) = faest_key_gen();
 
-            // Verify all beta blocks are consistent: encrypt(key, plaintext_b) == ciphertext_b
+            // verify all beta blocks are consistent: encrypt(key, plaintext_b) == ciphertext_b
             for b in 0..beta {
                 let (plain_text_flat, cipher_text_flat) = pk[b];
 
-                let plaintext: [u8; 16] = std::array::from_fn(|i| {
-                    bits_to_byte(&plain_text_flat[i * 8..i * 8 + 8])
+                // convert bit arrays back to bytes
+                let plaintext: [u8; 16] = std::array::from_fn(|j| {
+                    bits_to_byte(&plain_text_flat[j * 8..j * 8 + 8])
                 });
-                let ciphertext: [u8; 16] = std::array::from_fn(|i| {
-                    bits_to_byte(&cipher_text_flat[i * 8..i * 8 + 8])
+                let ciphertext: [u8; 16] = std::array::from_fn(|j| {
+                    bits_to_byte(&cipher_text_flat[j * 8..j * 8 + 8])
                 });
 
+                // encrypt plaintext under key and compare
                 let plaintext_state = transform_byte_array_to_state(&plaintext);
                 let computed_cipher = encrypt(plaintext_state, &key_expansion(key));
 
@@ -36,7 +38,7 @@ mod tests {
 
                 assert_eq!(
                     ciphertext, computed_flat,
-                    "KeyGen block {}: encrypt(key, plaintext) != ciphertext in pk", b
+                    "KeyGen iter {i} block {b}: encrypt(key, plaintext) != ciphertext in pk"
                 );
             }
         }

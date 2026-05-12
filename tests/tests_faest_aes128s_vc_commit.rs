@@ -1,5 +1,4 @@
-// #[cfg(all(test, feature = "lambda_128s"))]
-#[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests{
     use bachelor_assurance::utils::constants::{iv_bytes, k_0, k_0_pow, k_1, k_1_pow, lambda_bytes};
     use bachelor_assurance::utils::preliminary_helper_methods::{num_rec_k0, num_rec_k1};

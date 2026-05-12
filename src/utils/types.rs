@@ -27,12 +27,12 @@ pub enum sized_array_for_coms {
     sized_array_1(sized_array_32<k_0_pow>),
     sized_array_2(sized_array_32<k_1_pow>)
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum sized_array_for_sds {
     sized_array_1(sized_array_16<k_0_pow>),
     sized_array_2(sized_array_16<k_1_pow>)
 }
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum sized_array_for_q_v{
     sized_array_1(sized_array_234<k_0>),
     sized_array_2(sized_array_234<k_1>)

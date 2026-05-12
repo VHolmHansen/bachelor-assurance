@@ -5,5 +5,9 @@ pub mod protocols;
 
 #[hax_lib::include]
 fn main() {
-    run_faest::run();
+    let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024);
+    let handler = builder.spawn(|| {
+        run_faest::run();
+    }).unwrap();
+    handler.join().unwrap();
 }

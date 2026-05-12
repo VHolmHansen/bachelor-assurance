@@ -2,15 +2,15 @@ use hax_lib::loop_invariant;
 use crate::utils::constants::{ell_hat, ell_plus_lambda, lambda_bytes, num_chunks_lambda, x0_padded_64_size, x0_padded_lambda_size, x1_bytes};
 use crate::utils::constants::{chall1_bytes, x0_bytes};
 use crate::utils::types::sized_array_for_q_v;
-use crate::utils::constants::{ell, k_0, k_1, lambda, tau, tau_0, ell_hat_bytes, chall3_bytes};
+use crate::utils::constants::{ell, k_0, k_1, LAMBDA, tau, tau_0, ell_hat_bytes, chall3_bytes};
 use crate::utils::galois_field::{gf128_mul, gf64_add, gf64_mul, gf_lambda_mul};
 use crate::utils::helper_methods_cstrnts::bits_to_byte;
 use crate::utils::math::xor_arrays;
 use crate::utils::types::State;
 
 // funktioner der bruges til at omdanne vores V og u, i sign til bits, skal nok slettes senere efte refactor
-pub fn vole_to_row_major(big_v: [sized_array_for_q_v;tau]) -> [[u8; lambda]; ell +lambda] {
-    let mut v_rows: [[u8; lambda]; ell +lambda] = [[0u8; lambda]; ell + lambda];
+pub fn vole_to_row_major(big_v: [sized_array_for_q_v;tau]) -> [[u8; LAMBDA]; ell + LAMBDA] {
+    let mut v_rows: [[u8; LAMBDA]; ell + LAMBDA] = [[0u8; LAMBDA]; ell + LAMBDA];
     // flatten all columns across tau instances
     // big_v[0] has k_0 columns, big_v[1..tau_0] have k_0 columns
     // big_v[tau_0..tau] have k_1 columns
@@ -30,7 +30,7 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;tau]) -> [[u8; lambda]; ell
                 else {tau_0 * k_0 + (i - tau_0) * k_1 + j}
             });
             // big_v[i][j] is one column of l_hat bits packed into 234 bytes
-            for row in 0..(ell +lambda) {
+            for row in 0..(ell + LAMBDA) {
                 loop_invariant!(|row: usize| {
                     row <= (ell_bit_size+lambda)
                 });
@@ -47,7 +47,7 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;tau]) -> [[u8; lambda]; ell
         }
     }
     // col should equal lambda = 128 here
-    assert_eq!(col, lambda, "Column count mismatch");
+    assert_eq!(col, LAMBDA, "Column count mismatch");
     v_rows
 }
 
@@ -79,8 +79,8 @@ pub fn expand_bits_56(input: [u8; 56]) -> [u8; 448] {
 
 
 
-pub fn chall3_to_bits(chall_3: &[u8;chall3_bytes]) -> [u8;lambda] {
-    let mut bits = [0u8; lambda];
+pub fn chall3_to_bits(chall_3: &[u8;chall3_bytes]) -> [u8; LAMBDA] {
+    let mut bits = [0u8; LAMBDA];
     let mut idx = 0;
     for &byte in chall_3 {
         for i in 0..8 {

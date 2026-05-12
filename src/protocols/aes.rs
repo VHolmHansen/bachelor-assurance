@@ -28,7 +28,7 @@ pub fn key_expansion(key: [u8; lambda_bytes]) -> [Word; (R + 1) * 4] {      // n
     // let rcon = setup_rcon_table();
     let mut result_key: [Word; (R + 1) * 4] = [[0u8, 0u8, 0u8, 0u8]; (R + 1) * 4];
 
-    for i in 0..4 {
+    for i in 0..nk {
         for j in 0..4 {
             result_key[i][j] = key[(i * 4)+j];        // i * 4 = i << 2
         }

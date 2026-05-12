@@ -68,11 +68,11 @@ pub fn FAEST_VOLE_commit(r: [u8; lambda_bytes], iv: [u8; iv_bytes]) -> ([u8; 2*l
     // this loop should be made able to be threaded
     for i in 0..tau{
         let (h, decoms, u, v) = if i < tau_0 {
-            let (h, decoms, seeds) = vec_commit_k0(arr_of_rs[i], iv, k_0 as i128);
+            let (h, decoms, seeds) = vec_commit_k0(arr_of_rs[i], iv);
             let (u,v) = convert_to_VOLE::<k_0>(&seeds, iv);
             (h, decoms, u, sized_array_for_q_v::sized_array_1(v))
         } else {
-            let (h, decoms, seeds) = vec_commit_k1(arr_of_rs[i], iv, k_1 as i128);
+            let (h, decoms, seeds) = vec_commit_k1(arr_of_rs[i], iv);
             let (u,v) = convert_to_VOLE::<k_1>(&seeds, iv);
             (h, decoms, u, sized_array_for_q_v::sized_array_2(v))
         };
@@ -143,6 +143,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;chall3_bytes], pdecoms: &[(sized_array_
                 sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
             };
             let N_b = sds.len();
+            let delta = num_rec_k0(&b);
             let delta = num_rec_k0(&b);
             let mut sd_updated_verifier: [[u8;lambda_bytes];k_0_pow] = [[0;lambda_bytes];k_0_pow];
             for j in 1..N_b {

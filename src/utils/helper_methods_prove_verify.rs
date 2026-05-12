@@ -89,7 +89,36 @@ fn field_pow(base: &[u8; lambda_bytes], exp: usize) -> [u8; lambda_bytes] {
     result
 }
 pub fn gf_lambda_mul_64(a: &[u8; lambda_bytes], b: &[u8; 8]) -> [u8; lambda_bytes] {
-    let mut b_padded = [0u8; lambda_bytes];
-    b_padded[..8].copy_from_slice(b);
-    gf_lambda_mul(a, &b_padded)
+    let mut lhs = *a;
+    let mut result = [0u8; lambda_bytes];
+
+    // for each of the 64 bits of b
+    for idx in 0..64 {
+        // if bit idx of b is set, XOR current lhs into result
+        let b_bit = (b[idx >> 3] >> (idx & 7)) & 1;
+        if b_bit == 1 {
+            for k in 0..lambda_bytes {
+                result[k] ^= lhs[k];
+            }
+        }
+
+        if idx < 63 {
+            // shift lhs left by 1 in GF(2^128) and reduce
+            // check top bit before shifting
+            let top_bit = (lhs[lambda_bytes - 1] >> 7) & 1;
+            // shift left by 1
+            let mut shifted = [0u8; lambda_bytes];
+            for k in (1..lambda_bytes).rev() {
+                shifted[k] = (lhs[k] << 1) | (lhs[k-1] >> 7);
+            }
+            shifted[0] = lhs[0] << 1;
+            // reduce if top bit was set: XOR with modulus x^128 + x^7 + x^2 + x + 1
+            // modulus as bytes: bit 7, bit 2, bit 1, bit 0 set = 0x87
+            if top_bit == 1 {
+                shifted[0] ^= 0x87;
+            }
+            lhs = shifted;
+        }
+    }
+    result
 }

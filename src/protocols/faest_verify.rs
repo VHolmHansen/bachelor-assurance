@@ -7,7 +7,7 @@ use crate::utils::types::{sized_array_for_q_v, Pk};
 use crate::utils::types::sized_array_for_cop;
 use crate::protocols::faest_prove_and_verify::faest_aes_verify;
 use crate::protocols::fs_vole::{FAEST_VOLE_reconstruct};
-use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell};
+use crate::utils::constants::{tau, tau_0, k_0, k_1, LAMBDA, ell};
 use crate::utils::hash_functions::{bits_to_bytes_for_d, h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, vole_hash, vole_to_row_major};
 use crate::utils::preliminary_helper_methods::flatten;
@@ -114,8 +114,8 @@ pub fn faest_verify(
     let chall_2 : [u8;chall2_bytes] = h_2_2(chall_1, u_tilde.clone(), h_v, d_bytes);
 
     // et lille fix til hvordan q den hænger sammen, samme check som til prove
-    let q_rows : [[u8; lambda]; ell+lambda] = vole_to_row_major(q_corrected);
-    let q_arr: [[u8; lambda]; ell + lambda] = q_rows.try_into().unwrap();
+    let q_rows : [[u8; LAMBDA]; ell+ LAMBDA] = vole_to_row_major(q_corrected);
+    let q_arr: [[u8; LAMBDA]; ell + LAMBDA] = q_rows.try_into().unwrap();
 
 
 

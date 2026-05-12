@@ -2,7 +2,7 @@
 
 use hax_lib::loop_invariant;
 use crate::utils::constants::{beta, chall1_bytes, chall2_bytes, chall3_bytes, ell, ell_bytes, ell_hat_bytes, h_v_size, tau_minus_one, x1_bytes};
-use crate::utils::constants::{iv_bytes, k_0_pow, k_1_pow, lambda, lambda_plus_iv, lambda_bytes_times_three, lambda_bytes_times_two, tau};
+use crate::utils::constants::{iv_bytes, k_0_pow, k_1_pow, LAMBDA, lambda_plus_iv, lambda_bytes_times_three, lambda_bytes_times_two, tau};
 use crate::utils::constants::lambda_bytes;
 use crate::utils::libcrux_proxy::DigestProxy;
 use crate::utils::types::Pk;
@@ -16,7 +16,7 @@ pub fn h_0(k: [u8; lambda_bytes], iv: [u8; iv_bytes]) -> ([u8; lambda_bytes], [u
     input[lambda_bytes..lambda_bytes+iv_bytes].copy_from_slice(&iv);
     input[lambda_bytes+iv_bytes] = 0;
 
-    let output = if lambda == 128 {
+    let output = if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_three>(&input)
     }
     else {
@@ -48,7 +48,7 @@ pub fn h_1_k0(coms: &[[u8; lambda_bytes_times_two]; k_0_pow]) -> [u8; lambda_byt
         }
     }
     input[SIZE - 1] = 0x01;
-    if lambda == 128 {
+    if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_two>(&input)
     } else {
         DigestProxy::shake256::<lambda_bytes_times_two>(&input)
@@ -74,7 +74,7 @@ pub fn h_1_k1(coms: &[[u8; lambda_bytes_times_two]; k_1_pow]) -> [u8; lambda_byt
         }
     }
     input[SIZE - 1] = 0x01;
-    if lambda == 128 {
+    if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_two>(&input)
     } else {
         DigestProxy::shake256::<lambda_bytes_times_two>(&input)
@@ -85,7 +85,7 @@ pub fn h_1_for_352(coms: &[u8; tau * lambda_bytes_times_two]) -> [u8; lambda_byt
     let mut input = [0u8; tau * lambda_bytes_times_two+1];
     input[..tau * lambda_bytes_times_two].copy_from_slice(coms);
     input[tau * lambda_bytes_times_two] = 0x01;
-    if lambda == 128 {
+    if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_two>(&input)
     } else {
         DigestProxy::shake256::<lambda_bytes_times_two>(&input)
@@ -96,7 +96,7 @@ pub fn h_1_for_2304(coms: &[u8; h_v_size]) -> [u8; lambda_bytes_times_two] {
     let mut input = [0u8; h_v_size+1];
     input[..h_v_size].copy_from_slice(coms);
     input[h_v_size] = 0x01; // domain separation byte for H1
-    if lambda == 128 {
+    if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_two>(&input)
     } else {
         DigestProxy::shake256::<lambda_bytes_times_two>(&input)
@@ -126,7 +126,7 @@ pub fn h_1_for_sign(pk: Pk, msg: &[u8]) -> [u8; lambda_bytes_times_two] {
     input.extend_from_slice(msg);
     input.push(0x01);
 
-    if lambda == 128 {
+    if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_two>(&input)
     } else {
         DigestProxy::shake256::<lambda_bytes_times_two>(&input)
@@ -144,7 +144,7 @@ pub fn h_3(sk : [u8;lambda_bytes], my : [u8;lambda_bytes_times_two], rho : [u8;l
     offset += lambda_bytes_times_two;
     input[offset..offset+lambda_bytes].copy_from_slice(&rho);
     input[size_of_input-1] = 0x03;
-    let output = if lambda == 128 {
+    let output = if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_plus_iv>(&input)
     } else {
         DigestProxy::shake256::<lambda_plus_iv>(&input)
@@ -176,7 +176,7 @@ pub fn h_2_1(my : [u8;lambda_bytes_times_two], hcom : [u8;lambda_bytes_times_two
     input[offset..offset + iv_bytes].copy_from_slice(&iv);
     offset += iv_bytes;
     input[offset] = 0x02;
-    if lambda == 128 {
+    if LAMBDA == 128 {
         DigestProxy::shake128::<chall1_bytes>(&input)
     } else {
         DigestProxy::shake256::<chall1_bytes>(&input)
@@ -198,7 +198,7 @@ pub fn h_2_2(chall_1 : [u8;chall1_bytes], u_tilde : [u8; x1_bytes], h_v : [u8;la
     input[offset..offset + ell_bytes].copy_from_slice(&d);
     offset += ell_bytes;
     input[offset] = 0x02;
-    if lambda == 128 {DigestProxy::shake128::<chall2_bytes>(&input)} else {DigestProxy::shake256::<chall2_bytes>(&input)}
+    if LAMBDA == 128 {DigestProxy::shake128::<chall2_bytes>(&input)} else {DigestProxy::shake256::<chall2_bytes>(&input)}
 }
 
 pub fn h_2_3(chall_2 : [u8;chall2_bytes], a_tilde : [u8;lambda_bytes], b_tilde : [u8;lambda_bytes]) -> [u8;chall3_bytes]{
@@ -213,7 +213,7 @@ pub fn h_2_3(chall_2 : [u8;chall2_bytes], a_tilde : [u8;lambda_bytes], b_tilde :
     offset += lambda_bytes;
     input[offset] = 0x02;
 
-    if lambda == 128 {DigestProxy::shake128::<chall3_bytes>(&input)} else {DigestProxy::shake256::<chall3_bytes>(&input)}
+    if LAMBDA == 128 {DigestProxy::shake128::<chall3_bytes>(&input)} else {DigestProxy::shake256::<chall3_bytes>(&input)}
 }
 
 

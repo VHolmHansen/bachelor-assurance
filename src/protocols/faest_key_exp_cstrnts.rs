@@ -3,7 +3,7 @@ use crate::utils::galois_field::gf_lambda_mul;
 use crate::protocols::aes::{setup_rcon_table};
 use crate::utils::types::{ret_value, XorHelper};
 use crate::utils::helper_methods_cstrnts::{byte_combine};
-use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lambda, R, l_ke, key_schedule_bits, lambda_bytes, l_ke_minus_lambda};
+use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, LAMBDA, R, l_ke, key_schedule_bits, lambda_bytes, l_ke_minus_lambda};
 
 
 // pk, is a tuple with a in message and out that is 128 * (\lambda / 128)
@@ -17,10 +17,10 @@ pub fn faest_aes_key_exp_fwd<T : ret_value>(_m : usize, x: T, mtag : bool, mkey 
     }
     let mut y : [<T as ret_value>::Elem;ret_size_exp_fwd] = [<T as ret_value>::dummy_value;ret_size_exp_fwd];
     // while it states lambda, we iterate over words and a word is 8*4 = 32, so we don't need lambda words we need 4 words
-    for i in 0..lambda{
+    for i in 0..LAMBDA {
         y[i] = x.get_element(i);
     }
-    let mut iwd = lambda;
+    let mut iwd = LAMBDA;
     for j in nk..((R+1) << 2){
         let cond = (j % nk) == 0 || (nk > 6 && j % nk == 4);
         if cond {
@@ -122,13 +122,13 @@ pub fn faest_aes_key_exp_bkwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
         c = c + 1;
         if c == 4 {
             c = 0;
-            if lambda == 192 {
+            if LAMBDA == 192 {
                 // unsure what the value should be here
                 i_wd = i_wd + 192
             } else {
                 // changed the value to plus 1, since we don't index over 0..128, the equivalent for us is 0..1
                 i_wd = i_wd + 128;
-                if lambda == 256 {rmvRcon = !rmvRcon; }
+                if LAMBDA == 256 {rmvRcon = !rmvRcon; }
             }
         }
     }
@@ -143,9 +143,9 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; lambda_bytes]; l_ke], 
     let k : [u8;key_schedule_bits] = faest_aes_key_exp_fwd::<[u8;l_ke]>(1, w, false, false, [0;lambda_bytes]);
     let v_k : [[u8;lambda_bytes];key_schedule_bits] = faest_aes_key_exp_fwd::<[[u8;lambda_bytes];l_ke]>(128, v, true, false, [0;lambda_bytes]);
 
-    let w_slice : &[u8;l_ke_minus_lambda] = (&w[lambda..]).try_into().unwrap(); // make w a known size, 320 is l_ke-lambda
+    let w_slice : &[u8;l_ke_minus_lambda] = (&w[LAMBDA..]).try_into().unwrap(); // make w a known size, 320 is l_ke-lambda
     let w_tilde: [u8;ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<[u8;l_ke_minus_lambda],[u8;key_schedule_bits]>(1, *w_slice, k, false, false, 0); // w : l_ke-lambda = 448-128 = 320, k : 1408
-    let v_slice : &[[u8;lambda_bytes];l_ke_minus_lambda] = (&v[lambda..]).try_into().unwrap(); // make v a known size, 320 is l_ke-lambda
+    let v_slice : &[[u8;lambda_bytes];l_ke_minus_lambda] = (&v[LAMBDA..]).try_into().unwrap(); // make v a known size, 320 is l_ke-lambda
     let v_w: [[u8;lambda_bytes];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<[[u8;lambda_bytes];l_ke_minus_lambda],[[u8;lambda_bytes];key_schedule_bits]>(128, *v_slice, v_k, true, false, [0;lambda_bytes]); // v : l_ke-lambda = 448-128 = 320, v_k : 1408
 
     let mut i_wd = (nk-1) << 5;
@@ -175,14 +175,14 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; lambda_bytes]; l_ke], 
             v_w_hat[r] = byte_combine::<[u8;lambda_bytes]>(*v_w_hat_slice);
         }
 
-        if lambda == 256 {do_rot_word = ! do_rot_word}
+        if LAMBDA == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
             A_0[4*j+r] = gf_lambda_mul(&v_k_hat[r], &v_w_hat[r]);
             let product = gf_lambda_mul(&<[u8;lambda_bytes]>::xor_array(&k_hat[r],&v_k_hat[r]),&<[u8;lambda_bytes]>::xor_array(&w_hat[r],&v_w_hat[r]));
             let xor = <[u8;lambda_bytes]>::xor_array(&<[[u8;lambda_bytes];4] as ret_value>::value_of_one(),&A_0[(j << 2) + r]);
             A_1[4*j+r] = <[u8;lambda_bytes]>::xor_array(&product,&xor);
         }
-        if lambda == 192 {i_wd += 192} else {i_wd += 128}
+        if LAMBDA == 192 {i_wd += 192} else {i_wd += 128}
     }
     (A_0, A_1, k, v_k)
 }
@@ -192,7 +192,7 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;lambda_bytes], q : [[u8;lambda_b
         panic!("invalid tags")
     }
     let q_k = faest_aes_key_exp_fwd::<[[u8;lambda_bytes];l_ke]>(128, q, false, true, Delta);
-    let q_slice : &[[u8;lambda_bytes];l_ke_minus_lambda] = (&q[lambda..]).try_into().unwrap();
+    let q_slice : &[[u8;lambda_bytes];l_ke_minus_lambda] = (&q[LAMBDA..]).try_into().unwrap();
     let q_w_flat: [[u8;lambda_bytes];ret_size_exp_bwd] = faest_aes_key_exp_bkwd::<[[u8;lambda_bytes];l_ke_minus_lambda],[[u8;lambda_bytes];key_schedule_bits]>(128, *q_slice, q_k, false, true, Delta); // q : l_ke-lambda = 320, q_k : 1408
 
     let mut B : [[u8;lambda_bytes];S_ke] = [[0;lambda_bytes];S_ke];
@@ -212,11 +212,11 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;lambda_bytes], q : [[u8;lambda_b
             q_hat_w[r] = byte_combine::<[u8;lambda_bytes]>(*q_hat_w_slice);
         }
 
-        if lambda == 256 {do_rot_word = ! do_rot_word}
+        if LAMBDA == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
             B[(j << 2) + r] = <[u8;lambda_bytes]>::xor_array(&gf_lambda_mul(&q_hat_k[r], &q_hat_w[r]), &gf_lambda_mul(&Delta, &Delta));
         }
-        if lambda == 192 {i_wd += 192} else {i_wd += 128}
+        if LAMBDA == 192 {i_wd += 192} else {i_wd += 128}
     }
     (B, q_k)
 }

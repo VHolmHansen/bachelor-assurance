@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[cfg(all(test, feature = "lambda_128s"))]
 mod tests {
     use bachelor_assurance::utils::types::*;
     use bachelor_assurance::utils::galois_field::*;
@@ -129,5 +130,33 @@ mod tests {
         expected[0] = 0x87;
 
         assert_eq!(result, expected);
+    }
+    #[test]
+    fn test_gf128_mul_basic() {
+        use bachelor_assurance::utils::galois_field::gf_lambda_mul;
+
+        // [2] = x^1 in little-endian bit representation (bit 1 of byte 0 set)
+        // x^1 * x^1 = x^2 = [4]
+        let a = [2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let b = [2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let result = gf_lambda_mul(&a, &b);
+        println!("x^1 * x^1 = {:?}", result);
+        println!("expected  = {:?}", [4u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(result[0], 4, "x^1 * x^1 should equal x^2");
+
+        // [1] = x^0 = 1, so [1]*[1] = [1]
+        let one = [1u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let result2 = gf_lambda_mul(&one, &one);
+        assert_eq!(result2, one, "1 * 1 should equal 1");
+
+        // also check the high degree reduction:
+        // x^127 * x^1 = x^128 = x^7 + x^2 + x + 1 = [0b10000111] = [0x87]
+        let mut x127 = [0u8; 16];
+        x127[15] = 0x80; // bit 127 = MSB of last byte in little-endian
+        let x1 = [2u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let result3 = gf_lambda_mul(&x127, &x1);
+        println!("x^127 * x^1 = {:?}", result3);
+        println!("expected    = {:?}", [0x87u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(result3[0], 0x87, "x^128 should reduce to x^7+x^2+x+1 = 0x87");
     }
 }

@@ -1,8 +1,66 @@
+use bachelor_assurance::protocols::faest_key_gen::faest_key_gen;
+use bachelor_assurance::protocols::faest_verify::faest_verify;
+
+#[cfg(test)]
 mod tests{
+    use bachelor_assurance::protocols::faest_key_gen::faest_key_gen;
     use bachelor_assurance::protocols::faest_sign::faest_sign;
+    use bachelor_assurance::protocols::faest_verify::faest_verify;
     use bachelor_assurance::utils::hash_functions::bits_to_bytes_for_d;
     use bachelor_assurance::utils::types::{sized_array_for_cop, Pk};
 
+    // a test for testing a single random key
+    #[test]
+    fn sign_verify_test_random_key() {
+        let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024);
+        let handler = builder.spawn(|| {
+            let start = std::time::Instant::now();
+            let (key, pk) = faest_key_gen();
+            println!("key_gen took: {:?}", start.elapsed());
+
+            let msg: &[u8] = b"hello world";
+
+            let sign_start = std::time::Instant::now();
+            let sig = faest_sign(msg, &key, &pk);
+            println!("sign took: {:?}", sign_start.elapsed());
+
+            let verify_start = std::time::Instant::now();
+            let test_work = faest_verify(msg, &pk, &sig);
+            println!("verify took: {:?}", verify_start.elapsed());
+
+            assert!(test_work);
+        }).unwrap();
+        handler.join().unwrap();
+    }
+    // a test for testing a 10 random keys
+    #[test]
+    fn sign_verify_test_random_multiple() {
+        let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024);
+        let handler = builder.spawn(|| {
+            for i in 0..10 {
+                let messages: Vec<&[u8]> = vec![
+                    b"hello world",
+                    b"the quick brown fox jumps over the lazy dog",
+                    b"FAEST signature scheme",
+                    b"post-quantum cryptography",
+                    b"",
+                    b"a",
+                    b"1234567890",
+                    b"!@#$%^&*()",
+                    b"the answer is 42",
+                    b"bachelor assurance project",
+                ];
+                let (key, pk) = faest_key_gen();
+                let msg: &[u8] = messages[i];
+                let sig = faest_sign(msg, &key, &pk);
+                let test_work = faest_verify(msg, &pk, &sig);
+                assert!(test_work);
+            }
+        }).unwrap();
+        handler.join().unwrap();
+    }
+
+    // a test for testing, that we match their signatures
     #[test]
     fn test_vector_signature() {
         let builder = std::thread::Builder::new().stack_size(32 * 1024 * 1024);
@@ -48,6 +106,7 @@ mod tests{
         }).unwrap();
         handler.join().unwrap();
     }
+
 
     fn pk_to_bits(pk: &[u8; 32]) -> Pk {
         let mut first = [0u8; 128];

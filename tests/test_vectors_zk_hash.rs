@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use bachelor_assurance::utils::helper_methods_prove_verify::zk_hash;
+    use bachelor_assurance::utils::galois_field::gf_lambda_mul;
+    use bachelor_assurance::utils::helper_methods_prove_verify::{gf_lambda_mul_64, zk_hash};
+    use bachelor_assurance::utils::math::xor_arrays;
     use super::*;
 
     // from zk_hash_128_sd - first test vector (3*16 + 8 = 56 bytes, but stored as bits = 448 bits)
@@ -74,40 +76,32 @@ mod tests {
         0x9c, 0xb5, 0xe4, 0xa6, 0x7d, 0x51, 0x64, 0xc9, 0x71, 0x1a, 0x1e, 0xdd, 0x5e,
         0x0c, 0x65, 0x29, 0x0c, 0x35, 0x51, 0x5f, 0xc6, 0x3f, 0x5b, 0x98, 0x6b,
     ];
-
+    // en fejl der var i den her test tidligere var at, test dateren fra deres test vector, har nogle gange overlappende data i hvordan de gemmer på dem
+    // derfor var der nogle indexer der ikke gav mening
     #[test]
     fn test_zk_hash_128_tv() {
         const SD_SIZE: usize = 56;
-        const XS_SIZE: usize = 144;
         const DIGEST_SIZE: usize = 16;
         const NUM_X0: usize = 8;
 
         for i in 0..4 {
             let sd = &ZK_HASH_128_SD_0[i * SD_SIZE..(i + 1) * SD_SIZE];
-            let xs = &ZK_HASH_128_XS_0[i * XS_SIZE..(i + 1) * XS_SIZE];
             let expected = &ZK_HASH_128_DIGEST_0[i * DIGEST_SIZE..(i + 1) * DIGEST_SIZE];
 
-            let mut sd_bits = [0u8; SD_SIZE * 8];
-            for j in 0..SD_SIZE {
-                for b in 0..8 {
-                    sd_bits[j * 8 + b] = (sd[j] >> b) & 1;
-                }
-            }
+            // reference indexes xs as i * xs * 16 = i * 8 * 16 = i * 128
+            let xs_start = i * NUM_X0 * 16;
 
             let mut x0 = [[0u8; 16]; NUM_X0];
             for j in 0..NUM_X0 {
-                x0[j].copy_from_slice(&xs[j * 16..(j + 1) * 16]);
+                x0[j].copy_from_slice(&ZK_HASH_128_XS_0[xs_start + j * 16..xs_start + (j + 1) * 16]);
             }
 
-            let x1: [u8; 16] = xs[NUM_X0 * 16..(NUM_X0 + 1) * 16].try_into().unwrap();
+            // x1 immediately follows x0 for this test vector
+            let x1: [u8; 16] = ZK_HASH_128_XS_0[xs_start + NUM_X0 * 16..xs_start + NUM_X0 * 16 + 16]
+                .try_into().unwrap();
 
-            let digest = zk_hash(&sd_bits, &x0, &x1);
-
-            assert_eq!(
-                digest, expected,
-                "zk_hash_128 failed for test vector {}",
-                i
-            );
+            let digest = zk_hash(sd, &x0, &x1);
+            assert_eq!(digest, expected, "zk_hash_128 failed for test vector {}", i);
         }
     }
 }

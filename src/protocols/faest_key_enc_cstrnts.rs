@@ -5,7 +5,7 @@ use crate::utils::galois_field::gf_lambda_mul;
 use crate::utils::helper_methods_cstrnts::byte_combine;
 use crate::utils::math::xor_arrays;
 use crate::utils::types::{ret_value, XorHelper};
-use crate::utils::constants::{l_enc, lambda, s_enc, R};
+use crate::utils::constants::{l_enc, LAMBDA, s_enc, R};
 
 // m is size of elements
 // x is the extended witness, vole tags or vole keys
@@ -187,9 +187,9 @@ pub fn faest_aes_enc_cstrnts_prover(
         panic!("mkey should be false");
     }
     let s : [[u8;lambda_bytes];s_enc] = faest_aes_enc_fwd::<[u8;l_enc],[u8;key_schedule_bits]>(1, &w, &k, &in_of_in_and_out, false, false, 0); // w is 1152, k is 1408
-    let v_s : [[u8;lambda_bytes];s_enc] = faest_aes_enc_fwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(lambda, &v, &v_k, &in_of_in_and_out, true, false, [0;lambda_bytes]); // v is 1152, v_k is 1408
+    let v_s : [[u8;lambda_bytes];s_enc] = faest_aes_enc_fwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(LAMBDA, &v, &v_k, &in_of_in_and_out, true, false, [0;lambda_bytes]); // v is 1152, v_k is 1408
     let s_overline: [[u8;lambda_bytes];s_enc] = faest_aes_enc_bkwd::<[u8;l_enc],[u8;key_schedule_bits]>(1, &w, &k, &out_of_in_and_out, false, false, 0); // w is 1152, k is 1408
-    let v_s_overline : [[u8;lambda_bytes];s_enc] = faest_aes_enc_bkwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(lambda, &v, &v_k, &out_of_in_and_out, true, false, [0;lambda_bytes]); // v is 1152, v_k is 1408
+    let v_s_overline : [[u8;lambda_bytes];s_enc] = faest_aes_enc_bkwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(LAMBDA, &v, &v_k, &out_of_in_and_out, true, false, [0;lambda_bytes]); // v is 1152, v_k is 1408
     let mut A_0 : [[u8;lambda_bytes];s_enc] = [[0;lambda_bytes];s_enc];
     let mut A_1 : [[u8;lambda_bytes];s_enc] = [[0;lambda_bytes];s_enc];
     for j in 0..s_enc {
@@ -220,8 +220,8 @@ pub fn faest_aes_enc_cstrnts_verifier(
     if !mkey {
         panic!("mkey should not be false");
     }
-    let q_s : [[u8;lambda_bytes];s_enc] = faest_aes_enc_fwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(lambda, q, q_k, in_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
-    let q_s_overline: [[u8;lambda_bytes];s_enc] = faest_aes_enc_bkwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(lambda, &q, &q_k, out_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
+    let q_s : [[u8;lambda_bytes];s_enc] = faest_aes_enc_fwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(LAMBDA, q, q_k, in_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
+    let q_s_overline: [[u8;lambda_bytes];s_enc] = faest_aes_enc_bkwd::<[[u8;lambda_bytes];l_enc],[[u8;lambda_bytes];key_schedule_bits]>(LAMBDA, &q, &q_k, out_of_in_and_out, false, true, delta); // q is 1152, q_k is 1408
     let mut B : [[u8;lambda_bytes]; s_enc] = [[0;lambda_bytes];s_enc];
     for j in 0..s_enc {
         let q_product : [u8;lambda_bytes] = gf_lambda_mul(&q_s[j], &q_s_overline[j]);

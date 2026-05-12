@@ -9,8 +9,8 @@ use crate::utils::types::{sized_array_for_cop, sized_array_for_coms, sized_array
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
-pub fn vec_commit_k0(r: [u8; lambda_bytes], iv: [u8; iv_bytes], d: i128) -> ([u8; lambda_bytes_times_two], ([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), sized_array_for_sds){
-    let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, d);
+pub fn vec_commit_k0(r: [u8; lambda_bytes], iv: [u8; iv_bytes]) -> ([u8; lambda_bytes_times_two], ([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), sized_array_for_sds){
+    let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, k_0);
     let mut sds: [[u8; lambda_bytes];k_0_pow] = [[0;lambda_bytes];k_0_pow];
     let mut coms: [[u8; lambda_bytes_times_two];k_0_pow] = [[0;lambda_bytes_times_two];k_0_pow];
     for i in 0..k_0_pow{        // leaves.len
@@ -27,8 +27,8 @@ pub fn vec_commit_k0(r: [u8; lambda_bytes], iv: [u8; iv_bytes], d: i128) -> ([u8
 
     (h, decom, sds_to_return)
 }
-pub fn vec_commit_k1(r: [u8; lambda_bytes], iv: [u8; iv_bytes], d: i128) -> ([u8; lambda_bytes_times_two], ([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), sized_array_for_sds){
-    let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, d);
+pub fn vec_commit_k1(r: [u8; lambda_bytes], iv: [u8; iv_bytes]) -> ([u8; lambda_bytes_times_two], ([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), sized_array_for_sds){
+    let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, k_1);
     let mut sds: [[u8; lambda_bytes];k_1_pow] = [[0;lambda_bytes];k_1_pow];
     let mut coms: [[u8; lambda_bytes_times_two];k_1_pow] = [[0;lambda_bytes_times_two];k_1_pow];
     for i in 0..k_1_pow{        // leaves.len
@@ -48,11 +48,11 @@ pub fn vec_commit_k1(r: [u8; lambda_bytes], iv: [u8; iv_bytes], d: i128) -> ([u8
 // for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
 // there must be a smarter way to this that to get the bits
-pub fn vec_open_k0(decom: &([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), b: &[u8; k_0], d: i128) -> (sized_array_for_cop, [u8; lambda_bytes_times_two]){
+pub fn vec_open_k0(decom: &([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), b: &[u8; k_0]) -> (sized_array_for_cop, [u8; lambda_bytes_times_two]){
     let r = decom.0;
     let iv = decom.1;
     let coms = &decom.2;
-    let cop = get_cop::<k_0>(r, iv, num_rec_k0(b), d);
+    let cop = get_cop::<k_0>(r, iv, num_rec_k0(b));
     let cop_to_return = sized_array_for_cop::sized_array_1(cop);
 
     let com_value: [u8; lambda_bytes_times_two] = match &coms {
@@ -63,11 +63,11 @@ pub fn vec_open_k0(decom: &([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_co
     let pdecom:(sized_array_for_cop, [u8; lambda_bytes_times_two]) = (cop_to_return, com_value);
     pdecom
 }
-pub fn vec_open_k1(decom: &([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), b: &[u8; k_1], d: i128) -> (sized_array_for_cop, [u8; lambda_bytes_times_two]){
+pub fn vec_open_k1(decom: &([u8;lambda_bytes], [u8;iv_bytes], sized_array_for_coms), b: &[u8; k_1]) -> (sized_array_for_cop, [u8; lambda_bytes_times_two]){
     let r = decom.0;
     let iv = decom.1;
     let coms = &decom.2;
-    let cop = get_cop::<k_1>(r, iv, num_rec_k1(b), d);
+    let cop = get_cop::<k_1>(r, iv, num_rec_k1(b));
     let cop_to_return = sized_array_for_cop::sized_array_2(cop);
 
     let com_value: [u8; lambda_bytes_times_two] = match &coms {

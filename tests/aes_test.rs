@@ -34,6 +34,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_encrypt2() {
 
         let key = [
@@ -60,6 +61,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_encrypt3() {
 
         let key = [
@@ -89,6 +91,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_encrypt4() {
 
         let key = [
@@ -118,6 +121,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_encrypt5() {
         let key = [
             0x00, 0x00, 0x00, 0x00,
@@ -146,6 +150,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_encrypt6_fips() {
         let key = [
             0x2b, 0x7e, 0x15, 0x16,
@@ -174,6 +179,7 @@ mod tests {
 
 
     #[test]
+    
     fn test_add_round_key_two_props() {
         let plaintext1: State = [[50, 67, 246, 168], [136, 90, 48, 141],
             [49, 49, 152, 162], [224, 55, 7, 52]];
@@ -195,6 +201,7 @@ mod tests {
     }
 
    #[test]
+   
     fn test_key_expansion() {
         let key = [43, 126, 21, 22, 40, 174, 210, 166, 171, 247, 21, 136, 9, 207, 79, 60];
 
@@ -210,6 +217,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_gf2_affine_transformation() {
 
         let bytes: [u8; 6] = [0, 42, 69, 91, 128, 255];
@@ -229,6 +237,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_encrypt_debug() {
         let key = [
             0x2b, 0x7e, 0x15, 0x16,
@@ -254,6 +263,7 @@ mod tests {
     }
 
     #[test]
+    
     fn test_encrypt_round1_debug() {
         let key = [
             0x2b, 0x7e, 0x15, 0x16,

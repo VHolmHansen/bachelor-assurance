@@ -4,7 +4,7 @@ use crate::utils::vector_commit::{vec_open_k0, vec_open_k1};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::protocols::faest_prove_and_verify::faest_aes_prove;
 use crate::protocols::fs_vole::{chall_dec_k0, chall_dec_k1, FAEST_VOLE_commit};
-use crate::utils::constants::{ell, k_0, k_1, lambda, lambda_bytes, not_deterministic_test, tau, tau_0, tau_1, tau_minus_one, ell_hat_bytes, x1_bytes, iv_bytes, chall1_bytes, x0_bytes, h_v_size, ell_plus_lambda, chall2_bytes, chall3_bytes};
+use crate::utils::constants::{ell, k_0, k_1, LAMBDA, lambda_bytes, not_deterministic_test, tau, tau_0, tau_1, tau_minus_one, ell_hat_bytes, x1_bytes, iv_bytes, chall1_bytes, x0_bytes, h_v_size, ell_plus_lambda, chall2_bytes, chall3_bytes};
 use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3, h_3};
 use crate::utils::helper_methods_for_sign::{bits_to_state, u_to_1728_bits, vole_hash, vole_to_row_major};
 use crate::utils::libcrux_proxy::RandGenProxy;
@@ -29,7 +29,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;lambda_bytes], pk : &Pk) -> ([[u8; ell_
 
 
     // få v_tilde
-    let mut v_tilde : [[u8; x1_bytes];lambda] = [[0u8; x1_bytes]; lambda];       // len : ( tau_0 * k_0 + tau_1*k_1 )
+    let mut v_tilde : [[u8; x1_bytes]; LAMBDA] = [[0u8; x1_bytes]; LAMBDA];       // len : ( tau_0 * k_0 + tau_1*k_1 )
     let mut index : usize = 0;
     for i in 0..tau {
         let k_b : usize = if i < tau_0 { k_0 } else { k_1 };
@@ -59,7 +59,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;lambda_bytes], pk : &Pk) -> ([[u8; ell_
     let u_bits: &[u8;ell_plus_lambda] = &u_to_1728_bits(&u_bytes);
 
 
-    let v_rows: &[[u8; lambda]; ell_plus_lambda] = &vole_to_row_major(v_bytes);
+    let v_rows: &[[u8; LAMBDA]; ell_plus_lambda] = &vole_to_row_major(v_bytes);
 
 
     let _extend_start = std::time::Instant::now();
@@ -89,10 +89,10 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;lambda_bytes], pk : &Pk) -> ([[u8; ell_
     for i in 0..tau {
         let pdecom = if i < tau_0 {
             let s_i : [u8;k_0] = chall_dec_k0(chall_3, i);
-            vec_open_k0(&decoms[i], &s_i, s_i.len() as i128)
+            vec_open_k0(&decoms[i], &s_i)
         } else {
             let s_i : [u8;k_1] = chall_dec_k1(chall_3, i);
-            vec_open_k1(&decoms[i], &s_i, s_i.len() as i128)
+            vec_open_k1(&decoms[i], &s_i)
         };
 
         pdecoms[i] = pdecom;

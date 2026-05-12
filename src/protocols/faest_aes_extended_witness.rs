@@ -2,7 +2,7 @@
 use crate::protocols::aes::{add_round_key, key_expansion, mix_columns, shift_rows, sub_bytes};
 use crate::utils::helper_methods_cstrnts::byte_to_bits;
 use crate::utils::types::{Pk, State};
-use crate::utils::constants::{lambda, S_ke, nk, R, ell, lambda_bytes, beta};
+use crate::utils::constants::{LAMBDA, S_ke, nk, R, ell, lambda_bytes, beta};
 use crate::utils::preliminary_helper_methods::flatten;
 use crate::utils::helper_methods_for_sign::bits_to_state;
 
@@ -33,7 +33,7 @@ pub fn faest_aes_extend_witness(k: [u8; lambda_bytes], pk: Pk) -> [u8; ell] {
                 index += 1;
             }
         }
-        ik = if lambda == 192 { ik+6 } else { ik+4 };
+        ik = if LAMBDA == 192 { ik+6 } else { ik+4 };
     }
 
     // beta encryption blocks

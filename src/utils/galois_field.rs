@@ -1,5 +1,5 @@
 use crate::protocols::aes;
-use crate::utils::constants::{lambda, lambda_bytes};
+use crate::utils::constants::{LAMBDA, lambda_bytes};
 
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
@@ -134,7 +134,7 @@ pub fn gf_lambda_pow(base: &[u8; lambda_bytes], pow_of: i32) -> [u8; lambda_byte
 }
 pub fn gf_lambda_mul(a: &[u8; lambda_bytes], b: &[u8; lambda_bytes]) -> [u8; lambda_bytes] {
     let mut result = [0u8; lambda_bytes];
-    if lambda == 128 {
+    if LAMBDA == 128 {
         gf128_mul_into(a.as_slice(), b.as_slice(), &mut result);
     } else {
         gf256_mul_into(a.as_slice(), b.as_slice(), &mut result);

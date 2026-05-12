@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod tests {
     #[test]
     fn test_key_gen() {
@@ -36,11 +37,6 @@ mod tests {
                 ciphertext, computed_flat,
                 "KeyGen block {}: encrypt(key, plaintext) != ciphertext in pk", b
             );
-
-            println!("Block {}:", b);
-            println!("  Key:       {:02x?}", key);
-            println!("  Plaintext: {:02x?}", plaintext);
-            println!("  Ciphertext:{:02x?}", ciphertext);
         }
     }
 }

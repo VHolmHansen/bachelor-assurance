@@ -3,7 +3,7 @@ use crate::utils::constants::{lambda_bytes, ret_size_exp_bwd};
 use crate::utils::constants::{nk, R};
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
-use crate::utils::constants::lambda;
+use crate::utils::constants::LAMBDA;
 use crate::utils::constants::S_ke;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
@@ -36,10 +36,9 @@ pub fn faest_key_gen() -> ([u8; lambda_bytes], Pk) {
         }
 
         let w = faest_aes_extend_witness(key, pk);
-
         // first fwd - key schedule check
         let fwd_key = faest_aes_key_exp_fwd(1, w, false, false, [0; lambda_bytes]);
-        let w_lambda: [u8; w_lambda_size] = w[lambda..].try_into().unwrap();
+        let w_lambda: [u8; w_lambda_size] = w[LAMBDA..].try_into().unwrap();
         let bwd_key: [u8; ret_size_exp_bwd] = faest_aes_key_exp_bkwd(1, w_lambda, fwd_key, false, false, 0);
         let mut valid = true;
 
@@ -61,7 +60,6 @@ pub fn faest_key_gen() -> ([u8; lambda_bytes], Pk) {
         }
 
         if !valid { continue; }
-
         // second fwd - encryption check for all beta blocks
         let mut expanded_key_flat = [0u8; key_schedule_bits];
         let blocks_of_expanded_key: [[u8; 16]; R + 1] = words_to_blocks(expanded_key);

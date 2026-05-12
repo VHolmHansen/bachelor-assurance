@@ -1,5 +1,5 @@
 use crate::utils::constants::{iv_bytes, lambda_bytes};
-use crate::utils::constants::{ell_hat_bytes, tau, lambda};
+use crate::utils::constants::{ell_hat_bytes, tau, LAMBDA};
 use crate::utils::math;
 use crate::protocols::aes;
 
@@ -38,8 +38,8 @@ pub fn prg_convert_to_vole(sd: [u8;lambda_bytes], iv: [u8; iv_bytes]) -> [u8; el
     output
 }
 
-pub fn prg_vole_commit_r(r: [u8;lambda_bytes], iv: [u8;iv_bytes]) -> [u8; (tau*lambda)/8] {
-    let mut output  = [0u8; (tau * lambda) >> 3];
+pub fn prg_vole_commit_r(r: [u8;lambda_bytes], iv: [u8;iv_bytes]) -> [u8; (tau* LAMBDA)/8] {
+    let mut output  = [0u8; (tau * LAMBDA) >> 3];
     prg(r, iv, &mut output);
     output
 }

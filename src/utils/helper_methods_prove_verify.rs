@@ -1,16 +1,26 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
+
+use crate::protocols::aes;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::math::xor_arrays;
 
+// TODO: K might be known, verify precondition
 // x er her en liste af u8, men det skal være bits
 // k er størrelsen på det field F_{2^k} vi gerne vil have det til
+#[hax_lib::requires(K != 0 && x_len % K == 0 && K <= 128 && N > 0 && N <= usize::MAX / K && x_len == N * K)]
 pub fn to_field<const x_len : usize, const K: usize, const N: usize>(x: &[u8;x_len]) -> [[u8; 16]; N] { // N should always be equal to X_len / K
     assert!(x.len() % K == 0, "input length must be multiple of k");
 
     let mut result = [[0u8; 16]; N];
     for i in 0..N {
+        hax_lib::loop_invariant!(|i: usize| {
+            i <= N
+        });
         let mut field_elem = [0u8; 16];
         for j in 0..K {
+            hax_lib::loop_invariant!(|j: usize| {
+                j <= K
+            });
             let bit = x[i * K + j];
             if bit == 1 {
                 // Set the j-th bit in the field element (little-endian)
@@ -24,23 +34,36 @@ pub fn to_field<const x_len : usize, const K: usize, const N: usize>(x: &[u8;x_l
     result
 }
 
+//TODO: K might be known, verify precondition
 // burde være omvendt af den ovenstående funktion
+#[hax_lib::requires(K > 0 && N <= usize::MAX / K && N * K == NK && K <= 128)]
 pub fn to_bits<const N: usize, const K: usize, const NK: usize>(
     x: &[[u8; 16]; N],
     result: &mut [u8; NK],
 ) {
     debug_assert_eq!(N * K, NK);
     let mut idx = 0;
-    for field_elem in x {
+    for field_elem in 0..N {
+        hax_lib::loop_invariant!(|field_elem: usize| {
+            field_elem <= N &&
+            idx == field_elem * K
+        });
         for j in 0..K {
-            result[idx] = (field_elem[j >> 3] >> (j & 7)) & 1;
+            hax_lib::loop_invariant!(|j: usize| {
+                j <= K &&
+                idx == field_elem * K + j &&
+                j >> 3 <= 16
+            });
+            result[idx] = (x[field_elem][j >> 3] >> (aes::bitand_mod(j as u8, 7))) & 1;
             idx += 1;
         }
     }
 }
 
+//TODO: cleanup in input params + preconds
 
 // funktion brugt af prove og verify
+#[hax_lib::requires(sd.len() >= 56)]
 pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {
     // sd = r0 || r1 || s || t = 16 + 16 + 16 + 8 = 56 bytes
     let r0: [u8; 16] = sd[0..16].try_into().unwrap();
@@ -65,7 +88,7 @@ pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {
     let term1 = gf128_mul(&r1, &h1);
     xor_arrays(&xor_arrays(&term0, &term1), x1)
 }
-
+/*
 // Helper: compute base^exp in GF(2^128)
 fn field_pow(base: &[u8; 16], exp: usize) -> [u8; 16] {
     if exp == 0 {
@@ -86,6 +109,8 @@ fn field_pow(base: &[u8; 16], exp: usize) -> [u8; 16] {
     }
     result
 }
+ */
+
 pub fn gf128_mul_64(a: &[u8; 16], b: &[u8; 8]) -> [u8; 16] {
     // zero-pad b to 16 bytes and use regular gf128_mul
     let mut b_padded = [0u8; 16];

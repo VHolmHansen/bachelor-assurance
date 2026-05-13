@@ -7,38 +7,37 @@ use crate::utils::math::xor_arrays;
 use crate::utils::types::State;
 
 // funktioner der bruges til at omdanne vores V og u, i sign til bits, skal nok slettes senere efte refactor
+#[hax_lib::requires(hax_lib::forall(|i: usize| i >= big_v.len() || (i < tau_0 && big_v[i].len() == k_0) || (i > tau_0 && i < big_v.len() && big_v[i].len() == k_1)))]
 pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_bit_size+lambda] {
     let mut v_rows: [[u8; lambda];ell_bit_size+lambda] = [[0u8; lambda]; ell_bit_size + lambda];
     // flatten all columns across tau instances
     // big_v[0] has k_0 columns, big_v[1..tau_0] have k_0 columns
     // big_v[tau_0..tau] have k_1 columns
+    let vtau = tau;
+    let vtau_0 = tau_0;
+    let vk_0 = k_0;
+    let vk_1 = k_1;
     let mut col = 0;
-    for i in 0..tau {
+    for i in 0..11 {
         loop_invariant!(|i: usize| {
             i <= tau &&
-            col == if i < tau_0 {i * k_0}
-            else {tau_0 * k_0 + (i - tau_0) * k_1}
+            ((i < tau_0 && col == i * k_0) || (i >= tau_0 && col == tau_0 * k_0 + (i - tau_0) * k_1)) &&
+            i <= big_v.len()
         });
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
             loop_invariant!(|j: usize| {
                 j <= k_b &&
-                big_v[i].len() == k_b &&
-                col == if i < tau_0 {i * k_0 + j}
-                else {tau_0 * k_0 + (i - tau_0) * k_1 + j}
+                ((i < tau_0 && col == i * k_0 + j) || (i >= tau_0 && col == tau_0 * k_0 + (i - tau_0) * k_1 + j))
             });
             // big_v[i][j] is one column of l_hat bits packed into 234 bytes
             for row in 0..(ell_bit_size+lambda) {
                 loop_invariant!(|row: usize| {
-                    row <= (ell_bit_size+lambda)
+                    row <= (1600+128)
                 });
                 let byte_idx = row >> 3;
                 let bit_idx  = row % 8;
-                hax_lib::assert!(i < big_v.len());
-                hax_lib::assert!(j < big_v[i].len());
                 let val = (big_v[i].get(j)[byte_idx] >> bit_idx) & 1;
-                hax_lib::assert!(row < v_rows.len());
-                hax_lib::assert!(col < v_rows[row].len());
                 v_rows[row][col] = val; // [j][byte_idx]
             }
             col += 1;
@@ -49,13 +48,20 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_b
     v_rows
 }
 
-
 pub fn u_to_1728_bits(u: &[u8; 234]) -> [u8; 1728] {
     let mut bits = [0u8; 1872];
     let mut idx = 0;
     for b in 0..u.len() {
+        loop_invariant!(|b: usize| {
+            b <= u.len() &&
+            idx == b * 8
+        });
         let byte = u[b];
-        for i in 0..8 {
+        for i in 0..8usize {
+            loop_invariant!(|i: usize| {
+                i <= 8 &&
+                idx == b * 8 + i
+            });
             bits[idx] = (byte >> i) & 1;
             idx += 1;
         }
@@ -63,26 +69,42 @@ pub fn u_to_1728_bits(u: &[u8; 234]) -> [u8; 1728] {
     bits[0..1728].try_into().unwrap()
 }
 
-
 pub fn expand_bits_56(input: [u8; 56]) -> [u8; 448] {
     let mut output = [0u8; 448];
-    for (i, byte) in input.iter().enumerate() {
-        for bit in 0..8 {
+    let mut idx = 0;
+    for i in 0..input.len() {
+        loop_invariant!(|i: usize| {
+            i <= input.len() &&
+            idx == i * 8
+        });
+        for bit in 0..8usize {
+            loop_invariant!(|bit: usize| {
+                bit <= 8 &&
+                idx == i * 8 + bit
+            });
             // extract each bit, MSB first
-            output[i * 8 + bit] = (byte >> (7 - bit)) & 1;
+            output[idx] = (input[i] >> (7 - bit)) & 1;
+            idx += 1;
         }
     }
     output
 }
 
 
-
 pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
     let mut bits = [0u8; 128];
     let mut idx = 0;
-    for &byte in chall_3 {
-        for i in 0..8 {
-            bits[idx] = (byte >> i) & 1;
+    for byte in 0..chall_3.len() {
+        loop_invariant!(|byte: usize| {
+            byte <= chall_3.len() &&
+            idx == byte * 8
+        });
+        for i in 0..8usize {
+            loop_invariant!(|i: usize| {
+                i <= 8 &&
+                idx == byte * 8 + i
+            });
+            bits[idx] = (chall_3[byte] >> i) & 1;
             idx += 1;
         }
     }
@@ -91,12 +113,16 @@ pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
 
 // turn pk and sk into states:
 pub fn bits_to_state(text: &[u8; 128]) -> State {
-    let mut state = [[0u8; 4]; 4];
-    for (i, chunk) in text.chunks(8).enumerate() {
+    let mut state: State = [[0u8; 4]; 4];
+    for i in 0..(text.len() / 8) {
+        loop_invariant!(|i: usize| {
+            i <= text.len() / 8
+        });
+        let chunk: &[u8; 8] = text[i * 8..(i + 1) * 8].try_into().unwrap();
         let byte = bits_to_byte(chunk);
         let col = i >> 2;
         let row = i % 4;
-        state[col][row] = byte;  // ← swap col and row here
+        state[col][row] = byte;  // swap col and row
     }
     state
 }

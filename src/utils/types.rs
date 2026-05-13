@@ -73,7 +73,7 @@ impl sized_array_for_q_v {
         }
     }
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Log2Number {
     one,
     two,
@@ -114,6 +114,9 @@ impl Log2Number {
     #[hax_lib::requires(n == 1 || n == 2 || n == 4 || n == 8
                         || n == 16 || n == 32 || n == 64 || n == 128
                         || n == 256 || n == 512 || n == 1024 || n == 2048)]
+    #[hax_lib::ensures(|result| result == Log2Number::one || result == Log2Number::two || result == Log2Number::four || result == Log2Number::eight
+                        || result == Log2Number::sixteen || result == Log2Number::thirtytwo || result == Log2Number::sixtyfour || result == Log2Number::onehundredandtwentyeight
+                        || result == Log2Number::twohundredandfiftysix || result == Log2Number::fivehundredandtwelve || result == Log2Number::onethousandandtwentyfour || result == Log2Number::twothousandsandfortyeight)]
     pub fn wrap(n: usize) -> Log2Number {
         match n {
             1 => Self::one,
@@ -136,12 +139,40 @@ impl Log2Number {
     pub fn log_reduce(&mut self) -> Self {
         Self::wrap(self.value() >> 1)
     }
+
+    /*
+    #[hax_lib::requires(n == 1 || n == 2 || n == 4 || n == 8
+                        || n == 16 || n == 32 || n == 64 || n == 128
+                        || n == 256 || n == 512 || n == 1024 || n == 2048)]
+    #[hax_lib::ensures(|result| n == 1 || n == 2 || n == 4 || n == 8
+                        || n == 16 || n == 32 || n == 64 || n == 128
+                        || n == 256 || n == 512 || n == 1024 || n == 2048)]
+    pub fn is_log2_number(n: usize) -> bool{
+        match n {
+            1 => true,
+            2 => true,
+            4 => true,
+            8 => true,
+            16 => true,
+            32 => true,
+            64 => true,
+            128 => true,
+            256 => true,
+            512 => true,
+            1024 => true,
+            2048 => true,
+            _ => false
+        }
+    }
+     */
+
+
 }
 
 
 
 pub trait ret_value {
-    type Elem: RetElem;
+    type Elem: Copy + XorHelper + AlphaMul;
     const dummy_value : Self::Elem;
     const value_of_one : Self::Elem;
     const value_of_two : Self::Elem;
@@ -211,11 +242,13 @@ impl<const N: usize> ret_value for [u8; N] {
     }
 
 }
-
-pub trait RetElem: Copy + XorHelper + AlphaMul {}
+/*
+pub trait RetElem:  {}
 
 impl RetElem for u8 {}
 impl RetElem for [u8; 16] {}
+
+ */
 
 pub trait XorHelper: Sized {
     fn xor_array(x : &Self, y : &Self) -> Self;

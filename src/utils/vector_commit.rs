@@ -10,7 +10,7 @@ use crate::utils::types::{sized_array_for_cop, sized_array_for_coms, sized_array
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
 pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
-    let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, d);
+    let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, k_0);
     let mut sds: [[u8; 16];k_0_pow] = [[0;16];k_0_pow];
     let mut coms: [[u8; 32];k_0_pow] = [[0;32];k_0_pow];
     for i in 0..k_0_pow{        // leaves.len
@@ -28,7 +28,7 @@ pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16],
     (h, decom, sds_to_return)
 }
 pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
-    let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, d);
+    let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, k_1);
     let mut sds: [[u8; 16];k_1_pow] = [[0;16];k_1_pow];
     let mut coms: [[u8; 32];k_1_pow] = [[0;32];k_1_pow];
     for i in 0..k_1_pow{        // leaves.len
@@ -52,7 +52,7 @@ pub fn vec_open_k0(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 12
     let r = decom.0;
     let iv = decom.1;
     let coms = &decom.2;
-    let cop = get_cop::<k_0>(r, iv, num_rec_k0(b), d);
+    let cop = get_cop::<k_0>(r, iv, num_rec_k0(b));
     let cop_to_return = sized_array_for_cop::sized_array_1(cop);
 
     let com_value: [u8; 32] = match &coms {
@@ -67,7 +67,7 @@ pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 11
     let r = decom.0;
     let iv = decom.1;
     let coms = &decom.2;
-    let cop = get_cop::<k_1>(r, iv, num_rec_k1(b), d);
+    let cop = get_cop::<k_1>(r, iv, num_rec_k1(b));
     let cop_to_return = sized_array_for_cop::sized_array_2(cop);
 
     let com_value: [u8; 32] = match &coms {

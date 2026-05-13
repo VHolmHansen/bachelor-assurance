@@ -4,31 +4,40 @@ use crate::protocols::aes;
 
 // should have an extra parameter based on size, but we know size is 2 \lambda, which for us is 256
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
-pub fn prg(k: [u8; 16], iv: [u8; 16], output: &mut [u8]) {
+#[hax_lib::requires(N > 0 && N <= usize::MAX - 16)]
+pub fn prg<const N: usize>(k: [u8; 16], iv: [u8; 16], output: &mut [u8; N]) {
     let num_blocks = (output.len() + 15) >> 4; // ceiling division
 
     let iv_int = u128::from_be_bytes(iv);
+    hax_lib::assume!(iv_int <= u128::MAX - num_blocks as u128); //TODO: replace assume with assert if possible, might need helper func
 
     let key_ex = aes::key_expansion(k);
 
-    for i in 0..num_blocks {
-        let counter = (iv_int + i as u128).to_be_bytes();
-        let counter_state = math::transform_byte_array_to_state(&counter);
-        let block = aes::encrypt(counter_state, &key_ex); // your existing function
-        let block_arr= math::transform_state_to_array(&block);
+        for i in 0..num_blocks {
+            hax_lib::loop_invariant!(|i: usize| {
+                i <= num_blocks &&
+                i as u128 <= u128::MAX - iv_int &&
+                i <= usize::MAX / 16 &&
+                output.len() <= usize::MAX - 16 &&
+                ((i + 1 == num_blocks && i << 4 < output.len())
+                    || (i << 4 <= output.len() + 16))
 
-        let start = i << 4;
+            });
+            let counter = (iv_int + i as u128).to_be_bytes();
+            let counter_state = math::transform_byte_array_to_state(&counter);
+            let block = aes::encrypt(counter_state, &key_ex);
+            let block_arr = math::transform_state_to_array(&block);
 
-        if i == num_blocks - 1 {
-            let length_of_output = output.len();
-            output[start..].copy_from_slice(&block_arr[..length_of_output - start]);
-        } else {
-            output[start..start + 16].copy_from_slice(&block_arr);
+            let start = i << 4;
+
+
+            if i == num_blocks - 1 {
+                output[start..].copy_from_slice(&block_arr[..N - start]);
+            } else {
+                output[start..start + 16].copy_from_slice(&block_arr);
+
+            }
         }
-
-        //let start = i * 16;
-        //output[start..start + 16].copy_from_slice(&block_arr);
-    }
 }
 
 pub fn prg_convert_to_vole(sd: [u8;16], iv: [u8; 16]) -> [u8; ell]{

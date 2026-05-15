@@ -28,11 +28,11 @@ mod tests {
         for i in 0..tau {
             let b = if i < tau_0 {
                 let b = chall_dec_k0(CHALL, i);
-                let pdecom = vec_open_k0(&all_decoms[i], &b, k_0 as i128);
+                let pdecom = vec_open_k0(&all_decoms[i], &b);
                 pdecoms[i] = pdecom;
             } else {
                 let b = chall_dec_k1(CHALL, i);
-                let pdecom = vec_open_k1(&all_decoms[i], &b, k_1 as i128);
+                let pdecom = vec_open_k1(&all_decoms[i], &b);
                 pdecoms[i] = pdecom;
             };
         }
@@ -61,10 +61,10 @@ mod tests {
         for i in 0..tau {
             if i < tau_0 {
                 let b = chall_dec_k0(CHALL, i);
-                pdecoms[i] = vec_open_k0(&all_decoms[i], &b, k_0 as i128);
+                pdecoms[i] = vec_open_k0(&all_decoms[i], &b);
             } else {
                 let b = chall_dec_k1(CHALL, i);
-                pdecoms[i] = vec_open_k1(&all_decoms[i], &b, k_1 as i128);
+                pdecoms[i] = vec_open_k1(&all_decoms[i], &b);
             }
         }
 

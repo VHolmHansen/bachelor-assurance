@@ -92,10 +92,10 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     for i in 0..tau {
         let pdecom = if i < tau_0 {
             let s_i : [u8;12] = chall_dec_k0(chall_3, i);
-            vec_open_k0(&decoms[i], &s_i, s_i.len() as i128)
+            vec_open_k0(&decoms[i], &s_i)
         } else {
             let s_i : [u8;11] = chall_dec_k1(chall_3, i);
-            vec_open_k1(&decoms[i], &s_i, s_i.len() as i128)
+            vec_open_k1(&decoms[i], &s_i)
         };
 
         pdecoms[i] = pdecom;

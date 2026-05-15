@@ -70,7 +70,7 @@ mod tests{
 
         let (h, decom, _sds) = vec_commit_k0(ROOT_KEY, IV, k_0 as i128);
 
-        let (cop, com_j) = vec_open_k0(&decom, &b, k_0 as i128);
+        let (cop, com_j) = vec_open_k0(&decom, &b);
 
         // check 1: com_j matches the commitment stored at leafIndex during commit
         let expected_com_j = match &decom.2 {
@@ -93,7 +93,7 @@ mod tests{
 
         let (h, decom, _sds) = vec_commit_k1(ROOT_KEY, IV, k_1 as i128);
 
-        let (cop, com_j) = vec_open_k1(&decom, &b, k_1 as i128);
+        let (cop, com_j) = vec_open_k1(&decom, &b);
 
         let expected_com_j = match &decom.2 {
             sized_array_for_coms::sized_array_2(inner) => inner[leaf_index as usize],

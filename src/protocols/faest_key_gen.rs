@@ -34,12 +34,13 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
         let cipher_text_flat = turn_states_to_bits(ciphertext_state);
 
 
+        let bobe_w: [ByteOrBytesElem; 1600] = ByteOrBytesElem::from_byte_array(&w);
 
 
         // first fwd
-        let fwd_key = faest_aes_key_exp_fwd(1, w, false, false, [0;16]);
-        let w_lambda : [u8; 1472] = w[lambda..].try_into().unwrap(); // 1600-128 = 1472
-        let bwd_key : [u8;320]= faest_aes_key_exp_bkwd(1, w_lambda, fwd_key, false, false, 0);
+        let fwd_key = faest_aes_key_exp_fwd(1, bobe_w, false, false, [0;16]);
+        let w_lambda : [ByteOrBytesElem; 1472] = bobe_w[lambda..].try_into().unwrap(); // 1600-128 = 1472
+        let bwd_key : [ByteOrBytesElem;320]= faest_aes_key_exp_bkwd(1, w_lambda, fwd_key, false, false, ByteOrBytesElem::Byte(ByteElem(0)));
         let mut valid = true;
 
         let one_gf8 : u8 = 0x01;
@@ -52,9 +53,13 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
             let rotated_idx = (byte_idx + 1) % 4;
 
             let word_start = (nk - 1 + (word_idx << 2)) << 5;   // << 2 = * nk
-            let alpha_bits = &fwd_key[word_start + (rotated_idx << 3)..word_start + (rotated_idx << 3) + 8];
-            let gamma_bits = &bwd_key[i << 3..(i+1) << 3];
+            let alpha_bits: &[ByteOrBytesElem; 8] = &fwd_key[word_start + (rotated_idx << 3)..word_start + (rotated_idx << 3) + 8].try_into().unwrap();
+            let gamma_bits: &[ByteOrBytesElem; 8] = &bwd_key[i << 3..(i+1) << 3].try_into().unwrap();
 
+            let alpha_bits: &[u8; 8] = &array::from_fn(|i: usize| {ByteOrBytesElem::get_byte(&alpha_bits[i])});
+            let gamma_bits: &[u8; 8] = &array::from_fn(|i: usize| {ByteOrBytesElem::get_byte(&gamma_bits[i])});
+
+            hax_lib::assert!(true);
             let w_alpha = bits_to_byte(alpha_bits);
             let w_gamma = bits_to_byte(gamma_bits);
 

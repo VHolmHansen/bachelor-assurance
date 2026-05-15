@@ -1,5 +1,6 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 
+use std::array;
 use hax_lib::requires;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::math::xor_arrays;
@@ -116,7 +117,7 @@ impl Log2Number {
     #[hax_lib::requires(n == 0 || n == 1 || n == 2 || n == 4 || n == 8
                         || n == 16 || n == 32 || n == 64 || n == 128
                         || n == 256 || n == 512 || n == 1024 || n == 2048)]
-    #[hax_lib::ensures(|result| result == Log2Number::one || result == Log2Number::two || result == Log2Number::four || result == Log2Number::eight
+    #[hax_lib::ensures(|result| result == Log2Number::zero || result == Log2Number::one || result == Log2Number::two || result == Log2Number::four || result == Log2Number::eight
                         || result == Log2Number::sixteen || result == Log2Number::thirtytwo || result == Log2Number::sixtyfour || result == Log2Number::onehundredandtwentyeight
                         || result == Log2Number::twohundredandfiftysix || result == Log2Number::fivehundredandtwelve || result == Log2Number::onethousandandtwentyfour || result == Log2Number::twothousandsandfortyeight)]
     pub fn wrap(n: usize) -> Log2Number {
@@ -325,6 +326,16 @@ impl AlphaMul for [u8; 16] {
         gf128_mul(&x, &alpha_val)
     }
 }
+/*
+type BytesArray = [(BytesElem)];
+
+pub fn bytes_array_wrap(arr: [BytesElem]) -> BytesArray {
+    let mut res: BytesArray = [0];
+    array::from_fn(|i: usize| res[i] = arr[i]);
+    res
+}
+
+ */
 
 #[derive(Clone, Copy)]
 pub enum ByteOrBytesElem {
@@ -353,10 +364,14 @@ impl ByteOrBytesElem {
             _ => panic!("get_bytes called on non-bytes elem")
         }
     }
+
+    #[hax_lib::ensures(|result| matches!(x, result))]
     pub fn dummy(x: &Self) -> Self {
         match x {
-            ByteOrBytesElem::Byte(_) => ByteOrBytesElem::Byte(ByteElem(0)),
-            ByteOrBytesElem::Bytes(_) => ByteOrBytesElem::Bytes(BytesElem([0u8; 16]))
+            ByteOrBytesElem::Byte(_) => {let res = ByteOrBytesElem::Byte(ByteElem(0));
+                hax_lib::assert!(matches!(x, res)); res},
+            ByteOrBytesElem::Bytes(_) => {let res = ByteOrBytesElem::Bytes(BytesElem([0u8; 16]));
+                hax_lib::assert!(matches!(x, res)); res},
         }
 
     }

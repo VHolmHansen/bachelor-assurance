@@ -148,7 +148,16 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
         let parameter_a: [ByteOrBytesElem; 8] = x[j << 3..(j << 3) + 8].try_into().unwrap();
         let parameter_b: [ByteOrBytesElem; 8] = x_k[i_wd + (c << 3)..i_wd + (c << 3) + 8].try_into().unwrap();
 
-        let mut x_tilde : [ByteOrBytesElem; 8] = array::from_fn(|i: usize| ByteOrBytesElem::xor_array(&parameter_a[i], &parameter_b[i]));
+        //let mut x_tilde : [ByteOrBytesElem; 8] = array::from_fn(|i: usize| {assert!(i < 8); ByteOrBytesElem::xor_array(&parameter_a[i], &parameter_b[i])});
+        let mut x_tilde : [ByteOrBytesElem; 8] = [ByteOrBytesElem::dummy(&x[0]); 8];
+
+        for i in 0..8 {
+            hax_lib::loop_invariant!(|i: usize| {
+                i <= 8
+            });
+            x_tilde[i] = ByteOrBytesElem::xor_array(&parameter_a[i], &parameter_b[i])
+        }
+
 
         // The if statement
         if !mtag && rmvRcon && (c == 0) {

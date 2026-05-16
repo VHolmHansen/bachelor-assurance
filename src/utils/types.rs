@@ -326,16 +326,123 @@ impl AlphaMul for [u8; 16] {
         gf128_mul(&x, &alpha_val)
     }
 }
-/*
-type BytesArray = [(BytesElem)];
+#[derive(Clone, Copy)]
+pub struct BytesArray<const N: usize>(pub [[u8; 16]; N]);
+#[derive(Clone, Copy)]
+pub struct ByteArray<const N: usize>(pub [u8; N]);
 
-pub fn bytes_array_wrap(arr: [BytesElem]) -> BytesArray {
-    let mut res: BytesArray = [0];
+/*
+#[hax_lib::requires()]
+pub fn bytes_array_wrap<const SIZE: usize>(arr: ByteOrBytesArray<SIZE>) -> BytesArray<SIZE> {
+    let mut res: BytesArray<SIZE> = [BytesElem([0; 16]); SIZE];
     array::from_fn(|i: usize| res[i] = arr[i]);
     res
 }
-
  */
+#[derive(Clone, Copy)]
+pub enum ByteOrBytesArray<const N: usize> {
+    Byte(ByteArray<N>),
+    Bytes(BytesArray<N>),
+}
+
+impl<const N: usize> ByteOrBytesArray<N> {
+    #[hax_lib::ensures(|result| matches!(x, result))]
+    pub fn dummy(x: &ByteOrBytesElem) -> Self {
+        match x {
+            ByteOrBytesElem::Byte(_) => {let res = ByteOrBytesArray::Byte(ByteArray([0u8; N]));
+                hax_lib::assert!(matches!(x, res)); res},
+            ByteOrBytesElem::Bytes(_) => {let res = ByteOrBytesArray::Bytes(BytesArray([[0u8; 16]; N]));
+                hax_lib::assert!(matches!(x, res)); res},
+        }
+
+    }
+
+    #[hax_lib::ensures(|result| matches!(result, ByteOrBytesElem::Bytes(_)))]
+    pub fn zero_bytes() -> Self {
+        ByteOrBytesArray::Bytes(BytesArray([[0u8; 16]; N]))
+    }
+
+    //TODO: Er den her nødvendig??
+    pub fn ones(x: &Self) -> Self {
+        match x {
+            ByteOrBytesArray::Byte(_) => ByteOrBytesArray::Byte(ByteArray([1u8; N])),
+            ByteOrBytesArray::Bytes(_) => ByteOrBytesArray::Bytes(BytesArray([[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; N]))
+        }
+    }
+
+    pub fn one_bytes() -> Self {
+        ByteOrBytesArray::Bytes(BytesArray([[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; N]))
+    }
+
+    #[hax_lib::requires(ByteOrBytesElem::same_variant(x, y))]
+    pub fn xor_array(x : &ByteOrBytesArray<{ N }>, y : &ByteOrBytesArray<{ N }>) -> ByteOrBytesArray<{ N }> {
+        match (x, y) {
+            (ByteOrBytesArray::Byte(x), ByteOrBytesArray::Byte(y)) =>
+                ByteOrBytesArray::Byte(ByteArray(array::from_fn(|i: usize| u8::xor_array(&x.0[i], &y.0[i])))),
+            (ByteOrBytesArray::Bytes(x), ByteOrBytesArray::Bytes(y)) =>
+                ByteOrBytesArray::Bytes(BytesArray(array::from_fn(|i: usize| <[u8; 16]>::xor_array(&x.0[i], &y.0[i])))),
+            _ => panic!("type mismatch for xor_array")
+        }
+    }
+
+    #[hax_lib::ensures(|result| matches!(x, y))]
+    pub fn same_variant(x: &Self, y: &Self) -> bool {
+        matches!(
+            (x, y),
+            (ByteOrBytesArray::Byte(_), ByteOrBytesArray::Byte(_))
+            | (ByteOrBytesArray::Bytes(_), ByteOrBytesArray::Bytes(_))
+        )
+    }
+
+    pub fn len(&self) -> usize { N }
+
+    #[hax_lib::requires(matches!(x, ByteOrBytesArray::Byte(_)))]
+    pub fn get_byte(&self) -> [u8; N] {
+        match self {
+            ByteOrBytesArray::Byte(res) => res.0,
+            _ => unreachable!()
+        }
+    }
+    #[hax_lib::requires(matches!(x, ByteOrBytesArray::Bytes(_)))]
+    pub fn get_bytes(&self) -> [[u8; 16]; N] {
+        match self {
+            ByteOrBytesArray::Bytes(res) => res.0,
+            _ => unreachable!()
+        }
+    }
+
+    #[hax_lib::requires(from <= to && to <= N && SIZE == to - from)]
+    pub fn get_slice<const SIZE: usize>(x: &ByteOrBytesArray<N>, from: usize, to: usize) -> ByteOrBytesArray<SIZE> {
+        match x {
+            ByteOrBytesArray::Byte(arr) => ByteOrBytesArray::Byte(ByteArray(arr.0[from..to].try_into().unwrap())),
+            ByteOrBytesArray::Bytes(arr) => ByteOrBytesArray::Bytes(BytesArray(arr.0[from..to].try_into().unwrap()))
+        }
+    }
+
+    #[hax_lib::requires(index < x.len())]
+    pub fn get_at_index(x: &Self, index: usize) -> ByteOrBytesElem {
+        match x {
+            ByteOrBytesArray::Byte(arr) => ByteOrBytesElem::Byte(ByteElem(arr.0[index])),
+            ByteOrBytesArray::Bytes(arr) => ByteOrBytesElem::Bytes(BytesElem(arr.0[index]))
+        }
+    }
+
+    #[hax_lib::requires(index < x.len())]
+    pub fn set_at_index(x: &mut Self, index: usize, elem: ByteOrBytesElem) {
+        match x {
+            ByteOrBytesArray::Byte(arr) => arr.0[index] = ByteOrBytesElem::get_byte(&elem),
+            ByteOrBytesArray::Bytes(arr) => arr.0[index] = ByteOrBytesElem::get_bytes(&elem)
+        }
+    }
+
+    pub fn from_byte_array(arr: [u8; N]) -> ByteOrBytesArray<{ N }> {
+        ByteOrBytesArray::Byte(ByteArray(arr))
+    }
+
+    pub fn from_bytes_array(arr: [[u8; 16]; N]) -> ByteOrBytesArray<{ N }> {
+        ByteOrBytesArray::Bytes(BytesArray(arr))
+    }
+}
 
 #[derive(Clone, Copy)]
 pub enum ByteOrBytesElem {
@@ -470,6 +577,25 @@ impl ByteOrBytesElem {
         arr[index] = elem
     }
 
+    /*
+    #[hax_lib::requires(N > 0)]
+    #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= N || matches!(x[i], elem)))]
+    pub fn same_for_all<const N: usize>(x: [ByteOrBytesElem; N]) -> bool {
+        for i in 0..N {
+            hax_lib::loop_invariant!(|i: usize| {
+                hax_lib::Prop::from(i <= N)
+                .and(hax_lib::forall(|j: usize| {
+                    j >= i || ByteOrBytesElem::same_variant(&x[j], &x[0])
+                }))
+            });
+            if !ByteOrBytesElem::same_variant(&x[i], &x[0]) {
+                return false
+            }
+        }
+        true
+    }
+
+     */
 }
 
 

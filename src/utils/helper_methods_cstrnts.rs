@@ -1,6 +1,6 @@
 use hax_lib::loop_invariant;
 use crate::utils::galois_field::gf128_pow;
-use crate::utils::types::{AlphaMul, ByteOrBytesElem, Word, XorHelper};
+use crate::utils::types::{AlphaMul, ByteOrBytesArray, ByteOrBytesElem, Word, XorHelper};
 use crate::utils::types::{ret_value};
 use crate::utils::constants::{alpha};
 
@@ -33,7 +33,7 @@ pub fn words_to_blocks(x: [Word; 44]) -> [[u8; 16]; 11]
     a
 }
 
-pub fn byte_combine(x: [ByteOrBytesElem; 8]) -> [u8; 16] {
+pub fn byte_combine(x: ByteOrBytesArray<8>) -> [u8; 16] {
     let mut res: [u8; 16] = [0; 16];
     for i in 0..x.len() {
         loop_invariant!(|i: usize| {
@@ -41,7 +41,7 @@ pub fn byte_combine(x: [ByteOrBytesElem; 8]) -> [u8; 16] {
         });
         let alpha_pow_val = alpha_pow(i as i32);
         hax_lib::assert!(i < x.len());
-        let elem = x[i];
+        let elem = ByteOrBytesArray::get_at_index(&x, i);
 
         // multiply_with_alpha must behave as:
         // - if elem is a scalar bit (0 or 1): return alpha_pow_val if bit=1, else [0;16]

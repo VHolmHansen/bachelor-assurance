@@ -7,7 +7,7 @@ use crate::utils::constants::S_ke;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits, words_to_blocks};
-use crate::utils::types::{ByteElem, ByteOrBytesElem, BytesElem, State, Word};
+use crate::utils::types::{ByteArray, ByteElem, ByteOrBytesArray, ByteOrBytesElem, BytesElem, State, Word};
 use crate::protocols::aes::{encrypt, key_expansion};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::utils::constants::s_enc;
@@ -28,19 +28,16 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 
         let plaintext_state = transform_byte_array_to_state(&plaintext);
         let ciphertext_state = encrypt(plaintext_state, &expanded_key);
-        let w = faest_aes_extend_witness(key, (plaintext_state, ciphertext_state));
+        let w: [u8; 1600] = faest_aes_extend_witness(key, (plaintext_state, ciphertext_state));
 
         let plain_text_flat = blocks_to_u8(plaintext);
         let cipher_text_flat = turn_states_to_bits(ciphertext_state);
 
 
-        let bobe_w: [ByteOrBytesElem; 1600] = ByteOrBytesElem::from_byte_array(&w);
-
-
         // first fwd
-        let fwd_key = faest_aes_key_exp_fwd(1, bobe_w, false, false, [0;16]);
-        let w_lambda : [ByteOrBytesElem; 1472] = bobe_w[lambda..].try_into().unwrap(); // 1600-128 = 1472
-        let bwd_key : [ByteOrBytesElem;320]= faest_aes_key_exp_bkwd(1, w_lambda, fwd_key, false, false, ByteOrBytesElem::Byte(ByteElem(0)));
+        let fwd_key: [u8; 1408] = faest_aes_key_exp_fwd(1, ByteOrBytesArray::from_byte_array(w), false, false, [0;16]).get_byte();
+        let w_lambda: ByteArray<1472> = ByteArray(w[lambda..].try_into().unwrap()); // 1600-128 = 1472
+        let bwd_key: [u8; 320] = faest_aes_key_exp_bkwd(1, ByteOrBytesArray::Byte(w_lambda), ByteOrBytesArray::Byte(ByteArray(fwd_key)), false, false, ByteOrBytesElem::Byte(ByteElem(0))).get_byte();
         let mut valid = true;
 
         let one_gf8 : u8 = 0x01;
@@ -53,15 +50,11 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
             let rotated_idx = (byte_idx + 1) % 4;
 
             let word_start = (nk - 1 + (word_idx << 2)) << 5;   // << 2 = * nk
-            let alpha_bits: &[ByteOrBytesElem; 8] = &fwd_key[word_start + (rotated_idx << 3)..word_start + (rotated_idx << 3) + 8].try_into().unwrap();
-            let gamma_bits: &[ByteOrBytesElem; 8] = &bwd_key[i << 3..(i+1) << 3].try_into().unwrap();
+            let alpha_bits: [u8; 8] = fwd_key[word_start + (rotated_idx << 3)..word_start + (rotated_idx << 3) + 8].try_into().unwrap();
+            let gamma_bits: [u8; 8] = bwd_key[i << 3..(i+1) << 3].try_into().unwrap();
 
-            let alpha_bits: &[u8; 8] = &array::from_fn(|i: usize| {ByteOrBytesElem::get_byte(&alpha_bits[i])});
-            let gamma_bits: &[u8; 8] = &array::from_fn(|i: usize| {ByteOrBytesElem::get_byte(&gamma_bits[i])});
-
-            hax_lib::assert!(true);
-            let w_alpha = bits_to_byte(alpha_bits);
-            let w_gamma = bits_to_byte(gamma_bits);
+            let w_alpha = bits_to_byte(&alpha_bits);
+            let w_gamma = bits_to_byte(&gamma_bits);
 
             let product = gf28_multiply(w_alpha, w_gamma);
 
@@ -86,18 +79,13 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
             }
         }
         let w_enc: [u8;1152] = w[448..1600].try_into().unwrap();
-        let bobe_w_enc: [ByteOrBytesElem; 1152] = array::from_fn(|i| {
-            ByteOrBytesElem::Byte(ByteElem(w_enc[i]))
-        });
-        let bobe_expanded_key_flat: [ByteOrBytesElem; 1408] = array::from_fn(|i| {
-            ByteOrBytesElem::Byte(ByteElem(
-                expanded_key_flat[i]
-            ))
-        });
 
-        let enc_fwd = faest_aes_enc_fwd(1, &bobe_w_enc, &bobe_expanded_key_flat, &plain_text_flat, false,false, ByteOrBytesElem::Byte(ByteElem(0)));
+        let boba_w_enc: ByteOrBytesArray<1152> = ByteOrBytesArray::from_byte_array(w_enc);
+        let boba_expanded_key_flat: ByteOrBytesArray<1408> = ByteOrBytesArray::from_byte_array(expanded_key_flat);
+
+        let enc_fwd = faest_aes_enc_fwd(1, &boba_w_enc, &boba_expanded_key_flat, &plain_text_flat, false,false, ByteOrBytesElem::Byte(ByteElem(0)));
         let enc_bwd = faest_aes_enc_bkwd(
-            1, &bobe_w_enc, &bobe_expanded_key_flat,
+            1, &boba_w_enc, &boba_expanded_key_flat,
             &cipher_text_flat, false, false, &ByteOrBytesElem::Byte(ByteElem(0))
         );
         let one = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0u8];

@@ -4,7 +4,7 @@ use std::array;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::helper_methods_cstrnts::byte_combine;
 use crate::utils::math::xor_arrays;
-use crate::utils::types::{ret_value, value_of_one_in_bytes, ByteElem, ByteOrBytesElem, BytesElem, XorHelper};
+use crate::utils::types::{ret_value, value_of_one_in_bytes, ByteElem, ByteOrBytesArray, ByteOrBytesElem, BytesArray, BytesElem, XorHelper};
 use crate::utils::constants::{l_enc, lambda, s_enc, R};
 
 // m is size of elements
@@ -19,8 +19,8 @@ use crate::utils::constants::{l_enc, lambda, s_enc, R};
 #[hax_lib::requires(!(mtag && mkey) && x.len() > 0 && x_k.len() > 0)] // need req for all types in x and x_k and delta to be the same
 pub fn faest_aes_enc_fwd(
     _m : usize,
-    x: &[ByteOrBytesElem; 1152],
-    x_k : &[ByteOrBytesElem; 1408], //TODO: verify length, this is minimum
+    x: &ByteOrBytesArray<1152>,
+    x_k : &ByteOrBytesArray<1408>, //TODO: verify length, this is minimum
     in_out : &[u8; 128],
     mtag : bool,
     mkey : bool,
@@ -38,9 +38,9 @@ pub fn faest_aes_enc_fwd(
             i <= 16 &&
             i <= usize::MAX / 8
         });
-        let zeroes = ByteOrBytesElem::dummy(&x[0]);
-        let ones = ByteOrBytesElem::ones(&x[0]);
-        let mut x_in : [ByteOrBytesElem;8] = [zeroes; 8];
+        let zeroes = ByteOrBytesElem::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
+        let ones = ByteOrBytesElem::ones(&ByteOrBytesArray::get_at_index(&x, 0));
+        let mut x_in : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
         for j in 0..8 {
             hax_lib::loop_invariant!(|j: usize| {
                 j <= 8 &&
@@ -50,12 +50,12 @@ pub fn faest_aes_enc_fwd(
             let elem = in_out[(i << 3) + j];
             if mtag { // do nothing
             } else if mkey {
-                x_in[j] = if elem == 1 {Delta.clone()} else {zeroes};
+                &ByteOrBytesArray::set_at_index(&mut x_in, j, if elem == 1 {Delta.clone()} else {zeroes});
             } else {
-                x_in[j] = if elem == 1 {ones} else {zeroes};
+                &ByteOrBytesArray::set_at_index(&mut x_in, j, if elem == 1 {ones} else {zeroes});
             }
         }
-        let x_k_slice_as_T: [ByteOrBytesElem; 8] = x_k[i << 3..(i << 3)+8].try_into().unwrap();
+        let x_k_slice_as_T: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x_k, i << 3, (i << 3)+8);
         // let x_in_as_T = <T as ret_value>::turn_array_to_T(&x_in);
         //let x_in_as_T: [ByteOrBytesElem; 8] = <[ByteOrBytesElem; 8] as ret_value>::turn_array_to_T(&x_in);
 
@@ -97,26 +97,26 @@ pub fn faest_aes_enc_fwd(
                 //hax_lib::assert!(i_k <= usize::MAX - ((r << 3) + 8));
                 hax_lib::assert!(i_k + (r << 3) + 8 <= x_k.len());
                 // let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
-                let get_slice_of_x: [ByteOrBytesElem; 8] = x[(i_x+(r << 3))..(i_x+(r << 3)+8)].try_into().unwrap();
+                let get_slice_of_x: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x, (i_x+(r << 3)), (i_x+(r << 3)+8));
                 x_hat[r] = byte_combine(get_slice_of_x);
                 // let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
-                let get_slice_of_x_k : [ByteOrBytesElem; 8] = x_k[i_k+(r << 3)..i_k+(r << 3)+8].try_into().unwrap();
+                let get_slice_of_x_k : ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x_k,i_k+(r << 3), i_k+(r << 3)+8);
 
                 x_hat_k[r] = byte_combine(get_slice_of_x_k);
             }
             //hax_lib::assert!(i_y + 3 <= y.len());
-            let mut one: [ByteOrBytesElem; 8] = [ByteOrBytesElem::zero_bytes();8];
-            let mut two: [ByteOrBytesElem; 8] = [ByteOrBytesElem::zero_bytes();8];
-            let mut three: [ByteOrBytesElem; 8] = [ByteOrBytesElem::zero_bytes();8];
+            let mut one: BytesArray<8> = BytesArray([[0u8; 16]; 8]);
+            let mut two: BytesArray<8> = BytesArray([[0u8; 16]; 8]);
+            let mut three: BytesArray<8> = BytesArray([[0u8; 16]; 8]);
 
-            one[0] = ByteOrBytesElem::Bytes(BytesElem(value_of_one_in_bytes));
-            two[1] = ByteOrBytesElem::Bytes(BytesElem(value_of_one_in_bytes));
-            three[0] = ByteOrBytesElem::Bytes(BytesElem(value_of_one_in_bytes));
-            three[1] = ByteOrBytesElem::Bytes(BytesElem(value_of_one_in_bytes));
+            one.0[0] = value_of_one_in_bytes;
+            two.0[1] = value_of_one_in_bytes;
+            three.0[0] = value_of_one_in_bytes;
+            three.0[1] = value_of_one_in_bytes;
 
-            let value_of_one = byte_combine(one);
-            let value_of_two = byte_combine(two);
-            let value_of_three = byte_combine(three);
+            let value_of_one = byte_combine(ByteOrBytesArray::Bytes(one));
+            let value_of_two = byte_combine(ByteOrBytesArray::Bytes(two));
+            let value_of_three = byte_combine(ByteOrBytesArray::Bytes(three));
 
             let x_hat_0_2 = gf128_mul(&x_hat[0],&value_of_two);
             let x_hat_1_3 = gf128_mul(&x_hat[1],&value_of_three);
@@ -152,8 +152,8 @@ pub fn faest_aes_enc_fwd(
 // delta is here a T value, that is only for simplifiuying implementation, delta should always be a [u8;16], and when this function is called with T = u8
 // then, it should also have mkey == 0, and therefore will never be set equal to delta
 pub fn faest_aes_enc_bkwd(
-    _m : usize, x : &[ByteOrBytesElem; 1152],
-    x_k : &[ByteOrBytesElem; 1408],
+    _m : usize, x : &ByteOrBytesArray<1152>,
+    x_k : &ByteOrBytesArray<1408>,
     in_out : &[u8; 128],
     mtag : bool,
     mkey : bool,
@@ -165,47 +165,57 @@ pub fn faest_aes_enc_bkwd(
         for c in 0..4{
             for r in 0..4{
                 let ird = (j << 7) + ((c as isize - (r as isize)).rem_euclid(4) << 5) as usize + (r << 3);
-                let mut x_tilde : [ByteOrBytesElem;8] = [ByteOrBytesElem::dummy(&x[0]); 8];
+                let mut x_tilde : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
                 if j < R-1{
                     for idx in 0..8{
-                        x_tilde[idx] = x[ird+idx];
+                        ByteOrBytesArray::set_at_index(&mut x_tilde, idx, ByteOrBytesArray::get_at_index(&x, ird + idx))
                     }
                 } else {
-                    let mut x_out : [ByteOrBytesElem;8] = [ByteOrBytesElem::dummy(&x[0]);8];
+                    let mut x_out : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
                     for i in 0..8{
                         if mtag { // do nothing
                         } else if mkey {
-                            x_out[i] = if in_out[ird - (j << 7) + i] == 1 {Delta.clone()} else {ByteOrBytesElem::dummy(&x[0])};
+                            &ByteOrBytesArray::set_at_index(&mut x_out, i,
+                                                            if in_out[ird - (j << 7) + i] == 1 {Delta.clone()}
+                                                            else {ByteOrBytesElem::dummy(&ByteOrBytesArray::get_at_index(&x, 0))});
                         } else {
-                            x_out[i] = if in_out[ird - (j << 7) + i] == 1 {ByteOrBytesElem::ones(&x[0])} else {ByteOrBytesElem::dummy(&x[0])};
+                            &ByteOrBytesArray::set_at_index(&mut x_out, i,
+                                                            if in_out[ird - (j << 7) + i] == 1 {ByteOrBytesElem::ones(&ByteOrBytesArray::get_at_index(&x, 0))}
+                                                            else {ByteOrBytesElem::dummy(&ByteOrBytesArray::get_at_index(&x, 0))});
                         }
                     }
                     for idx in 0..8{
-                        hax_lib::assume!(ByteOrBytesElem::same_variant(&x_out[idx], &x_k[128+ird+idx]));       //TODO: replace with assertion if possible
-                        x_tilde[idx] = ByteOrBytesElem::xor_array(&x_out[idx], &x_k[(128+ird+idx)]);
+                        //hax_lib::assume!(ByteOrBytesElem::same_variant(&x_out[idx], &x_k[128+ird+idx]));       //TODO: replace with assertion if possible
+                        &ByteOrBytesArray::set_at_index(&mut x_tilde, idx,
+                                                        ByteOrBytesElem::xor_array(
+                                                            &ByteOrBytesArray::get_at_index(&x_out, idx),
+                                                            &ByteOrBytesArray::get_at_index(&x_k, (128+ird+idx))));
                     }
                 }
-                let mut y_tilde : [ByteOrBytesElem;8] = [ByteOrBytesElem::dummy(&x[0]); 8];
+                let mut y_tilde : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
                 for i in 0..8{
-                    let parameter_a = &x_tilde[((i+7) as i32).rem_euclid(8) as usize]; // should be same for usize as -1
-                    let parameter_b = &x_tilde[((i+5) as i32).rem_euclid(8) as usize]; // should be same for usize as -3
-                    let parameter_c = &x_tilde[((i+2) as i32).rem_euclid(8) as usize]; // should be same for usize as -6
+                    let parameter_a = &ByteOrBytesArray::get_at_index(&x_tilde, ((i+7) as i32).rem_euclid(8) as usize); // should be same for usize as -1
+                    let parameter_b = &ByteOrBytesArray::get_at_index(&x_tilde, ((i+5) as i32).rem_euclid(8) as usize); // should be same for usize as -3
+                    let parameter_c = &ByteOrBytesArray::get_at_index(&x_tilde, ((i+2) as i32).rem_euclid(8) as usize); // should be same for usize as -6
 
-                    hax_lib::assume!(ByteOrBytesElem::same_variant(parameter_a,parameter_b));       //TODO: replace with assertion if possible
+                    //hax_lib::assume!(ByteOrBytesElem::same_variant(parameter_a,parameter_b));       //TODO: replace with assertion if possible
                     let middle_result = ByteOrBytesElem::xor_array(parameter_a, parameter_b);
-                    hax_lib::assume!(ByteOrBytesElem::same_variant(&middle_result, parameter_c));       //TODO: replace with assertion if possible
+                    //hax_lib::assume!(ByteOrBytesElem::same_variant(&middle_result, parameter_c));       //TODO: replace with assertion if possible
                     let final_result = ByteOrBytesElem::xor_array(&middle_result, parameter_c);
 
-                    y_tilde[i] = final_result;
+                    ByteOrBytesArray::set_at_index(&mut y_tilde, i, final_result);
                 }
-                let value_might_be_delta = if mtag {ByteOrBytesElem::dummy(&x[0])} else {
-                    if mkey {Delta.clone()} else {ByteOrBytesElem::ones(&x[0])}
+                let value_might_be_delta = if mtag {ByteOrBytesElem::dummy(&ByteOrBytesArray::get_at_index(&x, 0))} else {
+                    if mkey {Delta.clone()} else {ByteOrBytesElem::ones(&ByteOrBytesArray::get_at_index(&x, 0))}
                 };
-                hax_lib::assume!(ByteOrBytesElem::same_variant(&y_tilde[0], &value_might_be_delta));    //TODO: replace with assert if possible
-                y_tilde[0] = ByteOrBytesElem::xor_array(&y_tilde[0],&value_might_be_delta);
-                hax_lib::assume!(ByteOrBytesElem::same_variant(&y_tilde[2], &value_might_be_delta));    //TODO: replace with assert if possible
-                y_tilde[2] = ByteOrBytesElem::xor_array(&y_tilde[2],&value_might_be_delta);
-
+                //hax_lib::assume!(ByteOrBytesElem::same_variant(&y_tilde[0], &value_might_be_delta));    //TODO: replace with assert if possible
+                let val0 = ByteOrBytesElem::xor_array(&ByteOrBytesArray::get_at_index(&y_tilde, 0),
+                                                     &value_might_be_delta);
+                ByteOrBytesArray::set_at_index(&mut y_tilde, 0, val0);
+                //hax_lib::assume!(ByteOrBytesElem::same_variant(&y_tilde[2], &value_might_be_delta));    //TODO: replace with assert if possible
+                let val2 = ByteOrBytesElem::xor_array(&ByteOrBytesArray::get_at_index(&y_tilde, 2),
+                                                    &value_might_be_delta);
+                ByteOrBytesArray::set_at_index(&mut y_tilde, 2, val2);
                 y[(j << 4) + (c << 2) + r] = byte_combine(y_tilde);
             }
         }
@@ -230,15 +240,11 @@ pub fn faest_aes_enc_cstrnts_prover(
         panic!("mkey should be false");
     }
      */
-    let bobe_w: [ByteOrBytesElem; l_enc] = ByteOrBytesElem::from_byte_array(&w);
-    let bobe_k: [ByteOrBytesElem; (R+1) << 7] = ByteOrBytesElem::from_byte_array(&k);
-    let bobe_v: [ByteOrBytesElem; l_enc] = ByteOrBytesElem::from_bytes_array(&v);
-    let bobe_v_k: [ByteOrBytesElem; (R+1) << 7] = ByteOrBytesElem::from_bytes_array(&v_k);
 
-    let s : [[u8;16];s_enc] = faest_aes_enc_fwd(1, &bobe_w, &bobe_k, &in_of_in_and_out, false, false, ByteOrBytesElem::Byte(ByteElem(0))); // w is 1152, k is 1408
-    let v_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &bobe_v, &bobe_v_k, &in_of_in_and_out, true, false, ByteOrBytesElem::Bytes(BytesElem([0;16]))); // v is 1152, v_k is 1408
-    let s_overline: [[u8;16];160] = faest_aes_enc_bkwd(1, &bobe_w, &bobe_k, &out_of_in_and_out, false, false, &ByteOrBytesElem::Byte(ByteElem(0))); // w is 1152, k is 1408
-    let v_s_overline : [[u8;16];160] = faest_aes_enc_bkwd(lambda, &bobe_v, &bobe_v_k, &out_of_in_and_out, true, false, &ByteOrBytesElem::Bytes(BytesElem([0;16]))); // v is 1152, v_k is 1408
+    let s : [[u8;16];s_enc] = faest_aes_enc_fwd(1, &ByteOrBytesArray::from_byte_array(w), &ByteOrBytesArray::from_byte_array(k), &in_of_in_and_out, false, false, ByteOrBytesElem::Byte(ByteElem(0))); // w is 1152, k is 1408
+    let v_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &ByteOrBytesArray::from_bytes_array(v), &ByteOrBytesArray::from_bytes_array(v_k), &in_of_in_and_out, true, false, ByteOrBytesElem::Bytes(BytesElem([0;16]))); // v is 1152, v_k is 1408
+    let s_overline: [[u8;16];160] = faest_aes_enc_bkwd(1, &ByteOrBytesArray::from_byte_array(w), &ByteOrBytesArray::from_byte_array(k), &out_of_in_and_out, false, false, &ByteOrBytesElem::Byte(ByteElem(0))); // w is 1152, k is 1408
+    let v_s_overline : [[u8;16];160] = faest_aes_enc_bkwd(lambda, &ByteOrBytesArray::from_bytes_array(v), &ByteOrBytesArray::from_bytes_array(v_k), &out_of_in_and_out, true, false, &ByteOrBytesElem::Bytes(BytesElem([0;16]))); // v is 1152, v_k is 1408
     let mut A_0 : [[u8;16];160] = [[0;16];160];
     let mut A_1 : [[u8;16];160] = [[0;16];160];
 
@@ -285,11 +291,11 @@ pub fn faest_aes_enc_cstrnts_verifier(
     if !mkey {
         panic!("mkey should not be false");
     }
-    let bobe_q: [ByteOrBytesElem; l_enc] = ByteOrBytesElem::from_bytes_array(&q);
-    let bobe_q_k: [ByteOrBytesElem; (R+1) << 7] = ByteOrBytesElem::from_bytes_array(&q_k);
+    //let bobe_q: [ByteOrBytesElem; l_enc] = ByteOrBytesElem::from_bytes_array(&q);
+    //let bobe_q_k: [ByteOrBytesElem; (R+1) << 7] = ByteOrBytesElem::from_bytes_array(&q_k);
 
-    let q_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &bobe_q, &bobe_q_k, in_of_in_and_out, false, true, ByteOrBytesElem::Bytes(BytesElem(delta))); // q is 1152, q_k is 1408
-    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd(lambda, &bobe_q, &bobe_q_k, out_of_in_and_out, false, true, &ByteOrBytesElem::Bytes(BytesElem(delta))); // q is 1152, q_k is 1408
+    let q_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &ByteOrBytesArray::from_bytes_array(*q), &ByteOrBytesArray::from_bytes_array(*q_k), in_of_in_and_out, false, true, ByteOrBytesElem::Bytes(BytesElem(delta))); // q is 1152, q_k is 1408
+    let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd(lambda, &ByteOrBytesArray::from_bytes_array(*q), &ByteOrBytesArray::from_bytes_array(*q_k), out_of_in_and_out, false, true, &ByteOrBytesElem::Bytes(BytesElem(delta))); // q is 1152, q_k is 1408
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];
     for j in 0..s_enc {
         let q_product : [u8;16] = gf128_mul(&q_s[j], &q_s_overline[j]);

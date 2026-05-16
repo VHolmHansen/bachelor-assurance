@@ -335,7 +335,8 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         hax_lib::loop_invariant!(|j: usize| {
             j <= S_ke >> 2 &&
             i_wd == ((nk - 1) << 5) + j * lambda &&
-            (j << 5) + (3 << 3) + 8 <= ret_size_exp_bwd
+            i_wd <= 1408 &&
+            (j << 5) <= ret_size_exp_bwd - 32
         });
         let mut k_hat : [[u8;16];4] = [[0;16];4];
         let mut v_k_hat : [[u8;16];4] = [[0;16];4];
@@ -344,19 +345,20 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         hax_lib::assert!(i_wd == ((nk - 1) << 5) + j * lambda);
         hax_lib::assert!((j << 5) + (3 << 3) + 8 <= ret_size_exp_bwd);
 
+        //TODO this loop fails, probably the i_wd calc that's wrong
         for r in 0..4 {
             hax_lib::loop_invariant!(|r: usize| {
                 r <= 4 &&
                 (lambda == 256 && j > 0 && i_wd + (r << 3) + 8 <= 1408) || (i_wd + (((r+1) % 4) << 3) + 8 <= 1408) &&
-                ((j << 5) + (r << 3) + 8) <= ret_size_exp_bwd
+                (r << 3) <= ret_size_exp_bwd - (j << 5)
             });
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
             hax_lib::assert!((lambda == 256 && j > 0 && i_wd + (r << 3) + 8 < 1408) || (i_wd + (((r+1) % 4) << 3) + 8 < 1408));
             hax_lib::assert!(((j << 5) + (r << 3) + 8) <= ret_size_exp_bwd);
-            hax_lib::assert!((i_wd + (rotated << 3) + 8) < k.len());
-            hax_lib::assert!((i_wd + (rotated << 3) + 8) < v_k.len());
-            hax_lib::assert!(((j << 5) + (r << 3) + 8) < w_tilde.len());
-            hax_lib::assert!(((j << 5) + (r << 3) + 8) < v_w.len());
+            hax_lib::assert!((i_wd + (rotated << 3) + 8) <= k.len());
+            hax_lib::assert!((i_wd + (rotated << 3) + 8) <= v_k.len());
+            hax_lib::assert!(((j << 5) + (r << 3) + 8) <= w_tilde.len());
+            hax_lib::assert!(((j << 5) + (r << 3) + 8) <= v_w.len());
 
             let k_hat_slice: ByteOrBytesArray<8> = ByteOrBytesArray::Byte(ByteArray(
                 k[(i_wd + (rotated << 3))..(i_wd + (rotated << 3) + 8)].try_into().unwrap()));
@@ -374,26 +376,26 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
             hax_lib::assert!((lambda == 256 && j > 0 && i_wd + (r << 3) + 8 < 1408) || (i_wd + (((r+1) % 4) << 3) + 8 < 1408));
             hax_lib::assert!(((j << 5) + (r << 3) + 8) <= ret_size_exp_bwd);
         }
-
+        hax_lib::assert!((lambda == 256 && j > 0 && i_wd < 1408 - 32) || (i_wd < 1408 - 32));
+        hax_lib::assert!((j << 5) <= ret_size_exp_bwd - 32);
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
             hax_lib::loop_invariant!(|r: usize| {
                 r <= 4 &&
                 4 * j + r <= A_0.len() &&
                 4 * j + r <= A_1.len()
-
             });
-            hax_lib::assert!(4 * j + 4 < A_0.len());
+            hax_lib::assert!(4 * j + r < A_0.len());
             A_0[4*j+r] = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
             let product = gf128_mul(&<[u8;16]>::xor_array(&k_hat[r],&v_k_hat[r]),&<[u8;16]>::xor_array(&w_hat[r],&v_w_hat[r]));
             let ones = ByteOrBytesElem::one_bytes();
             let xor = <[u8;16]>::xor_array(&ByteOrBytesElem::get_bytes(&ones),&A_0[(j << 2) + r]);
-            hax_lib::assert!(4 * j + 4 < A_1.len());
+            hax_lib::assert!(4 * j + r < A_1.len());
             A_1[4*j+r] = <[u8;16]>::xor_array(&product,&xor);
         }
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
         hax_lib::assert!(i_wd == ((nk - 1) << 5) + (j+1) * lambda);
-        hax_lib::assert!((j << 5) + (3 << 3) + 8 < ret_size_exp_bwd);
+        hax_lib::assert!((j << 5) + (3 << 3) + 8 <= ret_size_exp_bwd);
 
 
     }

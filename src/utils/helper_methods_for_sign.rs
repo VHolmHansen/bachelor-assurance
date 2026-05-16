@@ -1,6 +1,6 @@
 use hax_lib::loop_invariant;
 use crate::utils::types::sized_array_for_q_v;
-use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau, tau_0, ell};
+use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau_0};
 use crate::utils::galois_field::{gf128_mul, gf64_add, gf64_mul};
 use crate::utils::helper_methods_cstrnts::bits_to_byte;
 use crate::utils::math::xor_arrays;
@@ -13,14 +13,11 @@ pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_b
     // flatten all columns across tau instances
     // big_v[0] has k_0 columns, big_v[1..tau_0] have k_0 columns
     // big_v[tau_0..tau] have k_1 columns
-    let vtau = tau;
-    let vtau_0 = tau_0;
-    let vk_0 = k_0;
-    let vk_1 = k_1;
     let mut col = 0;
+    //TODO: 11 used to be tau ?
     for i in 0..11 {
         loop_invariant!(|i: usize| {
-            i <= tau &&
+            i <= 11 &&
             ((i < tau_0 && col == i * k_0) || (i >= tau_0 && col == tau_0 * k_0 + (i - tau_0) * k_1)) &&
             i <= big_v.len()
         });

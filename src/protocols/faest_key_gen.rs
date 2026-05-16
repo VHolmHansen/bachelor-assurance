@@ -1,4 +1,3 @@
-use std::array;
 use crate::utils::constants::{nk, R};
 use crate::utils::galois_field::gf28_multiply;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_bkwd;
@@ -7,7 +6,7 @@ use crate::utils::constants::S_ke;
 use crate::protocols::faest_key_exp_cstrnts::faest_aes_key_exp_fwd;
 use crate::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
 use crate::utils::helper_methods_cstrnts::{bits_to_byte, byte_to_bits, words_to_blocks};
-use crate::utils::types::{ByteArray, ByteElem, ByteOrBytesArray, ByteOrBytesElem, BytesElem, State, Word};
+use crate::utils::types::{ByteArray, ByteElem, ByteOrBytesArray, ByteOrBytesElem, State, Word};
 use crate::protocols::aes::{encrypt, key_expansion};
 use crate::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
 use crate::utils::constants::s_enc;

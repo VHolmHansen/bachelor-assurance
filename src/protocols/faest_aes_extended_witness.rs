@@ -11,7 +11,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
     let k_overline = key_expansion(k);
     let bytes_from_k_overline: [u8; 16] = flatten::<nk, 4, {nk * 4} >(k_overline[0..nk].try_into().unwrap());     //INNER_LEN = word len
     let mut witness : [u8;ell_bit_size] = [0;ell_bit_size];
-    let mut index = 0;
+    //let mut index = 0;
     for b in 0..16{     //bytes_from_k_overline_len
         hax_lib::loop_invariant!(|b: usize| {
             b <= 16 &&
@@ -77,7 +77,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
             idx_snd + (b * (R - 1) << 2 << 2 << 3) <= ell_bit_size
             //index == idx_snd + b * (R-1) * 4 * 4 * 8
         });
-        let bval =  b * (R-1) << 2 << 2 << 3;
+        //let bval =  b * (R-1) << 2 << 2 << 3;
         let mut state_new : State = in_aes;
         add_round_key(&mut state_new, k_overline[0..4].try_into().unwrap());
         for j in 1..R{
@@ -88,7 +88,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
                 idx_snd + (b * (R - 1) << 2 << 2 << 3) + ((j-1) << 2 << 2 << 3) <= ell_bit_size
                 //index == idx_snd + bval + (j-1) * 4 * 4 * 8
             });
-            let jval = (j-1) << 2 << 2 << 3;
+            //let jval = (j-1) << 2 << 2 << 3;
             sub_bytes(&mut state_new);
             shift_rows(&mut state_new);
             for col in 0..4 {
@@ -97,14 +97,14 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
                     idx_snd + (b * (R - 1) << 2 << 2 << 3) + ((j-1) << 2 << 2 << 3) + (col << 2 << 3) <= ell_bit_size
                     //index == idx_snd + bval + jval + col * 4 * 8
                 });
-                let colval = col << 2 << 3;
+                //let colval = col << 2 << 3;
                 for row in 0..4 {
                     hax_lib::loop_invariant!(|row: usize| {
                         row <= 4 &&
                         idx_snd + (b * (R - 1) << 2 << 2 << 3) + ((j-1) << 2 << 2 << 3) + (col << 2 << 3) + (row << 3) <= ell_bit_size
                         //index == idx_snd + bval + jval + colval + row * 8
                     });
-                    let rowval = row << 3;
+                    //let rowval = row << 3;
                     let bits: [u8; 8] = byte_to_bits(state_new[col][row]);
                     for bit in 0..8 {
                         hax_lib::loop_invariant!(|bit: usize| {

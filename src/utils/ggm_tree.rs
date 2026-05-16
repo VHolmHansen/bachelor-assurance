@@ -1,6 +1,5 @@
 #![allow(non_upper_case_globals)]
 use crate::utils::prg::prg;
-use crate::utils::constants::{k_1};
 use crate::utils::types::{sized_array_16, sized_option_array, Log2Number};
 #[hax_lib::fstar::options("--z3rlimit 50")]
 #[hax_lib::requires(size_pow > 0 && d <= 12 && ((d == 0 && size_pow == 1) || (d > 0 && size_pow == 2 << (d-1))))]
@@ -136,7 +135,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
                 cop_helper::<1, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}
             Log2Number::two => {
                 cop_helper::<2, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}
-            Log2Number::four => {;
+            Log2Number::four => {
                 cop_helper::<4, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}
             Log2Number::eight => {
                 cop_helper::<8, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}

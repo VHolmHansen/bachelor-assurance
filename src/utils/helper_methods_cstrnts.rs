@@ -1,7 +1,6 @@
 use hax_lib::loop_invariant;
 use crate::utils::galois_field::gf128_pow;
-use crate::utils::types::{AlphaMul, ByteOrBytesArray, ByteOrBytesElem, Word, XorHelper};
-use crate::utils::types::{ret_value};
+use crate::utils::types::{ByteOrBytesArray, Word, XorHelper};
 use crate::utils::constants::{alpha};
 
 // len of res is 1 / 4 * len of input
@@ -35,7 +34,7 @@ pub fn words_to_blocks(x: [Word; 44]) -> [[u8; 16]; 11]
 
 pub fn byte_combine(x: ByteOrBytesArray<8>) -> [u8; 16] {
     let mut res: [u8; 16] = [0; 16];
-    for i in 0..x.len() {
+    for i in 0usize..x.len() {
         loop_invariant!(|i: usize| {
             i <= x.len()
         });

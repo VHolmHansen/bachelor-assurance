@@ -1,6 +1,5 @@
 #![allow(non_upper_case_globals)]
 
-use hax_lib::loop_invariant;
 use crate::utils::constants::{k_0, k_1, k_0_pow, k_1_pow};
 use crate::utils::ggm_tree::{get_cop, get_leaves_from_cop_and_b, get_leaves_node_from_root};
 use crate::utils::hash_functions::{h_0, h_1_k1,h_1_k0};
@@ -9,7 +8,7 @@ use crate::utils::types::{sized_array_for_cop, sized_array_for_coms, sized_array
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
-pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], _d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
     let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, k_0);
     let mut sds: [[u8; 16];k_0_pow] = [[0;16];k_0_pow];
     let mut coms: [[u8; 32];k_0_pow] = [[0;32];k_0_pow];
@@ -27,7 +26,7 @@ pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16],
 
     (h, decom, sds_to_return)
 }
-pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], _d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
     let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, k_1);
     let mut sds: [[u8; 16];k_1_pow] = [[0;16];k_1_pow];
     let mut coms: [[u8; 32];k_1_pow] = [[0;32];k_1_pow];

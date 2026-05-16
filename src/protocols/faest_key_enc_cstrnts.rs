@@ -1,6 +1,5 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 
-use std::array;
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::helper_methods_cstrnts::byte_combine;
 use crate::utils::math::xor_arrays;
@@ -50,9 +49,9 @@ pub fn faest_aes_enc_fwd(
             let elem = in_out[(i << 3) + j];
             if mtag { // do nothing
             } else if mkey {
-                &ByteOrBytesArray::set_at_index(&mut x_in, j, if elem == 1 {Delta.clone()} else {zeroes});
+                x_in = ByteOrBytesArray::set_at_index(x_in, j, if elem == 1 {Delta.clone()} else {zeroes});
             } else {
-                &ByteOrBytesArray::set_at_index(&mut x_in, j, if elem == 1 {ones} else {zeroes});
+                x_in = ByteOrBytesArray::set_at_index(x_in, j, if elem == 1 {ones} else {zeroes});
             }
         }
         let x_k_slice_as_T: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x_k, i << 3, (i << 3)+8);
@@ -97,7 +96,7 @@ pub fn faest_aes_enc_fwd(
                 //hax_lib::assert!(i_k <= usize::MAX - ((r << 3) + 8));
                 hax_lib::assert!(i_k + (r << 3) + 8 <= x_k.len());
                 // let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
-                let get_slice_of_x: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x, (i_x+(r << 3)), (i_x+(r << 3)+8));
+                let get_slice_of_x: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x, i_x+(r << 3), i_x+(r << 3)+8);
                 x_hat[r] = byte_combine(get_slice_of_x);
                 // let get_slice_of_x_k = <T as ret_value>::turn_array_to_T(x_k.get_slice(i_k+8*r, i_k+8*r+8));
                 let get_slice_of_x_k : ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x_k,i_k+(r << 3), i_k+(r << 3)+8);
@@ -168,32 +167,32 @@ pub fn faest_aes_enc_bkwd(
                 let mut x_tilde : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
                 if j < R-1{
                     for idx in 0..8{
-                        ByteOrBytesArray::set_at_index(&mut x_tilde, idx, ByteOrBytesArray::get_at_index(&x, ird + idx))
+                        x_tilde = ByteOrBytesArray::set_at_index(x_tilde, idx, ByteOrBytesArray::get_at_index(&x, ird + idx))
                     }
                 } else {
                     let mut x_out : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
                     for i in 0..8{
                         if mtag { // do nothing
                         } else if mkey {
-                            &ByteOrBytesArray::set_at_index(&mut x_out, i,
+                            x_out = ByteOrBytesArray::set_at_index(x_out, i,
                                                             if in_out[ird - (j << 7) + i] == 1 {Delta.clone()}
                                                             else {ByteOrBytesElem::dummy(&ByteOrBytesArray::get_at_index(&x, 0))});
                         } else {
-                            &ByteOrBytesArray::set_at_index(&mut x_out, i,
+                            x_out = ByteOrBytesArray::set_at_index(x_out, i,
                                                             if in_out[ird - (j << 7) + i] == 1 {ByteOrBytesElem::ones(&ByteOrBytesArray::get_at_index(&x, 0))}
                                                             else {ByteOrBytesElem::dummy(&ByteOrBytesArray::get_at_index(&x, 0))});
                         }
                     }
                     for idx in 0..8{
                         //hax_lib::assume!(ByteOrBytesElem::same_variant(&x_out[idx], &x_k[128+ird+idx]));       //TODO: replace with assertion if possible
-                        &ByteOrBytesArray::set_at_index(&mut x_tilde, idx,
+                        x_tilde = ByteOrBytesArray::set_at_index(x_tilde, idx,
                                                         ByteOrBytesElem::xor_array(
                                                             &ByteOrBytesArray::get_at_index(&x_out, idx),
-                                                            &ByteOrBytesArray::get_at_index(&x_k, (128+ird+idx))));
+                                                            &ByteOrBytesArray::get_at_index(&x_k, 128+ird+idx)));
                     }
                 }
                 let mut y_tilde : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
-                for i in 0..8{
+                for i in 0..8usize{
                     let parameter_a = &ByteOrBytesArray::get_at_index(&x_tilde, ((i+7) as i32).rem_euclid(8) as usize); // should be same for usize as -1
                     let parameter_b = &ByteOrBytesArray::get_at_index(&x_tilde, ((i+5) as i32).rem_euclid(8) as usize); // should be same for usize as -3
                     let parameter_c = &ByteOrBytesArray::get_at_index(&x_tilde, ((i+2) as i32).rem_euclid(8) as usize); // should be same for usize as -6
@@ -203,7 +202,7 @@ pub fn faest_aes_enc_bkwd(
                     //hax_lib::assume!(ByteOrBytesElem::same_variant(&middle_result, parameter_c));       //TODO: replace with assertion if possible
                     let final_result = ByteOrBytesElem::xor_array(&middle_result, parameter_c);
 
-                    ByteOrBytesArray::set_at_index(&mut y_tilde, i, final_result);
+                    y_tilde = ByteOrBytesArray::set_at_index(y_tilde, i, final_result);
                 }
                 let value_might_be_delta = if mtag {ByteOrBytesElem::dummy(&ByteOrBytesArray::get_at_index(&x, 0))} else {
                     if mkey {Delta.clone()} else {ByteOrBytesElem::ones(&ByteOrBytesArray::get_at_index(&x, 0))}
@@ -211,11 +210,11 @@ pub fn faest_aes_enc_bkwd(
                 //hax_lib::assume!(ByteOrBytesElem::same_variant(&y_tilde[0], &value_might_be_delta));    //TODO: replace with assert if possible
                 let val0 = ByteOrBytesElem::xor_array(&ByteOrBytesArray::get_at_index(&y_tilde, 0),
                                                      &value_might_be_delta);
-                ByteOrBytesArray::set_at_index(&mut y_tilde, 0, val0);
+                y_tilde = ByteOrBytesArray::set_at_index(y_tilde, 0, val0);
                 //hax_lib::assume!(ByteOrBytesElem::same_variant(&y_tilde[2], &value_might_be_delta));    //TODO: replace with assert if possible
                 let val2 = ByteOrBytesElem::xor_array(&ByteOrBytesArray::get_at_index(&y_tilde, 2),
                                                     &value_might_be_delta);
-                ByteOrBytesArray::set_at_index(&mut y_tilde, 2, val2);
+                y_tilde = ByteOrBytesArray::set_at_index(y_tilde, 2, val2);
                 y[(j << 4) + (c << 2) + r] = byte_combine(y_tilde);
             }
         }

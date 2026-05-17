@@ -7,6 +7,7 @@ use crate::utils::galois_field::gf128_mul;
 use crate::utils::helper_methods_prove_verify::{to_field, zk_hash};
 use crate::utils::math::{field_pow, xor_arrays};
 
+#[hax_lib::fstar::options("--z3rlimit 25")]
 pub fn faest_aes_prove(
     w : [u8; ell_bit_size],
     u : &[u8; 1728],
@@ -28,9 +29,7 @@ pub fn faest_aes_prove(
     let w_tilde_exp: [u8;l_ke] = w[0..l_ke].try_into().unwrap();
     let v_tilde_exp: [[u8;16];l_ke]  = v[0..l_ke].try_into().unwrap();
 
-
     let (a_tilde_0_exp, a_tilde_1_exp, k, v_k) : ([[u8;16];S_ke], [[u8;16];S_ke], [u8;1408],[[u8;16];1408]) = faest_aes_exp_cstrnts_wv(w_tilde_exp, v_tilde_exp, false);
-
 
     let w_tilde_enc : [u8; 1152] = w[l_ke..(l_ke+l_enc)].try_into().unwrap();
     // forsøger at gøre den her til den specifikke størrelse, det er noget vi skla kigge på senere
@@ -48,7 +47,6 @@ pub fn faest_aes_prove(
         false
     );
 
-
     let a_0 : [[u8;16];200] = concat_arrays(a_tilde_0_exp, a_tilde_0_enc);
     let a_1 : [[u8;16];200] = concat_arrays(a_tilde_1_exp, a_tilde_1_enc);
 
@@ -56,7 +54,6 @@ pub fn faest_aes_prove(
     for i in 0..lambda {
         new_u[i] = to_field::<1,1,1>(&[u[ell_bit_size+i]])[0]; // k = 1
     }
-    
 
     let mut alpha : [u8;16] = [0u8; 16];
     alpha[0] = 0x02; // bit 1 set = x^1
@@ -75,11 +72,9 @@ pub fn faest_aes_prove(
         let term : [u8;16] = gf128_mul(&v[ell_bit_size + i], &alpha_pow);
         v_star = xor_arrays(&v_star, &term);
     }
-
     
     let alpha_tilde : [u8;16] = zk_hash(&chall, &a_1, &u_star);
     let beta_tilde : [u8;16] = zk_hash(&chall, &a_0, &v_star);
-    
 
     (alpha_tilde, beta_tilde)
 }
@@ -94,8 +89,6 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
     // Det her skal forstås som en reconstruction af det Q (en matrix), som er blevet sendt rundt på et tidligere tidspunkt
     let mut Q_mut : [[u8; 128]; 1728] = Q.clone();
 
-    
-    
     for row in 0..ell_bit_size {
         if d[row] == 1 {
             for col in 0..lambda {
@@ -103,7 +96,6 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
             }
         }
     }
-    
 
     // After correction - row 0 should now equal v[0] from sign since d[0]=w[0] XOR u[0]
     let mut q: [[u8; 16]; ell_bit_size + lambda] = [[0u8; 16]; ell_bit_size+lambda];
@@ -143,14 +135,9 @@ pub fn faest_aes_verify(d : [u8; ell_bit_size], Q : [[u8; lambda]; ell_bit_size+
         q_star = xor_arrays(&q_star, &term);
     }
 
-
     let q_tilde : [u8;16] = zk_hash(&chall_2, &b, &q_star);
     let a_tilde_times_delta : [u8;16] = gf128_mul(&a_tilde, &delta);
     let q_tilde_minus_a_tilde_times_delta : [u8;16] = xor_arrays(&q_tilde, &a_tilde_times_delta);
-
-
-
-
 
     q_tilde_minus_a_tilde_times_delta
 }
@@ -159,12 +146,20 @@ fn concat_arrays(b1: [[u8; 16]; S_ke], b2: [[u8; 16]; 200 - S_ke]) -> [[u8; 16];
     let mut result = [[0u8; 16]; 200];
     let mut idx = 0;
     for i in 0..S_ke {
+        hax_lib::loop_invariant!(
+            i <= S_ke &&
+            idx <= i
+        );
+        idx = i;
         result[idx] = b1[i];
-        idx += 1;
     }
     for i in 0..(200 - S_ke) {
+        hax_lib::loop_invariant!(
+            i <= 200 - S_ke &&
+            idx <= i + S_ke
+        );
+        idx = i + S_ke;
         result[idx] = b2[i];
-        idx += 1;
     }
     result
 }

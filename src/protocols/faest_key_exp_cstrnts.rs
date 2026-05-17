@@ -3,7 +3,7 @@
 use crate::protocols::aes;
 use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{setup_rcon_table};
-use crate::utils::types::{ret_value, ByteArray, ByteElem, ByteOrBytesArray, ByteOrBytesElem, BytesArray, BytesElem, XorHelper};
+use crate::utils::types::{ByteArray, ByteElem, ByteOrBytesArray, ByteOrBytesElem, BytesArray, BytesElem, XorHelper};
 use crate::utils::helper_methods_cstrnts::{byte_combine};
 use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lambda, R, l_ke};
 
@@ -16,6 +16,7 @@ use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lamb
 #[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(hax_lib::Prop::from(SIZE >= lambda + (((((R + 1) << 2) - 1) / nk) * 32))
 .and(hax_lib::Prop::from(!(mtag && mkey))))]
+#[hax_lib::ensures(|result| result.is_byte() == x.is_byte())]
 pub fn faest_aes_key_exp_fwd<const SIZE: usize>(_m : usize, x: ByteOrBytesArray<SIZE>, mtag : bool, mkey : bool, _Delta : [u8;16]) -> ByteOrBytesArray<ret_size_exp_fwd> {
     /*
     if mtag && mkey{
@@ -23,6 +24,7 @@ pub fn faest_aes_key_exp_fwd<const SIZE: usize>(_m : usize, x: ByteOrBytesArray<
     }
 
      */
+
     let mut y: ByteOrBytesArray<ret_size_exp_fwd> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
     //let mut y : [ByteOrBytesElem;ret_size_exp_fwd] = [ByteOrBytesElem::dummy(&x[0]); ret_size_exp_fwd];
     //hax_lib::assert_prop!(hax_lib::forall(|i: usize| i >= y.len() || ByteOrBytesElem::same_variant(&y[i], &x[0])));
@@ -60,7 +62,8 @@ pub fn faest_aes_key_exp_fwd<const SIZE: usize>(_m : usize, x: ByteOrBytesArray<
         hax_lib::assert!(j < ((R + 1) << 2));
         hax_lib::assert!(j >= nk);
         hax_lib::assert!(iwd == lambda + ncond * 32);
-        hax_lib::assume!((j << 5) < ret_size_exp_fwd);  //TODO
+        hax_lib::assert!((j << 5) < ret_size_exp_fwd);
+
         let cond = (j % nk) == 0 || (nk > 6 && j % nk == 4);
         if cond {
             // same change made here, we are not pushing bits, we are pushing words, so for every 32 bits to be pushed, push one word
@@ -138,9 +141,10 @@ pub fn faest_aes_key_exp_fwd<const SIZE: usize>(_m : usize, x: ByteOrBytesArray<
 // x is 320
 // x_k is 1408
 #[hax_lib::fstar::options("--z3rlimit 500")]
-#[hax_lib::requires(matches!(x, x_k) && !(mtag && mkey) && N >= 320 && M >= 1312
+#[hax_lib::requires(matches!(x, x_k) && !(mtag && mkey) && N >= S_ke << 3 && M >= 1312
 //&& ByteOrBytesElem::same_variant(Delta, &x[0])
 )]
+#[hax_lib::ensures(|result| result.is_byte() == x.is_byte())]
 pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
     _m : usize,
     x: ByteOrBytesArray<N>,
@@ -174,15 +178,15 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
             ncond == (j) / 4 &&
             i_wd == ncond * lambda &&
             c == j % 4 &&
+            (j << 3) <= N &&
             ((!mtag && i_rcon == (j + 3) / 4) || (mtag && i_rcon == 0)) &&
             ByteOrBytesArray::same_variant(&y, &x)
-
         });
         println!("value of ircon {:?} at j {:?}", i_rcon, j);
-        hax_lib::assume!((j << 3) + 8 < x.len());   //TODO
-        hax_lib::assume!(c << 3 <= usize::MAX - 8);     //TODO
-        hax_lib::assume!(i_wd <= usize::MAX - ((c << 3) + 8));      //TODO
-        hax_lib::assume!(i_wd + (c << 3) + 8 < x_k.len());      //TDO
+        hax_lib::assert!((j << 3) + 8 <= N);
+        hax_lib::assert!(c << 3 <= usize::MAX - 8);
+        hax_lib::assert!(i_wd <= usize::MAX - ((c << 3) + 8));
+        hax_lib::assert!(i_wd + (c << 3) + 8 <= M);
         // first value in minues operation
         let parameter_a: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x, j << 3, (j << 3) + 8);
         let parameter_b: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x_k, i_wd + (c << 3), i_wd + (c << 3) + 8);
@@ -336,7 +340,7 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
             j <= S_ke >> 2 &&
             i_wd == ((nk - 1) << 5) + j * lambda &&
             i_wd <= 1408 &&
-            (j << 5) <= ret_size_exp_bwd - 32
+            (j << 5) <= ret_size_exp_bwd
         });
         let mut k_hat : [[u8;16];4] = [[0;16];4];
         let mut v_k_hat : [[u8;16];4] = [[0;16];4];
@@ -349,11 +353,11 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         for r in 0..4 {
             hax_lib::loop_invariant!(|r: usize| {
                 r <= 4 &&
-                (lambda == 256 && j > 0 && i_wd + (r << 3) + 8 <= 1408) || (i_wd + (((r+1) % 4) << 3) + 8 <= 1408) &&
+                //(lambda == 256 && j > 0 && i_wd + (r << 3) + 8 <= 1408) || (i_wd + (((r+1) % 4) << 3) + 8 <= 1408) &&
                 (r << 3) <= ret_size_exp_bwd - (j << 5)
             });
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
-            hax_lib::assert!((lambda == 256 && j > 0 && i_wd + (r << 3) + 8 < 1408) || (i_wd + (((r+1) % 4) << 3) + 8 < 1408));
+            //hax_lib::assume!((lambda == 256 && j > 0 && i_wd + (r << 3) + 8 <= 1408) || (i_wd + (((r+1) % 4) << 3) + 8 <= 1408));
             hax_lib::assert!(((j << 5) + (r << 3) + 8) <= ret_size_exp_bwd);
             hax_lib::assert!((i_wd + (rotated << 3) + 8) <= k.len());
             hax_lib::assert!((i_wd + (rotated << 3) + 8) <= v_k.len());
@@ -375,6 +379,8 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
             v_w_hat[r] = byte_combine(v_w_hat_slice);
             hax_lib::assert!((lambda == 256 && j > 0 && i_wd + (r << 3) + 8 < 1408) || (i_wd + (((r+1) % 4) << 3) + 8 < 1408));
             hax_lib::assert!(((j << 5) + (r << 3) + 8) <= ret_size_exp_bwd);
+            hax_lib::assert!(r << 3 < ret_size_exp_bwd - (j << 5));
+            hax_lib::assert!(r < 4);
         }
         hax_lib::assert!((lambda == 256 && j > 0 && i_wd < 1408 - 32) || (i_wd < 1408 - 32));
         hax_lib::assert!((j << 5) <= ret_size_exp_bwd - 32);
@@ -382,9 +388,9 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         for r in 0..4{
             hax_lib::loop_invariant!(|r: usize| {
                 r <= 4 &&
-                4 * j + r <= A_0.len() &&
-                4 * j + r <= A_1.len()
+                4 * j + r <= S_ke
             });
+            hax_lib::assert!(4 * j + r < S_ke);
             hax_lib::assert!(4 * j + r < A_0.len());
             A_0[4*j+r] = gf128_mul(&v_k_hat[r], &v_w_hat[r]);
             let product = gf128_mul(&<[u8;16]>::xor_array(&k_hat[r],&v_k_hat[r]),&<[u8;16]>::xor_array(&w_hat[r],&v_w_hat[r]));
@@ -396,28 +402,23 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
         hax_lib::assert!(i_wd == ((nk - 1) << 5) + (j+1) * lambda);
         hax_lib::assert!((j << 5) + (3 << 3) + 8 <= ret_size_exp_bwd);
+        hax_lib::assert!(j < S_ke >> 2);
+        hax_lib::assert!(i_wd <= 1408);
+        hax_lib::assert!(j << 5 < ret_size_exp_bwd);
 
 
     }
-    /*
-    let k_res : [u8; 1408] = array::from_fn(|i: usize| {
-        ByteOrBytesElem::get_byte(&ByteOrBytesArray::get_at_index(&k, i))
-    });
-
-    let v_k_res : [[u8; 16]; 1408] = array::from_fn(|i: usize| {
-        ByteOrBytesElem::get_bytes(&ByteOrBytesArray::get_at_index(&v_k, i))
-    });
-
-     */
-
     (A_0, A_1, k, v_k)
 }
 
-#[hax_lib::exclude]
+#[hax_lib::fstar::options("--z3rlimit 500")]
+#[hax_lib::requires(mkey == true)]
 pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey : bool) -> ([[u8;16];S_ke], [[u8;16];1408]){
+    /*
     if !mkey {
         panic!("invalid tags")
     }
+     */
 
     let q_k = faest_aes_key_exp_fwd::<l_ke>(128, ByteOrBytesArray::Bytes(BytesArray(q)), false, true, Delta);
     let q_slice : &ByteOrBytesArray<320> = &ByteOrBytesArray::Bytes(BytesArray(q[lambda..].try_into().unwrap()));
@@ -429,13 +430,17 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
     let mut i_wd = (nk-1) << 5;
     let mut do_rot_word = true;
     for j in 0..(S_ke >> 2) {
+        hax_lib::loop_invariant!(|j: usize| {
+            j <= S_ke >> 2 &&
+            i_wd == ((nk - 1) << 5) + j * lambda
+        });
         let mut q_hat_k : [[u8;16];4] = [[0;16];4];
         let mut q_hat_w : [[u8;16];4] = [[0;16];4];
         for r in 0..4 {
             let rotated = if do_rot_word { (r + 1) % 4 } else { r };
-
+            hax_lib::assert!(i_wd + (rotated << 3) + 8 <= 1408);
             let q_hat_k_slice : ByteOrBytesArray<8> = ByteOrBytesArray::get_slice::<8>(&q_k,i_wd + (rotated << 3), i_wd + (rotated << 3) + 8);
-
+            hax_lib::assert!((j << 5) + (r << 3) + 8 <= ret_size_exp_bwd);
             let q_hat_w_slice : ByteOrBytesArray<8> = ByteOrBytesArray::get_slice::<8>(&q_w_flat, (j << 5) + (r << 3), (j << 5) + (r << 3) + 8);
 
             q_hat_k[r] = byte_combine(q_hat_k_slice);
@@ -444,9 +449,16 @@ pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey :
 
         if lambda == 256 {do_rot_word = ! do_rot_word}
         for r in 0..4{
+            hax_lib::loop_invariant!(|r: usize| {
+                r <= 4 &&
+                (j << 2) + 4 <= S_ke
+            });
             B[(j << 2) + r] = <[u8;16]>::xor_array(&gf128_mul(&q_hat_k[r], &q_hat_w[r]), &gf128_mul(&Delta, &Delta));
         }
+        hax_lib::assert!(i_wd == ((nk - 1) << 5) + j * lambda);
         if lambda == 192 {i_wd += 192} else {i_wd += 128}
+        hax_lib::assert!(j < S_ke >> 2);
+        hax_lib::assert!(i_wd == ((nk - 1) << 5) + (j + 1) * lambda);
     }
 
     let q_k_res : [[u8; 16]; 1408] = ByteOrBytesArray::get_bytes(&q_k);

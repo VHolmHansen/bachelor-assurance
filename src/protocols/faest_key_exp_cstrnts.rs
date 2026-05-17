@@ -182,7 +182,7 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
             ((!mtag && i_rcon == (j + 3) / 4) || (mtag && i_rcon == 0)) &&
             ByteOrBytesArray::same_variant(&y, &x)
         });
-        println!("value of ircon {:?} at j {:?}", i_rcon, j);
+
         hax_lib::assert!((j << 3) + 8 <= N);
         hax_lib::assert!(c << 3 <= usize::MAX - 8);
         hax_lib::assert!(i_wd <= usize::MAX - ((c << 3) + 8));

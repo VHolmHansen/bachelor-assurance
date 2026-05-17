@@ -10,7 +10,7 @@ use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
 use crate::utils::vector_commit::{vec_commit_k0, vec_commit_k1, vec_reconstruct_k0, vec_reconstruct_k1};
 use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow, tau_minus_one};
 
-
+#[hax_lib::exclude]
 pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16]) -> ([u8; ell], sized_array_234<d>) {
     let sds: &[[u8; 16]] = match &sds {
         sized_array_for_sds::sized_array_1(inner) => inner.as_slice(),
@@ -52,7 +52,7 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
     (u.expect("Should be some"), v)
 }
 
-
+#[hax_lib::exclude]
 pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau]) {
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's
@@ -99,13 +99,19 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
+#[hax_lib::requires(i < tau_0)]
 pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
-    assert!(i < tau_0, "i must be < tau_0 for k_0 variant");
     let lo = i * k_0;
     let hi = (i + 1) * k_0 - 1;
 
     let mut bits = [0u8; k_0];
-    for (idx, b) in (lo..(hi + 1)).enumerate() {     //inclusive range
+    for idx in 0..12 {
+        hax_lib::loop_invariant!(
+            idx <= 12 &&
+            (lo + idx) >> 3 < 16
+        );
+
+        let b = lo + idx;
         let byte_index = b >> 3;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
@@ -113,21 +119,29 @@ pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
     bits
 }
 
+#[hax_lib::requires(i >= tau_0 && i < tau)]
 pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
-    assert!(i >= tau_0 && i < tau, "i must be in [tau_0, tau) for k_1 variant");
     let t = i - tau_0;
     let lo = tau_0 * k_0 + t * k_1;
     let hi = tau_0 * k_0 + (t + 1) * k_1 - 1;
 
     let mut bits = [0u8; k_1];
-    for (idx, b) in (lo..(hi + 1)).enumerate() {     //inclusive range
+    for idx in 0..11 {
+        hax_lib::loop_invariant!(
+            idx <= 12 &&
+            (lo + idx) >> 3 < 16
+        );
+
+        let b = lo + idx;
         let byte_index = b >> 3;
         let bit_index = b % 8;
         bits[idx] = (chall[byte_index] >> bit_index) & 1;
     }
+
     bits
 }
 
+#[hax_lib::exclude]
 pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;32], [sized_array_for_q_v;tau]){
     let mut commitments : [[u8; 32];tau] = [[0;32];tau];
     let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];

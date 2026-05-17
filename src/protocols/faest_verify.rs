@@ -75,6 +75,7 @@ pub fn faest_verify(
             index += 1;
         }
     }
+
     let mut q_e_xored : [[u8;18];tau_0*k_0+tau_1*k_1] = q_e_columns.clone();
     let mut col_idx : usize = 0;
     for i in 0..tau {
@@ -114,9 +115,7 @@ pub fn faest_verify(
     let q_rows : [[u8; 128]; 1728] = vole_to_row_major(q_corrected);
     let q_arr: [[u8; lambda]; ell_bit_size + lambda] = q_rows.try_into().unwrap();
 
-
-
-    let _verify_start = std::time::Instant::now();
+    //let _verify_start = std::time::Instant::now();
     let b_tilde : [u8;16] = faest_aes_verify(
         d.clone().try_into().unwrap(),
         q_arr,
@@ -128,8 +127,6 @@ pub fn faest_verify(
     // println!("verify took: {:?}", verify_start.elapsed());
 
     let chall_3_mark : [u8;16] = h_2_3(chall_2, *a_tilde, b_tilde);
-    
 
     *chall_3 == chall_3_mark
-
 }

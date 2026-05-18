@@ -9,7 +9,7 @@ use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2
 use crate::utils::helper_methods_for_sign::{bits_to_state, u_to_1728_bits, vole_hash, vole_to_row_major};
 use crate::utils::libcrux_proxy::RandGenProxy;
 
-#[hax_lib::fstar::options("--z3rlimit 500")]
+#[hax_lib::fstar::options("--z3rlimit 1000")]
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
 pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> ([[u8; 234]; tau_minus_one], [u8; 18], [u8; 1600], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]) {
     let mut rng = RandGenProxy::get_rand_gen_sha256();
@@ -56,17 +56,21 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     for i in 0..tau {
         hax_lib::loop_invariant!(|i: usize| {
             i <= tau
+            && ((i < tau_0 && index == i * k_0) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0))
             && ((i == tau
                 || i < tau_0 && v_bytes[i].len() == k_0)
                 || (i >= tau_0 && i < tau && v_bytes[i].len() == k_1))
         });
+        hax_lib::assert!((i < tau_0 && index == i * k_0) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0));
         let k_b : usize = if i < tau_0 { k_0 } else { k_1 };
         hax_lib::assert!(v_bytes[i].len() == k_b);
         for j in 0..k_b {
             hax_lib::loop_invariant!(|j: usize| {
                 j <= k_b
+                && ((i < tau_0 && index == i * k_0 + j) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0 + j))
                 && v_bytes[i].len() == k_b
             });
+            //hax_lib::assert!((i < tau_0 && index == i * k_0) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0));
             hax_lib::assert!(j < v_bytes[i].len());
             let col : &[u8;234] = v_bytes[i].get(j); // [u8; 234]
             let x0_col : &[u8;216] = &col[0..216].try_into().unwrap();
@@ -76,6 +80,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
             v_tilde[index] = col_hash_arr;
             index += 1;
         }
+        //hax_lib::assert!((i < tau_0 && index == i * k_0) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0));
     }
 
     // man skla have hashed h_V

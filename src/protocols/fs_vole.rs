@@ -158,6 +158,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8
             j > i
             || (j < tau_0 && big_v[j].len() == k_0)
             || (j >= tau_0 && big_v[j].len() == k_1)));
+
     }
     let u_0 = big_u[0];
 
@@ -252,7 +253,9 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
     bits
 }
 
+#[hax_lib::opaque]//TODO
 #[hax_lib::fstar::options("--z3rlimit 150")]
+#[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= result.1.len() || (i < tau_0 && result.1[i].len() == k_0) || (i >= tau_0 && result.1[i].len() == k_1)))]
 pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;32], [sized_array_for_q_v;tau]){
     let mut commitments : [[u8; 32];tau] = [[0;32];tau];
     let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];

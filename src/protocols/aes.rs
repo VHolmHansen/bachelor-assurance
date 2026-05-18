@@ -194,9 +194,8 @@ pub fn gf2_affine_transform(w: u8) -> u8 {
 
 //TODO: generalize, move and utilize
 #[requires(n <= u8::MAX && modu <= u8::BITS as u8)]
-#[ensures(|result| result < u8::BITS as u8)]
+#[ensures(|result| result <= modu)]
 pub fn bitand_mod(n: u8, modu: u8) -> u8 {
-    hax_lib::assume!(n & modu < u8::BITS as u8);    //TODO: make lemma?
     n & modu
 }
 const RCON_TABLE : [u8;10] = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54];

@@ -1,6 +1,6 @@
 use crate::utils::math::xor_arrays;
 use crate::utils::constants::{k_0, k_1};
-
+use crate::utils::types::Log2Number;
 
 //TODO
 #[hax_lib::fstar::options("--z3rlimit 50")]
@@ -91,6 +91,13 @@ pub fn flatten<const OUTER_LEN: usize, const INNER_LEN: usize, const COMBINED_LE
 
 pub fn xor_u8(x: &u8, y: &u8) -> u8 {
     x^y
+}
+
+#[hax_lib::requires(x < bound.value() && y < bound.value())]
+#[hax_lib::ensures(|result| result < bound.value())]
+pub fn xor_usize(x: usize, y: usize, bound: Log2Number) -> usize {
+    hax_lib::assume!( x ^ y < bound.value()); //TODO lemma
+    x ^ y
 }
 
 pub fn xor_u8_16_array(x: &[u8; 16], y: &[u8; 16]) -> [u8; 16] {

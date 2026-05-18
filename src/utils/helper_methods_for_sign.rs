@@ -7,7 +7,9 @@ use crate::utils::math::xor_arrays;
 use crate::utils::types::State;
 
 // funktioner der bruges til at omdanne vores V og u, i sign til bits, skal nok slettes senere efte refactor
-#[hax_lib::requires(hax_lib::forall(|i: usize| i >= big_v.len() || (i < tau_0 && big_v[i].len() == k_0) || (i > tau_0 && i < big_v.len() && big_v[i].len() == k_1)))]
+#[hax_lib::requires(hax_lib::forall(|i: usize| i >= big_v.len() 
+    || (i < tau_0 && big_v[i].len() == k_0) 
+    || (i >= tau_0 && big_v[i].len() == k_1)))]
 pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_bit_size+lambda] {
     let mut v_rows: [[u8; lambda];ell_bit_size+lambda] = [[0u8; lambda]; ell_bit_size + lambda];
     // flatten all columns across tau instances

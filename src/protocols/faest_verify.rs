@@ -24,7 +24,10 @@ pub fn faest_verify(
     let iv : &[u8; 16]= &sig.6;
 
     let my : [u8;32]= h_1_for_sign(pk.clone(), msg);
+
+    #[cfg(not(hax))]
     let _rec_start = std::time::Instant::now();
+
     let (h_com, q_mark) : ([u8; 32], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
     // println!("reconstruct took: {:?}", rec_start.elapsed());
 
@@ -32,7 +35,10 @@ pub fn faest_verify(
 
     // fixing q:
     let mut q_corrected : [sized_array_for_q_v; 11]  = q_mark;
+
+    #[cfg(not(hax))]
     let _challenge_start = std::time::Instant::now();
+
     for i in 1..tau {
         if i < tau_0 {
             let delta_bits : [u8;12] = chall_dec_k0(*chall_3, i);

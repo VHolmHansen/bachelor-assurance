@@ -14,7 +14,7 @@ use crate::utils::galois_field::gf128_mul;
 use crate::utils::libcrux_proxy::RandGenProxy;
 use crate::utils::math::transform_byte_array_to_state;
 
-#[hax_lib::exclude]
+#[hax_lib::opaque]
 pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 {
     let mut rng = RandGenProxy::get_rand_gen_sha256();

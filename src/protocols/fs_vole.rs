@@ -241,6 +241,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8
     (hash, all_decoms, big_c, u_0, big_v)
 }
 
+#[hax_lib::opaque]
 #[hax_lib::requires(i < tau_0)]
 #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= result.len() || result[i] <= 1))]
 pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
@@ -273,6 +274,7 @@ pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
     bits
 }
 
+#[hax_lib::opaque]//TODO maybe use update_bits_helper
 #[hax_lib::requires(i >= tau_0 && i < tau)]
 #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= result.len() || result[i] <= 1))]
 pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
@@ -305,8 +307,9 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
     bits
 }
 
+#[hax_lib::opaque]//TODO
 #[hax_lib::fstar::options("--z3rlimit 150")]
-#[hax_lib::exclude]
+#[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= result.1.len() || (i < tau_0 && result.1[i].len() == k_0) || (i >= tau_0 && result.1[i].len() == k_1)))]
 pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;32], [sized_array_for_q_v;tau]){
     let mut commitments : [[u8; 32];tau] = [[0;32];tau];
     let mut big_q:  [sized_array_for_q_v;tau] =  [sized_array_for_q_v::sized_array_1([[0u8;234];k_0]);tau];

@@ -5,6 +5,7 @@ use crate::utils::types::{State};
 use crate::utils::constants::{lambda, S_ke, nk, R, ell_bit_size};
 use crate::utils::preliminary_helper_methods::flatten;
 
+#[hax_lib::opaque]
 #[hax_lib::fstar::options("--z3rlimit 50")]
 pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit_size]{
     let (in_aes, _out_aes) = pk;

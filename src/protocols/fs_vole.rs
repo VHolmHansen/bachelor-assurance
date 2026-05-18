@@ -103,7 +103,14 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
 
 #[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::opaque]
-#[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= result.4.len() || (i < tau_0 && result.4[i].len() == k_0) || (i >= tau_0 && result.4[i].len() == k_1)))]
+#[hax_lib::ensures(|result| hax_lib::forall(|i: usize|
+        i >= result.4.len()
+        || (i < tau_0 && result.4[i].len() == k_0)
+        || (i >= tau_0 && result.4[i].len() == k_1))
+.and(hax_lib::forall(|i: usize|
+        i >= result.4.len()
+        || (i < tau_0 && matches!(result.1[i].2, sized_array_for_coms::sized_array_1(_)))
+        || (i >= tau_0 && matches!(result.1[i].2, sized_array_for_coms::sized_array_2(_))))))]
 pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau]) {
     let new_r = prg_vole_commit_r(r, iv);
     // extract all r's

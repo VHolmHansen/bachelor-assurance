@@ -86,14 +86,15 @@ pub enum Log2Number {
     twohundredandfiftysix,
     fivehundredandtwelve,
     onethousandandtwentyfour,
-    twothousandsandfortyeight
+    twothousandsandfortyeight,
+    fourthousandsandninetysix
 }
 
 #[hax_lib::attributes]
 impl Log2Number {
     #[hax_lib::ensures(|result| result == 0 || result == 1 || result == 2 || result == 4 || result == 8
                         || result == 16 || result == 32 || result == 64 || result == 128
-                        || result == 256 || result == 512 || result == 1024 || result == 2048)]
+                        || result == 256 || result == 512 || result == 1024 || result == 2048 || result == 4096)]
     pub fn value(self) -> usize {
         match self {
             Self::zero => 0,
@@ -109,15 +110,17 @@ impl Log2Number {
             Self::fivehundredandtwelve => 512,
             Self::onethousandandtwentyfour => 1024,
             Self::twothousandsandfortyeight => 2048,
+            Self::fourthousandsandninetysix => 4096,
         }
     }
 
     #[hax_lib::requires(n == 0 || n == 1 || n == 2 || n == 4 || n == 8
                         || n == 16 || n == 32 || n == 64 || n == 128
-                        || n == 256 || n == 512 || n == 1024 || n == 2048)]
+                        || n == 256 || n == 512 || n == 1024 || n == 2048 || n == 4096)]
     #[hax_lib::ensures(|result| result == Log2Number::zero || result == Log2Number::one || result == Log2Number::two || result == Log2Number::four || result == Log2Number::eight
                         || result == Log2Number::sixteen || result == Log2Number::thirtytwo || result == Log2Number::sixtyfour || result == Log2Number::onehundredandtwentyeight
-                        || result == Log2Number::twohundredandfiftysix || result == Log2Number::fivehundredandtwelve || result == Log2Number::onethousandandtwentyfour || result == Log2Number::twothousandsandfortyeight)]
+                        || result == Log2Number::twohundredandfiftysix || result == Log2Number::fivehundredandtwelve
+                        || result == Log2Number::onethousandandtwentyfour || result == Log2Number::twothousandsandfortyeight || result == Log2Number::fourthousandsandninetysix)]
     pub fn wrap(n: usize) -> Log2Number {
         match n {
             0 => Self::zero,
@@ -133,16 +136,17 @@ impl Log2Number {
             512 => Self::fivehundredandtwelve,
             1024 => Self::onethousandandtwentyfour,
             2048 => Self::twothousandsandfortyeight,
+            4096 => Self::fourthousandsandninetysix,
             _ => panic!("Invalid log2 number")
         }
     }
 
     #[hax_lib::requires(self.value() == 0 || self.value() == 1 || self.value() == 2 || self.value() == 4 || self.value() == 8
     || self.value() == 16 || self.value() == 32 || self.value() == 64 || self.value() == 128
-    || self.value() == 256 || self.value() == 512 || self.value() == 1024 || self.value() == 2048)]
+    || self.value() == 256 || self.value() == 512 || self.value() == 1024 || self.value() == 2048 || self.value() == 4096)]
     #[hax_lib::ensures(|result| result == Log2Number::zero || result == Log2Number::one || result == Log2Number::two || result == Log2Number::four || result == Log2Number::eight
                                 || result == Log2Number::sixteen || result == Log2Number::thirtytwo || result == Log2Number::sixtyfour || result == Log2Number::onehundredandtwentyeight
-                                || result == Log2Number::twohundredandfiftysix || result == Log2Number::fivehundredandtwelve || result == Log2Number::onethousandandtwentyfour || result == Log2Number::twothousandsandfortyeight)]
+                                || result == Log2Number::twohundredandfiftysix || result == Log2Number::fivehundredandtwelve || result == Log2Number::onethousandandtwentyfour || result == Log2Number::twothousandsandfortyeight || result == Log2Number::fourthousandsandninetysix)]
     pub fn log_reduce(&mut self) -> Self {
         Self::wrap(self.value() >> 1)
     }

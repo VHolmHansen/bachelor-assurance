@@ -7,6 +7,7 @@ use crate::utils::galois_field::gf128_mul;
 use crate::utils::helper_methods_prove_verify::{to_field, zk_hash};
 use crate::utils::math::{field_pow, xor_arrays};
 
+#[hax_lib::opaque]
 #[hax_lib::fstar::options("--z3rlimit 25")]
 pub fn faest_aes_prove(
     w : [u8; ell_bit_size],

@@ -154,6 +154,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             Log2Number::onethousandandtwentyfour => {
                 cop_helper::<1024, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}
             Log2Number::zero => {(current_start, current_end)}
+            Log2Number::fourthousandsandninetysix => panic!("unreachable, should never be 4096 at this point")
 
         };
         if match_value.value() > 0 { match_value = match_value.log_reduce() }

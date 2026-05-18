@@ -7,6 +7,7 @@ use crate::utils::math::xor_arrays;
 use crate::utils::types::State;
 
 // funktioner der bruges til at omdanne vores V og u, i sign til bits, skal nok slettes senere efte refactor
+#[hax_lib::opaque]
 #[hax_lib::requires(hax_lib::forall(|i: usize| i >= big_v.len() 
     || (i < tau_0 && big_v[i].len() == k_0) 
     || (i >= tau_0 && big_v[i].len() == k_1)))]

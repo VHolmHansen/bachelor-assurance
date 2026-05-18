@@ -9,7 +9,7 @@ use crate::utils::hash_functions::{h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2
 use crate::utils::helper_methods_for_sign::{bits_to_state, u_to_1728_bits, vole_hash, vole_to_row_major};
 use crate::utils::libcrux_proxy::RandGenProxy;
 
-#[hax_lib::fstar::options("--z3rlimit 2500")]
+#[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
 pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> ([[u8; 234]; tau_minus_one], [u8; 18], [u8; 1600], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]) {
     let mut rng = RandGenProxy::get_rand_gen_sha256();
@@ -22,7 +22,21 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho); // mention to bas, it is hard to check to their test vectors, because differences in random algorithm
 
     //#[hax_lib::opaque]
-    let (h_com, decoms, c_bytes, u_bytes, v_bytes) : ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau])= FAEST_VOLE_commit(r, iv);
+    let (h_com, decoms, c_bytes, u_bytes, v_bytes) :
+        ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau])
+        = FAEST_VOLE_commit(r, iv);
+    hax_lib::assert_prop!(hax_lib::forall(|i: usize|
+        i >= decoms.len()
+        || (i < tau_0 && matches!(decoms[i].2, sized_array_for_coms::sized_array_1(_)))
+        || (i >= tau_0 && matches!(decoms[i].2, sized_array_for_coms::sized_array_2(_)))));
+
+    /*hax_lib::assert_prop!(hax_lib::forall(|i: usize|
+        hax_lib::Prop::from(i >= decoms.len())
+        .or(hax_lib::Prop::from(i < tau_0).and(hax_lib::implies(
+            i < tau_0 && decoms[i].2.len() == k_0, matches!(decoms[i].2, sized_array_for_coms::sized_array_1(_))))
+    )));
+
+     */
     let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
 
 

@@ -44,8 +44,8 @@ impl sized_array_for_q_v {
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
         match self {
-            sized_array_for_q_v::sized_array_1(_) => 12,
-            sized_array_for_q_v::sized_array_2(_) => 11,
+            sized_array_for_q_v::sized_array_1(_) => k_0,
+            sized_array_for_q_v::sized_array_2(_) => k_1,
         }
     }
     #[hax_lib::requires(index < self.len())]

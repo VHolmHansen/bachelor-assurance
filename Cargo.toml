@@ -19,13 +19,13 @@ digest = "0.11.3"
 [target."cfg(hax)".dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
 
-[features]
-lambda_128s = [] # when using this it is important that lambda = 128, tau = 11, and ell = 1600, in constants
+[features] # when changing verison, changes to constants also needs to be made
+lambda_128s = [] # lambda = 128, tau = 11, ell = 1600
 lambda_128f = []
-lambda_192s = []
+lambda_192s = [] # lambda = 192, tau = 16, ell = 3264
 lambda_192f = []
-lambda_256s = [] # when using this it is important that lambda = 256, tau = 22, and ell = 4000, in constants
+lambda_256s = [] # lambda = 256, tau = 22, ell = 4000
 lambda_256f = []
-default = ["lambda_256s"]
+default = ["lambda_128s"]
 hax = []
 

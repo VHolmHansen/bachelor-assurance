@@ -85,6 +85,8 @@ pub fn faest_aes_prove(
     println!("A_1 last element: {:02x?}", &a_1[big_C-1]);
     println!("big_C: {}", big_C);
 
+
+
     let alpha_tilde : [u8;lambda_bytes] = zk_hash(&chall, &a_1, &u_star);
     let beta_tilde : [u8;lambda_bytes] = zk_hash(&chall, &a_0, &v_star);
     

@@ -89,6 +89,31 @@ pub fn gf128_mul(a: &[u8; 16], b: &[u8; 16]) -> [u8; 16] {
     // return lower 128 bits
     result[0..16].try_into().unwrap()
 }
+pub fn gf192_mul(a: &[u8; 24], b: &[u8; 24]) -> [u8; 24] {
+    let mut result = [0u8; 24];
+    let mut lhs = *a;
+
+    for idx in 0..192 {
+        let b_bit = (b[idx >> 3] >> (idx & 7)) & 1;
+        if b_bit == 1 {
+            for k in 0..24 { result[k] ^= lhs[k]; }
+        }
+        if idx < 191 {
+            let top_bit = (lhs[23] >> 7) & 1;
+            let mut shifted = [0u8; 24];
+            for k in (1..24).rev() {
+                shifted[k] = (lhs[k] << 1) | (lhs[k-1] >> 7);
+            }
+            shifted[0] = lhs[0] << 1;
+            if top_bit == 1 {
+                shifted[0] ^= 0x87; // GF(2^192): x^192 + x^7 + x^2 + x + 1
+            }
+            lhs = shifted;
+        }
+    }
+    result
+}
+
 pub fn gf256_mul(a: &[u8; 32], b: &[u8; 32]) -> [u8; 32] {
     let mut result = [0u8; 64];
 
@@ -136,7 +161,10 @@ pub fn gf_lambda_mul(a: &[u8; lambda_bytes], b: &[u8; lambda_bytes]) -> [u8; lam
     let mut result = [0u8; lambda_bytes];
     if LAMBDA == 128 {
         gf128_mul_into(a.as_slice(), b.as_slice(), &mut result);
-    } else {
+    } else if LAMBDA == 192 {
+        gf192_mul_into(a.as_slice(), b.as_slice(), &mut result);
+    }
+    else {
         gf256_mul_into(a.as_slice(), b.as_slice(), &mut result);
     }
     result
@@ -149,12 +177,21 @@ fn gf128_mul_into(a: &[u8], b: &[u8], out: &mut [u8]) {
     out.copy_from_slice(&res);
 }
 
+fn gf192_mul_into(a: &[u8], b: &[u8], out: &mut [u8]) {
+    let a: &[u8; 24] = a.try_into().unwrap();
+    let b: &[u8; 24] = b.try_into().unwrap();
+    let res = gf192_mul(a, b);
+    out.copy_from_slice(&res);
+}
+
 fn gf256_mul_into(a: &[u8], b: &[u8], out: &mut [u8]) {
     let a: &[u8; 32] = a.try_into().unwrap();
     let b: &[u8; 32] = b.try_into().unwrap();
     let res = gf256_mul(a, b);
     out.copy_from_slice(&res);
 }
+
+
 
 #[hax_lib::requires(i >> 3 < a.len())]
 fn get_bit(a: &[u8], i: usize) -> u8 {

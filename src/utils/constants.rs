@@ -3,9 +3,9 @@
 // ============================================
 // BASE PARAMETERS - only these change per variant
 // ============================================
-pub const LAMBDA: usize = 256;
-pub const tau    : usize = 22;
-pub const ell    : usize = 4000;
+pub const LAMBDA: usize = 128;
+pub const tau    : usize = 11;
+pub const ell    : usize = 1600;
 pub const iv_bytes: usize = 16;
 
 // ============================================

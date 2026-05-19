@@ -21,7 +21,6 @@ pub fn faest_key_gen() -> ([u8; lambda_bytes], Pk) {
     let mut rng = RandGenProxy::get_rand_gen_sha256();
     let mut how_many_iters = 0;
     loop {
-        println!("how many iters: {:?}", how_many_iters);
         how_many_iters = how_many_iters + 1;
         let mut key: [u8; lambda_bytes] = [0u8; lambda_bytes];
         rng.fill_bytes(&mut key);

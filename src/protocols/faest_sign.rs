@@ -27,8 +27,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;lambda_bytes], pk : &Pk) -> ([[u8; ell_
     let u_x_0 : &[u8;x0_bytes] = &u_bytes[0..x0_bytes].try_into().unwrap();
     let u_x_1 : &[u8;x1_bytes]= &u_bytes[x0_bytes..ell_hat_bytes].try_into().unwrap();
     let u_tilde: [u8;x1_bytes] = vole_hash(&chall_1, u_x_0, u_x_1);
-
-    println!("chall_1: {:02x?}", &chall_1);
+    
 
     // få v_tilde
     let mut v_tilde : [[u8; x1_bytes]; LAMBDA] = [[0u8; x1_bytes]; LAMBDA];       // len : ( tau_0 * k_0 + tau_1*k_1 )
@@ -87,11 +86,8 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;lambda_bytes], pk : &Pk) -> ([[u8; ell_
 
     let _prove_start = std::time::Instant::now();
     let (a_tilde , b_tilde) : ([u8;lambda_bytes],[u8;lambda_bytes]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, *pk, chall_2);
-    println!("a_tilde: {:02x?}", &a_tilde);
-    println!("b_tilde: {:02x?}", &b_tilde);
     // println!("prove took: {:?}", prove_start.elapsed());
     let chall_3 : [u8;chall3_bytes] = h_2_3(chall_2, a_tilde, b_tilde);
-    println!("chall_3 full: {:02x?}", &chall_3);
     let _open_start = std::time::Instant::now();
     // pdecoms
     let mut pdecoms : [(sized_array_for_cop, [u8; 2*lambda_bytes]);tau] = [(sized_array_for_cop::sized_array_1([[0u8;lambda_bytes];k_0]),[0u8;2*lambda_bytes]);tau];

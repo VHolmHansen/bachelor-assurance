@@ -21,11 +21,11 @@ hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
 
 [features] # when changing verison, changes to constants also needs to be made
 lambda_128s = [] # lambda = 128, tau = 11, ell = 1600
-lambda_128f = []
+lambda_128f = [] # lambda = 128, tau=16, ell = 1600
 lambda_192s = [] # lambda = 192, tau = 16, ell = 3264
-lambda_192f = []
+lambda_192f = [] # lambda = 192, tau=24, ell = 3264
 lambda_256s = [] # lambda = 256, tau = 22, ell = 4000
-lambda_256f = []
-default = ["lambda_128s"]
+lambda_256f = [] # lambda = 256, tau = 32, ell = 4000
+default = ["lambda_256f"]
 hax = []
 

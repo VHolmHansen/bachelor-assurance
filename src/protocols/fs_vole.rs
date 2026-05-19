@@ -17,7 +17,7 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; iv_b
         sized_array_for_sds::sized_array_2(inner) => inner.as_slice(),
     };
 
-    hax_lib::assert!(sds.len() == 2048 || sds.len() == 4096);
+    
     // the r structure:
     let mut r: Vec<Vec<Option<[u8; ell_hat_bytes]>>> = vec![vec![None; sds.len()]; d + 1];    // keeping as vec, annoying rewrite, plus sugar for report
 

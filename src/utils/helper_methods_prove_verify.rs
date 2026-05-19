@@ -61,9 +61,7 @@ pub fn zk_hash(sd: &[u8], x0: &[[u8; lambda_bytes]], x1: &[u8; lambda_bytes]) ->
         // h1 = h1 * t + v  (bf128_mul_64: 128-bit * 64-bit)
         h1 = xor_arrays(&gf_lambda_mul_64(&h1, &t), v);
     }
-
-    println!("zk_hash h0 before finalize: {:02x?}", &h0);
-    println!("zk_hash h1 before finalize: {:02x?}", &h1);
+    
 
     // finalize: h = r0*h0 + r1*h1 + x1
     let term0 = gf_lambda_mul(&r0, &h0);

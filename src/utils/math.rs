@@ -1,4 +1,4 @@
-use hax_lib::{assume, loop_invariant, Int, ToInt};
+use hax_lib::{assume, ensures, loop_invariant, requires, Int, ToInt};
 use crate::utils::galois_field::gf128_mul;
 use crate::utils::types::State;
 /*
@@ -168,5 +168,12 @@ pub fn field_pow(base: &[u8; 16], exp: usize) -> [u8; 16] {
         e >>= 1;
     }
     result
+}
+
+//TODO: generalize, move and utilize
+#[requires(n <= u8::MAX && modu <= u8::BITS as u8)]
+#[ensures(|result| result <= modu)]
+pub fn bitand_mod(n: u8, modu: u8) -> u8 {
+    n & modu
 }
 

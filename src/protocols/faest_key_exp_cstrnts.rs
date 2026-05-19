@@ -1,10 +1,9 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 
-use crate::protocols::aes;
 use crate::utils::galois_field::gf128_mul;
 use crate::protocols::aes::{setup_rcon_table};
 use crate::utils::types::{ByteArray, ByteElem, ByteOrBytesArray, ByteOrBytesElem, BytesArray, BytesElem, XorHelper};
-use crate::utils::helper_methods_cstrnts::{byte_combine};
+use crate::utils::{helper_methods_cstrnts::byte_combine, math};
 use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lambda, R, l_ke};
 
 
@@ -248,9 +247,9 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
                 ByteOrBytesArray::same_variant(&x_tilde, &y_tilde)
             });
             // all three parameters
-            let parameter_a = ByteOrBytesArray::get_at_index(&x_tilde, aes::bitand_mod((i+7) as u8, 8-1) as usize); // should be same for usize as -1
-            let parameter_b = ByteOrBytesArray::get_at_index(&x_tilde, aes::bitand_mod((i+5) as u8, 8-1) as usize); // should be same for usize as -3
-            let parameter_c = ByteOrBytesArray::get_at_index(&x_tilde, aes::bitand_mod((i+2) as u8, 8-1) as usize); // should be same for usize as -6
+            let parameter_a = ByteOrBytesArray::get_at_index(&x_tilde, math::bitand_mod((i+7) as u8, 8-1) as usize); // should be same for usize as -1
+            let parameter_b = ByteOrBytesArray::get_at_index(&x_tilde, math::bitand_mod((i+5) as u8, 8-1) as usize); // should be same for usize as -3
+            let parameter_c = ByteOrBytesArray::get_at_index(&x_tilde, math::bitand_mod((i+2) as u8, 8-1) as usize); // should be same for usize as -6
 
 
             hax_lib::assert!(ByteOrBytesElem::same_variant(&parameter_a, &parameter_b));

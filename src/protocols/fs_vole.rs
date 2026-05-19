@@ -1,10 +1,9 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 
-use crate::protocols::aes;
 use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_sds, Log2Number};
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
 use crate::utils::hash_functions::{h_1_for_352};
-use crate::utils::math::xor_arrays;
+use crate::utils::{math::xor_arrays, math};
 use crate::utils::preliminary_helper_methods::{flatten, num_rec_k0, num_rec_k1, xor_usize};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
 use crate::utils::vector_commit::{vec_commit_k0, vec_commit_k1, vec_reconstruct_k0, vec_reconstruct_k1};
@@ -266,7 +265,7 @@ pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
         let b = lo + idx;
         let byte_index = b >> 3;
         let bit_index = b % 8;
-        let val = aes::bitand_mod(chall[byte_index] >> bit_index, 1);
+        let val = math::bitand_mod(chall[byte_index] >> bit_index, 1);
         assert!(val <= 1);
         bits[idx] = val;
     }
@@ -299,7 +298,7 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
         let b = lo + idx;
         let byte_index = b >> 3;
         let bit_index = b % 8;
-        let val = aes::bitand_mod(chall[byte_index] >> bit_index, 1);
+        let val = math::bitand_mod(chall[byte_index] >> bit_index, 1);
         assert!(val <= 1);
         bits[idx] = val;
     }

@@ -1,5 +1,5 @@
 use hax_lib::*;
-use crate::utils::{galois_field};
+use crate::utils::{galois_field, math};
 use crate::utils::types::{Matrix, State, Word};
 use crate::utils::constants::{nk, nst, R};
 
@@ -180,23 +180,16 @@ pub fn gf2_affine_transform(w: u8) -> u8 {
 
         let bit =
             ((w >> i) & 1) ^
-                ((w >> bitand_mod(i + 4, 7)) & 1) ^
-                ((w >> bitand_mod(i + 5, 7)) & 1) ^
-                ((w >> bitand_mod(i + 6, 7)) & 1) ^
-                ((w >> bitand_mod(i + 7, 7)) & 1) ^
+                ((w >> math::bitand_mod(i + 4, 7)) & 1) ^
+                ((w >> math::bitand_mod(i + 5, 7)) & 1) ^
+                ((w >> math::bitand_mod(i + 6, 7)) & 1) ^
+                ((w >> math::bitand_mod(i + 7, 7)) & 1) ^
                 ((c >> i) & 1);
 
         result |= bit << i;
     };
 
     result
-}
-
-//TODO: generalize, move and utilize
-#[requires(n <= u8::MAX && modu <= u8::BITS as u8)]
-#[ensures(|result| result <= modu)]
-pub fn bitand_mod(n: u8, modu: u8) -> u8 {
-    n & modu
 }
 const RCON_TABLE : [u8;10] = [1, 2, 4, 8, 16, 32, 64, 128, 27, 54];
 

@@ -1,4 +1,4 @@
-use crate::protocols::aes;
+use crate::utils::math;
 
 #[hax_lib::requires(a <= u8::MAX
                     && b <= u8::MAX
@@ -105,11 +105,11 @@ pub fn gf128_pow(base: &[u8; 16], pow_of: i32) -> [u8; 16] {
 
 #[hax_lib::requires(i >> 3 < a.len())]
 fn get_bit(a: &[u8], i: usize) -> u8 {
-    (a[i >> 3] >> (aes::bitand_mod(i as u8, 7))) & 1    // where 7 = 8 - 1 (bitand instead of mod trick
+    (a[i >> 3] >> (math::bitand_mod(i as u8, 7))) & 1    // where 7 = 8 - 1 (bitand instead of mod trick
 }
 
 fn flip_bit(a: &mut [u8], i: usize) {
-    a[i >> 3] ^= 1 << (aes::bitand_mod(i as u8, 7));    // where 7 = 8 - 1 (bitand instead of mod trick
+    a[i >> 3] ^= 1 << (math::bitand_mod(i as u8, 7));    // where 7 = 8 - 1 (bitand instead of mod trick
 }
 
 pub fn gf64_add(a: &[u8;8], b: &[u8;8]) -> [u8;8] {

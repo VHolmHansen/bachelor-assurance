@@ -1,7 +1,6 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
 
-use crate::protocols::aes;
-use crate::utils::galois_field::gf128_mul;
+use crate::utils::{galois_field::gf128_mul, math};
 use crate::utils::math::xor_arrays;
 
 // TODO: K might be known, verify precondition
@@ -54,7 +53,7 @@ pub fn to_bits<const N: usize, const K: usize, const NK: usize>(
                 idx == field_elem * K + j &&
                 j >> 3 <= 16
             });
-            result[idx] = (x[field_elem][j >> 3] >> (aes::bitand_mod(j as u8, 7))) & 1;
+            result[idx] = (x[field_elem][j >> 3] >> (math::bitand_mod(j as u8, 7))) & 1;
             idx += 1;
         }
     }

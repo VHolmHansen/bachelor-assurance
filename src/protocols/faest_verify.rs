@@ -8,6 +8,7 @@ use crate::utils::constants::{tau, tau_0, k_0, k_1, lambda, ell_bit_size};
 use crate::utils::hash_functions::{bits_to_bytes_for_d, h_1_for_2304, h_1_for_sign, h_2_1, h_2_2, h_2_3};
 use crate::utils::helper_methods_for_sign::{chall3_to_bits, vole_hash, vole_to_row_major};
 use crate::utils::preliminary_helper_methods::flatten;
+use subtle::ConstantTimeEq;
 
 #[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
@@ -246,5 +247,11 @@ pub fn faest_verify(
 
     let chall_3_mark : [u8;16] = h_2_3(chall_2, *a_tilde, b_tilde);
 
-    *chall_3 == chall_3_mark
+    #[cfg(hax)]
+    let res = *chall_3 == chall_3_mark;
+
+    #[cfg(not(hax))]
+    let res = (*chall_3).ct_eq(&chall_3_mark).unwrap_u8() == 1;
+
+    res
 }

@@ -30,11 +30,6 @@ pub fn faest_aes_prove(
     let (a_tilde_0_exp, a_tilde_1_exp, k, v_k) : ([[u8;lambda_bytes];S_ke], [[u8;lambda_bytes];S_ke], [u8;key_schedule_bits],[[u8;lambda_bytes];key_schedule_bits]) = faest_aes_exp_cstrnts_wv(w_tilde_exp, v_tilde_exp, false);
 
 
-    let w_tilde_enc : [u8; l_enc] = w[l_ke..(l_ke+l_enc)].try_into().unwrap();
-    // forsøger at gøre den her til den specifikke størrelse, det er noget vi skla kigge på senere
-    let v_tilde_enc: [[u8;lambda_bytes]; l_enc] = v[l_ke..(l_ke+l_enc)]
-        .try_into()
-        .unwrap();
 
     let mut a_tilde_0_enc = [[0u8; lambda_bytes]; big_C - S_ke];
     let mut a_tilde_1_enc = [[0u8; lambda_bytes]; big_C - S_ke];
@@ -42,6 +37,8 @@ pub fn faest_aes_prove(
         let w_enc_start = l_ke + b * l_enc;
         let w_enc: [u8; l_enc] = w[w_enc_start..w_enc_start + l_enc].try_into().unwrap();
         let v_tilde_enc: [[u8; lambda_bytes]; l_enc] = v[w_enc_start..w_enc_start + l_enc].try_into().unwrap();
+        println!("beta block {}: in first 8 bits: {:?}", b, &pk[b].0[..8]);
+        println!("beta block {}: out first 8 bits: {:?}", b, &pk[b].1[..8]);
         let (a0, a1) = faest_aes_enc_cstrnts_prover(
             1, pk[b].0, pk[b].1,
             w_enc, v_tilde_enc, k, v_k, false
@@ -80,7 +77,14 @@ pub fn faest_aes_prove(
         v_star = xor_arrays(&v_star, &term);
     }
 
-    
+    println!("u_star: {:02x?}", &u_star);
+    println!("v_star: {:02x?}", &v_star);
+    println!("A_0 first element: {:02x?}", &a_0[0]);
+    println!("A_0 last element: {:02x?}", &a_0[big_C-1]);
+    println!("A_1 first element: {:02x?}", &a_1[0]);
+    println!("A_1 last element: {:02x?}", &a_1[big_C-1]);
+    println!("big_C: {}", big_C);
+
     let alpha_tilde : [u8;lambda_bytes] = zk_hash(&chall, &a_1, &u_star);
     let beta_tilde : [u8;lambda_bytes] = zk_hash(&chall, &a_0, &v_star);
     
@@ -91,8 +95,6 @@ pub fn faest_aes_prove(
 pub fn faest_aes_verify(d : [u8; ell], Q : [[u8; LAMBDA]; ell + LAMBDA], chall_2 : [u8; chall2_bytes], chall_3 : [u8; LAMBDA], a_tilde : [u8;lambda_bytes], pk : Pk) -> [u8;lambda_bytes]
 {
     let delta : [u8;lambda_bytes] = to_field::<LAMBDA, LAMBDA,1>(&chall_3)[0]; // k = lambda
-    let in_of_in_and_out : [u8;128] = pk[0].0;
-    let out_of_in_and_out : [u8;128] = pk[0].1;
 
     // linje 5
     // Det her skal forstås som en reconstruction af det Q (en matrix), som er blevet sendt rundt på et tidligere tidspunkt

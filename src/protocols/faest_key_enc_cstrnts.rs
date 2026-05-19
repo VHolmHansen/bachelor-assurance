@@ -32,7 +32,7 @@ pub fn faest_aes_enc_fwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
         panic!("called with wrong values")
     }
     let mut y : [<[[u8;lambda_bytes];4] as ret_value>::Elem;s_enc] = [<[[u8;lambda_bytes];4] as ret_value>::dummy_value;s_enc]; // 4 is dummy
-    for i in 0..16 {
+    for i in 0..16 { // first add round key storage
         let mut x_in : [<T as ret_value>::Elem;8] = [<T as ret_value>::dummy_value;8];
         for j in 0..8 {
             if mtag { // do nothing
@@ -51,7 +51,7 @@ pub fn faest_aes_enc_fwd<T : ret_value, TK : ret_value<Elem = T::Elem>>(
 
         y[i] = <[u8;lambda_bytes]>::xor_array(&parameter_1, &parameter_2);
     }
-    for j in 1..R{
+    for j in 1..R{ // rest of the subbytes storage
         for c in 0..4{
             let i_x = ((j-1) << 7) + (c << 5);
             let i_k = (j << 7) + (c << 5);

@@ -6,7 +6,7 @@ mod tests {
     use bachelor_assurance::utils::types::{sized_array_for_cop, sized_array_for_q_v};
     use bachelor_assurance::utils::vector_commit::{vec_open_k0, vec_open_k1};
 
-    // if challenge is 0, then Q should equal V
+    // if challenge is 0, then Q should equal V, this explicitely follows proposition 5
     #[test]
     fn test_fs_vole_chall_0(){
         let builder = std::thread::Builder::new().stack_size(64 * 1024 * 1024);

@@ -13,6 +13,8 @@ rand = "0.10.0"
 stacker = "0.1.24"
 rayon = "1.12.0"
 lib = "0.0.2"
+sha3 = "0.10.0"
+digest = "0.11.3"
 
 [target."cfg(hax)".dependencies]
 hax-lib = { git = "https://github.com/hacspec/hax", version = "0.3.6" }
@@ -24,6 +26,6 @@ lambda_192s = []
 lambda_192f = []
 lambda_256s = [] # when using this it is important that lambda = 256, tau = 22, and ell = 4000, in constants
 lambda_256f = []
-default = ["lambda_128s"]
+default = ["lambda_256s"]
 hax = []
 

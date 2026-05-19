@@ -3,9 +3,9 @@
 // ============================================
 // BASE PARAMETERS - only these change per variant
 // ============================================
-pub const LAMBDA: usize = 128;
-pub const tau    : usize = 11;
-pub const ell    : usize = 1600;
+pub const LAMBDA: usize = 256;
+pub const tau    : usize = 22;
+pub const ell    : usize = 4000;
 pub const iv_bytes: usize = 16;
 
 // ============================================
@@ -15,9 +15,9 @@ pub const nk    : usize = LAMBDA / 32;
 pub const nst   : usize = 4; // always 4 for AES, only changes for Rijndael-EM
 pub const R     : usize = nk + 6;
 pub const beta  : usize = (LAMBDA + 127) / 128;
-pub const S_ke  : usize = (56 - (LAMBDA as i128 / 8) + 28 * (LAMBDA as i128 / 256)) as usize;
+pub const S_ke  : usize = (56 - (LAMBDA as i128 / 8) + 28 * (LAMBDA as i128 / 256)) as usize; // 40
 pub const s_enc : usize = R << 4;
-pub const l_ke  : usize = LAMBDA + (S_ke << 3);
+pub const l_ke  : usize = LAMBDA + (S_ke << 3); // 448
 pub const l_enc : usize = (s_enc - 16) << 3;
 pub const big_C : usize = S_ke + beta * s_enc;
 

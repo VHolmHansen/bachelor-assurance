@@ -37,8 +37,8 @@ pub fn key_expansion(key: [u8; lambda_bytes]) -> [Word; (R + 1) * 4] {      // n
     for i in nk..((R + 1) * 4) {      // nst * (R+1) = (R+1) << 2
         let mut temp = result_key[i-1];
         if i.rem_euclid(nk) == 0 {
-            let mut rotated = sub_word(rot_word(temp));
-            rotated[0] ^= RCON_TABLE[i/nk-1];
+            let mut rotated = sub_word(rot_word(temp)); // affline transformation reversed en fwd_exp, the rotword part
+            rotated[0] ^= RCON_TABLE[i/nk-1]; // affline transformation reversed en bkwd_exp, specifically the xor
             temp = rotated;
         };
         if nk > 6 && i.rem_euclid(nk) == 4 {

@@ -7,7 +7,6 @@ use crate::protocols::aes;
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
 pub fn prg(k: [u8; lambda_bytes], iv: [u8; iv_bytes], output: &mut [u8]) {
     let num_blocks = (output.len() + 15) >> 4; // ceiling division
-
     let iv_int = u128::from_be_bytes(iv);
 
     let key_ex = aes::key_expansion(k);

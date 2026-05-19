@@ -7,6 +7,8 @@ use crate::utils::preliminary_helper_methods::flatten;
 use crate::utils::helper_methods_for_sign::bits_to_state;
 
 pub fn faest_aes_extend_witness(k: [u8; lambda_bytes], pk: Pk) -> [u8; ell] {
+
+
     let k_overline = key_expansion(k);
     let bytes_from_k_overline: [u8; lambda_bytes] = flatten::<nk, 4, {lambda_bytes}>(k_overline[0..nk].try_into().unwrap());
     let mut witness: [u8; ell] = [0; ell];

@@ -1,18 +1,72 @@
 #[cfg(all(test, feature = "lambda_256s"))]
 mod tests{
-    use bachelor_assurance::utils::types::Pk;
+    use bachelor_assurance::protocols::faest_sign::faest_sign;
+    use bachelor_assurance::utils::hash_functions::bits_to_bytes_for_d;
+    use bachelor_assurance::utils::types::{sized_array_for_cop, Pk};
 
     #[test]
     fn test_sig(){
         let builder = std::thread::Builder::new().stack_size(32 * 1024 * 1024);
         let handler = builder.spawn(|| {
+            let pk_bits = pk_to_bits(&pk);
+            // message from the reference test
+            let msg = b"This document describes and specifies the FAEST digital signature algorithm.";
 
+            // not_deterministic_test must be false so rho = [0x42; 32]
+            let sig = faest_sign(msg, &sk, &pk_bits);
+            let (c_bytes, u_tilde, d, a_tilde, pdecoms, chall_3, iv) = sig;
+
+            let mut serialized = Vec::new();
+            for c in &c_bytes {
+                serialized.extend_from_slice(c);
+            }
+            serialized.extend_from_slice(&u_tilde);
+            let d_bytes = bits_to_bytes_for_d(&d);
+            serialized.extend_from_slice(&d_bytes);
+            serialized.extend_from_slice(&a_tilde);
+            for pdecom in &pdecoms {
+                match &pdecom.0 {
+                    sized_array_for_cop::sized_array_1(s) => {
+                        for arr in s { serialized.extend_from_slice(arr); }
+                    },
+                    sized_array_for_cop::sized_array_2(s) => {
+                        for arr in s { serialized.extend_from_slice(arr); }
+                    }
+                }
+                serialized.extend_from_slice(&pdecom.1);
+            }
+            serialized.extend_from_slice(&chall_3);
+            serialized.extend_from_slice(&iv);
+
+            assert_eq!(serialized.len(), 22100, "signature length mismatch");
+            assert_eq!(serialized.as_slice(), &signature, "signature mismatch");
 
 
         }).unwrap();
         handler.join().unwrap();
     }
 
+    fn pk_to_bits(pk_bytes: &[u8; 64]) -> Pk {
+        let mut plain0  = [0u8; 128];
+        let mut cipher0 = [0u8; 128];
+        let mut plain1  = [0u8; 128];
+        let mut cipher1 = [0u8; 128];
+
+        for (i, &byte) in pk_bytes[0..16].iter().enumerate() {
+            for bit in 0..8 { plain0[i * 8 + bit] = (byte >> bit) & 1; }
+        }
+        for (i, &byte) in pk_bytes[32..48].iter().enumerate() {
+            for bit in 0..8 { cipher0[i * 8 + bit] = (byte >> bit) & 1; }
+        }
+        for (i, &byte) in pk_bytes[16..32].iter().enumerate() {
+            for bit in 0..8 { plain1[i * 8 + bit] = (byte >> bit) & 1; }
+        }
+        for (i, &byte) in pk_bytes[48..64].iter().enumerate() {
+            for bit in 0..8 { cipher1[i * 8 + bit] = (byte >> bit) & 1; }
+        }
+
+        [(plain0, cipher0), (plain1, cipher1)]
+    }
 
     const sk : [u8;32] = [0x7f, 0x45, 0x6d, 0xad, 0x48, 0x31, 0xaa,
         0x46, 0xf0, 0x18, 0xed, 0x4d, 0xd3, 0xa4, 0xd8, 0xcd, 0xe1, 0x30, 0x15, 0x5e,

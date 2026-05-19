@@ -144,7 +144,6 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;chall3_bytes], pdecoms: &[(sized_array_
             };
             let N_b = sds.len();
             let delta = num_rec_k0(&b);
-            let delta = num_rec_k0(&b);
             let mut sd_updated_verifier: [[u8;lambda_bytes];k_0_pow] = [[0;lambda_bytes];k_0_pow];
             for j in 1..N_b {
                 sd_updated_verifier[j] = sds[(j as u64 ^ delta) as usize]

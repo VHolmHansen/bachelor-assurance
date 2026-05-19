@@ -181,6 +181,9 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; lambda_bytes]; l_ke], 
             let product = gf_lambda_mul(&<[u8;lambda_bytes]>::xor_array(&k_hat[r],&v_k_hat[r]),&<[u8;lambda_bytes]>::xor_array(&w_hat[r],&v_w_hat[r]));
             let xor = <[u8;lambda_bytes]>::xor_array(&<[[u8;lambda_bytes];4] as ret_value>::value_of_one(),&A_0[(j << 2) + r]);
             A_1[4*j+r] = <[u8;lambda_bytes]>::xor_array(&product,&xor);
+            if j == 0 {
+                println!("Rust A_0[0]: {:02x?}", &A_0[0]);
+            }
         }
         if LAMBDA == 192 {i_wd += 192} else {i_wd += 128}
     }

@@ -109,17 +109,20 @@ pub fn h_1_for_sign(pk: Pk, msg: &[u8]) -> [u8; lambda_bytes_times_two] {
 
     // process all beta blocks
     for b in 0..beta {
-        let (in_block, out_block) = pk[b];
-        // convert bits to bytes for each block
+        let (in_block, _) = pk[b];
         let mut owf_input = [0u8; 16];
-        let mut owf_output = [0u8; 16];
         for i in 0..16 {
-            for bit in 0..8 {
-                owf_input[i] |= in_block[i * 8 + bit] << bit;
-                owf_output[i] |= out_block[i * 8 + bit] << bit;
-            }
+            for bit in 0..8 { owf_input[i] |= in_block[i * 8 + bit] << bit; }
         }
         input.extend_from_slice(&owf_input);
+    }
+    // then all outputs
+    for b in 0..beta {
+        let (_, out_block) = pk[b];
+        let mut owf_output = [0u8; 16];
+        for i in 0..16 {
+            for bit in 0..8 { owf_output[i] |= out_block[i * 8 + bit] << bit; }
+        }
         input.extend_from_slice(&owf_output);
     }
 
@@ -198,6 +201,7 @@ pub fn h_2_2(chall_1 : [u8;chall1_bytes], u_tilde : [u8; x1_bytes], h_v : [u8;la
     input[offset..offset + ell_bytes].copy_from_slice(&d);
     offset += ell_bytes;
     input[offset] = 0x02;
+
     if LAMBDA == 128 {DigestProxy::shake128::<chall2_bytes>(&input)} else {DigestProxy::shake256::<chall2_bytes>(&input)}
 }
 
@@ -212,6 +216,7 @@ pub fn h_2_3(chall_2 : [u8;chall2_bytes], a_tilde : [u8;lambda_bytes], b_tilde :
     input[offset..offset+lambda_bytes].copy_from_slice(&b_tilde);
     offset += lambda_bytes;
     input[offset] = 0x02;
+
 
     if LAMBDA == 128 {DigestProxy::shake128::<chall3_bytes>(&input)} else {DigestProxy::shake256::<chall3_bytes>(&input)}
 }

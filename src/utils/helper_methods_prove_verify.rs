@@ -103,19 +103,21 @@ pub fn gf_lambda_mul_64(a: &[u8; lambda_bytes], b: &[u8; 8]) -> [u8; lambda_byte
         }
 
         if idx < 63 {
-            // shift lhs left by 1 in GF(2^128) and reduce
-            // check top bit before shifting
             let top_bit = (lhs[lambda_bytes - 1] >> 7) & 1;
-            // shift left by 1
             let mut shifted = [0u8; lambda_bytes];
             for k in (1..lambda_bytes).rev() {
                 shifted[k] = (lhs[k] << 1) | (lhs[k-1] >> 7);
             }
             shifted[0] = lhs[0] << 1;
-            // reduce if top bit was set: XOR with modulus x^128 + x^7 + x^2 + x + 1
-            // modulus as bytes: bit 7, bit 2, bit 1, bit 0 set = 0x87
             if top_bit == 1 {
-                shifted[0] ^= 0x87;
+                if lambda_bytes == 16 {
+                    // GF(2^128): x^128 + x^7 + x^2 + x + 1 = 0x87
+                    shifted[0] ^= 0x87;
+                } else if lambda_bytes == 32 {
+                    // GF(2^256): x^256 + x^10 + x^5 + x^2 + 1 = 0x425
+                    shifted[0] ^= 0x25;
+                    shifted[1] ^= 0x04;
+                }
             }
             lhs = shifted;
         }

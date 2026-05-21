@@ -26,7 +26,6 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
                 b <= (usize::MAX >> 8) - bit &&
                 (b << 3) + bit <= 128
             });
-            //hax_lib::assume!(index < witness.len()); //TODO
             witness[(b << 3) + bit] = bits[bit];
         }
     }
@@ -118,7 +117,7 @@ pub fn faest_aes_extend_witness(k :[u8;16], pk : (State, State)) -> [u8; ell_bit
                     }
                 }
             }
-            mix_columns(&mut state_new);    //TODO some sub
+            mix_columns(&mut state_new);
             add_round_key(&mut state_new, k_overline[(j << 2)..(j << 2)+4].try_into().unwrap());  //4*j = j << 2
         }
     }

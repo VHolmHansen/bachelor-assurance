@@ -115,10 +115,18 @@ pub fn faest_key_gen() -> ([u8;16],([u8;lambda],[u8;lambda]))
 fn blocks_to_u8(x : [u8;16]) -> [u8;128]{
     let mut x_flat = [0; 128];
     let mut word_index = 0;
-    for byte in x {
-        let bits = byte_to_bits(byte);
-        for bit in bits {
-            x_flat[word_index] = bit;
+    for byte in 0..16 {     //size of input
+        hax_lib::loop_invariant!(|byte: usize| {
+            byte <= x.len()
+            && word_index == byte * 8
+        });
+        let bits = byte_to_bits(x[byte]);
+        for bit in 0..8 {       //size of bits
+            hax_lib::loop_invariant!(|bit: usize| {
+                bit <= 8
+                && word_index == byte * 8 + bit
+            });
+            x_flat[word_index] = bits[bit];
             word_index += 1;
         }
     }
@@ -128,11 +136,23 @@ fn blocks_to_u8(x : [u8;16]) -> [u8;128]{
 fn turn_states_to_bits(x : State) -> [u8; lambda] {
     let mut res = [0; lambda];
     let mut word_index = 0;
-    for word in x {
-        for byte in word {
-            let bits = byte_to_bits(byte);
-            for bit in bits {
-                res[word_index] = bit;
+    for word in 0..4 {      //size of state
+        hax_lib::loop_invariant!(|word: usize| {
+            word <= 4
+            && word_index == word * 4 * 8
+        });
+        for byte in 0..4 {      //size of arrays in state
+            hax_lib::loop_invariant!(|byte: usize| {
+                byte <= 4
+                && word_index == word * 4 * 8 + byte * 8
+            });
+            let bits = byte_to_bits(x[word][byte]);
+            for bit in 0..8 {       //size of bits
+                hax_lib::loop_invariant!(|bit: usize| {
+                    bit <= 8
+                    && word_index == word * 4 * 8 + byte * 8 + bit
+                });
+                res[word_index] = bits[bit];
                 word_index += 1;
             }
         }

@@ -4,7 +4,7 @@ use crate::utils::types::{sized_array_234, sized_array_for_q_v, sized_array_for_
 use crate::utils::types::{sized_array_for_coms, sized_array_for_cop};
 use crate::utils::hash_functions::{h_1_for_352};
 use crate::utils::{math::xor_arrays, math};
-use crate::utils::preliminary_helper_methods::{flatten, num_rec_k0, num_rec_k1, xor_usize};
+use crate::utils::preliminary_helper_methods::{flatten, num_rec_k0, num_rec_k1, xor_with_bound};
 use crate::utils::prg::{prg_convert_to_vole, prg_vole_commit_r};
 use crate::utils::vector_commit::{vec_commit_k0, vec_commit_k1, vec_reconstruct_k0, vec_reconstruct_k1};
 use crate::utils::constants::{ell, k_0, k_1, tau, tau_0, k_0_pow, k_1_pow, tau_minus_one};
@@ -272,6 +272,50 @@ pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
     hax_lib::assume!(hax_lib::forall(|j: usize| j >= bits.len() || bits[j] <= 1));
     bits
 }
+/*
+
+#[hax_lib::requires(i < tau_0)]
+#[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= result.len() || result[i] <= 1))]
+pub fn chall_dec_k0(chall: [u8; 16], i: usize) -> [u8; k_0] {
+    let lo = i * k_0;
+
+    let mut bits = [0u8; k_0];
+
+    hax_lib::assert_prop!(hax_lib::forall(|j: usize| j >= bits.len() || bits[j] <= 1));
+    for idx in 0..k_0 {
+        hax_lib::loop_invariant!(
+            hax_lib::Prop::from(idx <= k_0)
+            .and(hax_lib::Prop::from(lo + k_0 - 1 < 128))
+            .and(hax_lib::Prop::from((lo + k_0 - 1) >> 3 < 16))
+            .and(hax_lib::Prop::from(
+                hax_lib::forall(|j: usize| j >= idx || bits[j] <= 1)
+            ))
+            .and(hax_lib::Prop::from(
+                hax_lib::forall(|j: usize| j < idx || j >= k_0 || bits[j] == 0)
+            ))
+        );
+        hax_lib::assert_prop!(hax_lib::forall(|j: usize| j >= idx || bits[j] <= 1));
+        let b = lo + idx;
+        let byte_index = b >> 3;
+        let bit_index = b % 8;
+        let val = aes::bitand_mod(chall[byte_index] >> bit_index, 1);
+        assert!(val <= 1);
+        bits[idx] = val;
+        hax_lib::assert!(bits[idx] <= 1);
+        hax_lib::assert_prop!(hax_lib::forall(|j: usize| j >= idx || bits[j] <= 1));
+        hax_lib::assert_prop!(hax_lib::implies(hax_lib::Prop::from(bits[idx] <= 1)
+            .and(hax_lib::forall(|j: usize| j >= idx || bits[j] <= 1))
+            , hax_lib::forall(|j: usize| j > idx || bits[j] <= 1)));
+        hax_lib::assert_prop!(hax_lib::forall(|j: usize| j > idx || bits[j] <= 1));
+        hax_lib::assert_prop!(hax_lib::implies(hax_lib::Prop::from(idx == k_0 - 1)
+                             .and(hax_lib::forall(|j: usize| j > idx || bits[j] <= 1))
+                         , hax_lib::forall(|k: usize| k >= bits.len() || bits[k] <= 1)));
+    }
+    hax_lib::assert_prop!(hax_lib::forall(|j: usize| j >= bits.len() || bits[j] <= 1));
+    bits
+}
+
+ */
 
 #[hax_lib::opaque]//TODO maybe use update_bits_helper
 #[hax_lib::requires(i >= tau_0 && i < tau)]
@@ -306,7 +350,6 @@ pub fn chall_dec_k1(chall: [u8; 16], i: usize) -> [u8; k_1] {
     bits
 }
 
-#[hax_lib::opaque]//TODO
 #[hax_lib::fstar::options("--z3rlimit 150")]
 #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= result.1.len() || (i < tau_0 && result.1[i].len() == k_0) || (i >= tau_0 && result.1[i].len() == k_1)))]
 pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [u8; 32]); 11], iv : [u8;16]) -> ([u8;32], [sized_array_for_q_v;tau]){
@@ -337,7 +380,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
                 hax_lib::loop_invariant!(|j: usize| {
                     j <= N_b
                 });
-                sd_updated_verifier[j] = sds[xor_usize(j, delta as usize, Log2Number::wrap(4096))];
+                sd_updated_verifier[j] = sds[xor_with_bound(j, delta as usize, Log2Number::wrap(4096))];
             }
             let sds_for_later_use :  sized_array_for_sds = sized_array_for_sds::sized_array_1(sd_updated_verifier);
             let (_u_mark, q) = convert_to_VOLE::<k_0>(&sds_for_later_use, iv);
@@ -365,7 +408,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
                 hax_lib::loop_invariant!(|j: usize| {
                     j <= N_b
                 });
-                sd_updated_verifier[j] = sds[xor_usize(j, delta as usize, Log2Number::wrap(2048))];
+                sd_updated_verifier[j] = sds[xor_with_bound(j, delta as usize, Log2Number::wrap(2048))];
             }
             let sds_for_later_use :  sized_array_for_sds = sized_array_for_sds::sized_array_2(sd_updated_verifier);
             let (_u_mark, q) = convert_to_VOLE::<k_1>(&sds_for_later_use, iv);

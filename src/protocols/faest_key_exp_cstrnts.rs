@@ -17,12 +17,12 @@ use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lamb
 .and(hax_lib::Prop::from(!(mtag && mkey))))]
 #[hax_lib::ensures(|result| result.is_byte() == x.is_byte())]
 pub fn faest_aes_key_exp_fwd<const SIZE: usize>(_m : usize, x: ByteOrBytesArray<SIZE>, mtag : bool, mkey : bool, _Delta : [u8;16]) -> ByteOrBytesArray<ret_size_exp_fwd> {
-    /*
+
     if mtag && mkey{
         panic!("invalid tags")
     }
 
-     */
+
 
     let mut y: ByteOrBytesArray<ret_size_exp_fwd> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
     //let mut y : [ByteOrBytesElem;ret_size_exp_fwd] = [ByteOrBytesElem::dummy(&x[0]); ret_size_exp_fwd];

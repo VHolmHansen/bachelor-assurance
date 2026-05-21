@@ -5,7 +5,6 @@ use crate::utils::types::{sized_array_16, sized_option_array, Log2Number};
 #[hax_lib::requires(size_pow > 0 && d <= 12 && ((d == 0 && size_pow == 1) || (d > 0 && size_pow == 2 << (d-1))))]
 pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 16], d: usize) -> sized_array_16<size_pow>{
     let mut leaves: [[u8; 16]; size_pow] = [[0u8;16]; size_pow];
-    //hax_lib::assume!(size_pow == 2 << (d - 1)); //TODO
     leaves[0] = *r;
     if d >= 1 {
         for i in 1..(d + 1) {
@@ -192,8 +191,9 @@ fn cop_helper<const N: usize, const size_pow: usize>(c: &[u8; 16], leaves: &mut 
 
      */
     //TODO revisit these assumptions
-    hax_lib::assume!(d <= 12);
-    hax_lib::assume!(N > 0 && d <= 12 && ((d == 0 && N == 1) || (d > 0 && N == 2 << (d-1))));
+    hax_lib::assert_prop!(hax_lib::implies(N <= 4096, d <= 12));
+    hax_lib::assert!(d <= 12);
+    hax_lib::assert!(N > 0 && d <= 12 && ((d == 0 && N == 1) || (d > 0 && N == 2 << (d-1))));
     let leaves_to_add = get_leaves_node_from_root::<N>(c, iv, d);
     hax_lib::assert!(leaves_to_add.len() == N);
     if get_if_left(d as u64, b) {
@@ -228,28 +228,3 @@ fn cop_helper<const N: usize, const size_pow: usize>(c: &[u8; 16], leaves: &mut 
     hax_lib::assert!(current_end - N == current_start);
     (current_start, current_end)
 }
-
-/*
-//TODO: should be deleted?
-#[cfg(not(hax))]
-pub fn main(){
-    const pow_of_k_1 : usize = 2048;
-    let leaves1 = get_leaves_node_from_root::<pow_of_k_1>(&[1;16], [0;16], k_1);
-
-    let cop = get_cop::<k_1>([1;16], [0;16], 2047, k_1 as i128);
-
-    let leaves = get_leaves_from_cop_and_b::<k_1,pow_of_k_1>(&cop, [0;16], 2047);
-
-
-    for i in 0..2048{
-        match leaves[i] {
-            Some(leaf) => {
-                assert!(leaf == leaves1[i]);
-            }
-            None => {}
-        }
-    }
-
-}
-
- */

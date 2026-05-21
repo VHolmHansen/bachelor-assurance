@@ -95,7 +95,7 @@ pub fn xor_u8(x: &u8, y: &u8) -> u8 {
 
 #[hax_lib::requires(x < bound.value() && y < bound.value())]
 #[hax_lib::ensures(|result| result < bound.value())]
-pub fn xor_usize(x: usize, y: usize, bound: Log2Number) -> usize {
+pub fn xor_with_bound(x: usize, y: usize, bound: Log2Number) -> usize {
     hax_lib::assume!( x ^ y < bound.value()); //TODO lemma
     x ^ y
 }

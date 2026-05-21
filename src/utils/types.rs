@@ -329,10 +329,7 @@ impl AlphaMul for [u8; 16] {
         gf128_mul(&x, &alpha_val)
     }
 }
-#[derive(Clone, Copy)]
-pub struct BytesArray<const N: usize>(pub [[u8; 16]; N]);
-#[derive(Clone, Copy)]
-pub struct ByteArray<const N: usize>(pub [u8; N]);
+
 
 /*
 #[hax_lib::requires()]
@@ -342,6 +339,13 @@ pub fn bytes_array_wrap<const SIZE: usize>(arr: ByteOrBytesArray<SIZE>) -> Bytes
     res
 }
  */
+
+
+#[derive(Clone, Copy)]
+pub struct BytesArray<const N: usize>(pub [[u8; 16]; N]);
+#[derive(Clone, Copy)]
+pub struct ByteArray<const N: usize>(pub [u8; N]);
+
 #[derive(Clone, Copy)]
 pub enum ByteOrBytesArray<const N: usize> {
     Byte(ByteArray<N>),
@@ -488,15 +492,18 @@ impl<const N: usize> ByteOrBytesArray<N> {
     }
 }
 
+
+#[derive(Clone, Copy)]
+pub struct ByteElem(pub u8);
+#[derive(Clone, Copy)]
+pub struct BytesElem(pub [u8; 16]);
+
 #[derive(Clone, Copy)]
 pub enum ByteOrBytesElem {
     Byte(ByteElem),
     Bytes(BytesElem),
 }
-#[derive(Clone, Copy)]
-pub struct ByteElem(pub u8);
-#[derive(Clone, Copy)]
-pub struct BytesElem(pub [u8; 16]);
+
 #[hax_lib::attributes]
 impl ByteOrBytesElem {
 

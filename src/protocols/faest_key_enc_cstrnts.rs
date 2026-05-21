@@ -15,23 +15,21 @@ use crate::utils::constants::{l_enc, lambda, s_enc, R};
 // Delta, global vole key if mkey = 1 else none
 // in_out should be size 128, where each u8 in it corresponds to one bit
 // should never be called with mtag=1 and mkey= 1
-//#[hax_lib::fstar::options("--z3rlimit 500")]
+#[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(!(mtag && mkey) && x.len() > 0 && x_k.len() > 0 && ByteOrBytesArray::same_variant(&x, &x_k) && x.is_byte() == Delta.is_byte())] // need req for all types in x and x_k and delta to be the same
 pub fn faest_aes_enc_fwd(
     _m : usize,
     x: &ByteOrBytesArray<1152>,
-    x_k : &ByteOrBytesArray<1408>, //TODO: verify length, this is minimum
+    x_k : &ByteOrBytesArray<1408>,
     in_out : &[u8; 128],
     mtag : bool,
     mkey : bool,
     Delta : ByteOrBytesElem,
 ) -> [[u8;16]; s_enc]
 {
-    /*
     if mtag && mkey {
         panic!("called with wrong values")
     }
-    */
     let mut y : [[u8; 16]; s_enc] = [[0u8; 16];s_enc]; // 4 is dummy
     for i in 0..16 {
         hax_lib::loop_invariant!(|i: usize| {
@@ -94,10 +92,6 @@ pub fn faest_aes_enc_fwd(
                 (j << 7) + (c << 5) + 32 <= x_k.len() + (c << 5) &&
                 (j << 4) + (c << 2) + 3 <= y.len() + (c << 2)
             });
-            //TODO: use above invariant as general understanding of invariants according to some offset
-            //hax_lib::assert!(j <= usize::MAX / 128);
-            //hax_lib::assert!(c <= usize::MAX / 32);
-            //hax_lib::assert!(j << 7 <= usize::MAX - (c << 5));
             let i_x = ((j-1) << 7) + (c << 5);
             let i_k = (j << 7) + (c << 5);
             let i_y = (j << 4) + (c << 2);
@@ -308,12 +302,9 @@ pub fn faest_aes_enc_cstrnts_prover(
     mkey : bool,
 ) -> ([[u8;16];s_enc],[[u8;16];s_enc])
 {
-    /*
     if mkey {
         panic!("mkey should be false");
     }
-     */
-
     let s : [[u8;16];s_enc] = faest_aes_enc_fwd(1, &ByteOrBytesArray::from_byte_array(w), &ByteOrBytesArray::from_byte_array(k), &in_of_in_and_out, false, false, ByteOrBytesElem::Byte(ByteElem(0))); // w is 1152, k is 1408
     let v_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &ByteOrBytesArray::from_bytes_array(v), &ByteOrBytesArray::from_bytes_array(v_k), &in_of_in_and_out, true, false, ByteOrBytesElem::Bytes(BytesElem([0;16]))); // v is 1152, v_k is 1408
     let s_overline: [[u8;16];160] = faest_aes_enc_bkwd(1, &ByteOrBytesArray::from_byte_array(w), &ByteOrBytesArray::from_byte_array(k), &out_of_in_and_out, false, false, &ByteOrBytesElem::Byte(ByteElem(0))); // w is 1152, k is 1408
@@ -321,13 +312,11 @@ pub fn faest_aes_enc_cstrnts_prover(
     let mut A_0 : [[u8;16];160] = [[0;16];160];
     let mut A_1 : [[u8;16];160] = [[0;16];160];
 
-    let value_of_s_enc = s_enc; //TODO: somehow use consts in a hax-compatible way here, ideally
-
-    for j in 0..160 {
+    for j in 0..s_enc {
         hax_lib::loop_invariant!(|j: usize| {
-            j <= 160
+            j <= s_enc
         });
-        if j < 160 {
+        if j < s_enc {
             A_0[j] = gf128_mul(&v_s[j], &v_s_overline[j]);
 
             let s_v_s_add: [u8; 16] = xor_arrays(&s[j], &v_s[j]);
@@ -361,9 +350,6 @@ pub fn faest_aes_enc_cstrnts_verifier(
     if !mkey {
         panic!("mkey should not be false");
     }
-    //let bobe_q: [ByteOrBytesElem; l_enc] = ByteOrBytesElem::from_bytes_array(&q);
-    //let bobe_q_k: [ByteOrBytesElem; (R+1) << 7] = ByteOrBytesElem::from_bytes_array(&q_k);
-
     let q_s : [[u8;16];160] = faest_aes_enc_fwd(lambda, &ByteOrBytesArray::from_bytes_array(*q), &ByteOrBytesArray::from_bytes_array(*q_k), in_of_in_and_out, false, true, ByteOrBytesElem::Bytes(BytesElem(delta))); // q is 1152, q_k is 1408
     let q_s_overline: [[u8;16];160] = faest_aes_enc_bkwd(lambda, &ByteOrBytesArray::from_bytes_array(*q), &ByteOrBytesArray::from_bytes_array(*q_k), out_of_in_and_out, false, true, &ByteOrBytesElem::Bytes(BytesElem(delta))); // q is 1152, q_k is 1408
     let mut B : [[u8;16]; s_enc] = [[0;16];s_enc];

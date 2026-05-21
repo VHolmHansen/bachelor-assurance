@@ -26,6 +26,6 @@ lambda_192s = [] # lambda = 192, tau = 16, ell = 3264
 lambda_192f = [] # lambda = 192, tau=24, ell = 3264
 lambda_256s = [] # lambda = 256, tau = 22, ell = 4000
 lambda_256f = [] # lambda = 256, tau = 32, ell = 4000
-default = ["lambda_256f"]
+default = ["lambda_128s"]
 hax = []
 

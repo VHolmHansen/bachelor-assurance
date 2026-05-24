@@ -3,93 +3,119 @@ use crate::utils::prg::prg;
 use crate::utils::constants::{iv_bytes, k_1, lambda_bytes, lambda_bytes_times_two};
 use crate::utils::types::{sized_array_16, sized_option_array, Log2Number};
 
-//TODO: make i128 > u64
-#[hax_lib::requires(size_pow > 0)]
+// a function for generating size_pow random values, as ggm tree
 pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; lambda_bytes], iv: [u8; iv_bytes], k: usize) -> sized_array_16<size_pow>{
+    // size of random values
     let mut leaves = [[0u8;lambda_bytes]; size_pow];
+    // first value needed for generating values
     leaves[0] = *r;
+    // should hold that log_2(size_pow) = k
     for i in 1..(k + 1) {
+        // save current leaves, they are to be used to generate the next layer of random values
         let current_leaves = leaves;
+        // iterating over the size of the next layer so in the first iteration 2^1 >> 1 = 1, since each iteration generates two values
+        // so for the first value we get 2 new values
+        // for the two second values, we get four new values
         for j in 0..(2_i32.pow(i as u32) >> 1) {
-            // get parent value for prg
+            // get the value to be used to generate the next two values
             let ran_value = current_leaves[j as usize];
-
+            // a place to place the next two values
             let mut nodes = [0u8; lambda_bytes_times_two];
+            // randomly generating the new values
             prg(ran_value, iv, &mut nodes);
 
-            // get child values for left and right
+            // get values from each part of the randomly generated value
             let left_node_value : [u8;lambda_bytes]= nodes[..lambda_bytes].try_into().unwrap();
             let right_node_value : [u8;lambda_bytes] = nodes[lambda_bytes..].try_into().unwrap();
 
-            // insert child values
+            // store the two new values
             leaves[(j << 1) as usize].copy_from_slice(&left_node_value);
             leaves[((j << 1) + 1) as usize].copy_from_slice(&right_node_value);
         }
     }
-    // returns correct size
+    // returns all the values
     leaves
 }
 
-//TODO: make i128 > u64
+// should return all siblign nodes, from path of root to hidden value at index b
 pub fn get_cop<const size: usize>(r: [u8;lambda_bytes], iv: [u8;iv_bytes], b: u64) -> sized_array_16<size> {
+    // create array for inserting sibling node values
     let mut cop = [[0u8; lambda_bytes]; size];
+    // the current node represents, the node that should not be contained in cop
+    // but the node that is parent, to the next current node, and a node that should be contained in cop
     let mut current_node = r;
-
+    // a value i to index over
     let mut i : i128 = (size - 1) as i128;
-
+    // starting from the upper layer and moving down, that is why we start with i = k-1
     while i >= 0 {
+        // finding if the path to the hidden node, is to the left of the current node layer
+        // if b is 0, then the left node of the root node, is on the path to the hidden node
+        // if b is 0, then is_left is always true
         let is_left = get_if_left(i as u64, b as u64);
 
+        // generating the two child nodes of the current node
         let mut nodes = [0u8; lambda_bytes_times_two];
         prg(current_node, iv, &mut nodes);
 
-        // get child values for left and right
+        // get values from each child of the current node
         let left_node_value : [u8;lambda_bytes]= nodes[..lambda_bytes].try_into().unwrap();
         let right_node_value : [u8;lambda_bytes] = nodes[lambda_bytes..].try_into().unwrap();
 
-        // move right direction
+
         if is_left {
+            // if is_left == true, then the right node is saved, since it will be the sibling node
+            // of one of the nodes from the path of root to hidden node
             current_node = left_node_value;
             cop[(size-(i as usize)-1) as usize] = right_node_value;
         } else {
+            // if is_left == false, then the left node is saved, since it will be the sibling node
+            // of one of the nodes from the path of root to hidden node
             current_node = right_node_value;
             cop[(size-(i as usize)-1) as usize] = left_node_value;
         }
+        // moving a layer down
         i -= 1;
     }
+    // returning cop
     cop
 }
 
-// ensure level < tree size
-//TODO: make i128 > u64
+// a function for seeing if a leaf index is to the left (or right) to a certain level
+// i.e. if the index is 0, then it will always be to the left
 pub fn get_if_left(level : u64, index : u64) -> bool{
+    // we save index and level in mutable variables
     let mut index = index;
-    let mut i = level;
-    while i > 0 {
-        if index % 2 == 1 {
-            index = (index - 1) >> 1
-        } else {
-            index = (index) >> 1
-        }
-        i -= 1;
-    }
+    // the index structure is that each level has its own indexing
+    // so each level starts at zero, we therefore get the index of the child to the node at level
+    // where the index, is the node on the path from root to index node
+    index = index >> level;
 
-    if index % 2 == 1 {
+    if index % 2 == 1 { // if odd the node is on the right
         false
-    } else {
+    } else { // if even it is on the left
         true
     }
 }
-
+// this receives the cop, generated by cop, iv and a index
+// this function wants to generate all but one of the leaves
 pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop : &sized_array_16<size>, iv : [u8;iv_bytes], b: u64) -> sized_option_array<size_pow> {
+    // some initialising of values
+    // a place to store the leaves, it is initialized with None, since one of the leaves are the hidden value
     let mut leaves = [None; size_pow];
+    // updating such that from current start to current end, is the leaves missing
     let mut current_start = 0;
     let mut current_end = size_pow;
+    // how many leaves are being added in the current iteration, for the first iteration it is size_pow/2
     let mut match_value = Log2Number::wrap(size_pow >> 1);
-
+    // a inner helper function, supposed to generate leaves, based on the current node
     fn cop_helper<const N: usize, const size_pow: usize>(c: &[u8; lambda_bytes], leaves: &mut [Option<[u8; lambda_bytes]>; size_pow], iv: [u8; iv_bytes], b: u64, current_start: &mut usize, current_end: &mut usize) {
+        // N is the amount of leaves being generated, so d is the amount of levels, this tree shall have
         let d = N.ilog2() as usize;
+        // using priveous function to generate leaves
         let leaves_to_add = get_leaves_node_from_root::<N>(c, iv, d);
+        // using the left functionality, to update the tree
+        // this functionality used the currentstart and currentend, to check which indexes the N leaves shall be placed at
+        // it therefore also update current end or current start
         if get_if_left(d as u64, b){
             for i in (*current_start+N)..*current_end {
                 leaves[i] = Some(leaves_to_add[i-(*current_start+N)]);
@@ -102,7 +128,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
             *current_start += N;
         }
     }
-
+    // Matching we each of the different values that it can be, the highest value is 2048, since k_0 is at most 12
     for c in cop {
         match match_value {
             Log2Number::one => {cop_helper::<1, size_pow>(c, &mut leaves, iv, b, &mut current_start, &mut current_end);}
@@ -123,27 +149,3 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
     leaves
 }
 
-/*
-//TODO: should be deleted?
-#[cfg(not(hax))]
-pub fn main(){
-    const pow_of_k_1 : usize = 2048;
-    let leaves1 = get_leaves_node_from_root::<pow_of_k_1>(&[1;16], [0;16], k_1 as i128);
-
-    let cop = get_cop::<k_1>([1;16], [0;16], 2047, k_1 as i128);
-
-    let leaves = get_leaves_from_cop_and_b::<k_1,pow_of_k_1>(&cop, [0;16], 2047);
-
-
-    for i in 0..2048{
-        match leaves[i] {
-            Some(leaf) => {
-                assert!(leaf == leaves1[i]);
-            }
-            None => {}
-        }
-    }
-
-}
-
- */

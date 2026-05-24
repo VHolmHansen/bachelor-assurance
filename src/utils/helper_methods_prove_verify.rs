@@ -4,22 +4,53 @@ use crate::utils::constants::{lambda_bytes, lambda_bytes_times_three, lambda_byt
 use crate::utils::galois_field::{gf_lambda_mul};
 use crate::utils::math::xor_arrays;
 
-// x er her en liste af u8, men det skal være bits
-// k er størrelsen på det field F_{2^k} vi gerne vil have det til
-pub fn to_field<const x_len : usize, const K: usize, const N: usize>(x: &[u8;x_len]) -> [[u8; lambda_bytes]; N] { // N should always be equal to X_len / K
+// Implements the ToField conversion from Section 3.2 of the FAEST spec (Figure 3.1).
+// Maps a bit string x in {0,1}^{N*K} into a vector of N field elements in F_{2^K},
+// each embedded as an element of F_{2^lambda} (stored as lambda_bytes bytes).
+//
+// Concretely, for each i in 0..N, the i-th field element is:
+//   result[i] = sum_{j=0}^{K-1} x[i*K + j] * alpha_K^j
+// where alpha_K is the generator of F_{2^K} and the sum is over F_2 (i.e. the bits
+// of x select which powers of alpha_K appear in the field element).
+//
+// The encoding is little-endian: x[i*K + 0] is the coefficient of alpha_K^0
+// (the constant term), x[i*K + 1] is the coefficient of alpha_K^1, and so on.
+// This matches the little-endian ordering specified in Figure 3.1 of the spec:
+//   ToField(x, K) = sum_{i=0}^{K-1} x[i] * alpha_K^i
+//
+// The field element is stored as a lambda_bytes byte array, where bit j of the
+// element is stored at byte j/8, bit position j%8 (little-endian within each byte).
+// For K < lambda, only the first K bits are set and the remaining bits are zero,
+// reflecting that F_{2^K} is a subfield of F_{2^lambda}.
+//
+// The const generic parameters are:
+//   x_len: the total length of the input bit string (must equal N * K)
+//   K:     the size of each field F_{2^K} (the number of bits per field element)
+//   N:     the number of field elements to produce (must equal x_len / K)
+pub fn to_field<const x_len: usize, const K: usize, const N: usize>(
+    x: &[u8; x_len],
+) -> [[u8; lambda_bytes]; N] {
+    // N should always be equal to x_len / K
     assert!(x.len() % K == 0, "input length must be multiple of k");
 
     let mut result = [[0u8; lambda_bytes]; N];
     for i in 0..N {
+        // field_elem will hold the i-th field element as a lambda_bytes byte array.
+        // it starts as zero and we set bits one by one based on the input bits
         let mut field_elem = [0u8; lambda_bytes];
         for j in 0..K {
+            // x[i*K + j] is the j-th bit of the i-th group of K input bits,
+            // which is the coefficient of alpha_K^j in the i-th field element
             let bit = x[i * K + j];
             if bit == 1 {
-                // Set the j-th bit in the field element (little-endian)
+                // set the j-th bit of field_elem in little-endian order:
+                // bit j lives at byte j/8, at bit position j%8 within that byte
+                // (this matches the little-endian ordering of ToField in Figure 3.1)
                 let byte_idx = j / 8;
                 let bit_idx = j % 8;
                 field_elem[byte_idx] |= 1 << bit_idx;
             }
+            // if bit is 0, the coefficient of alpha_K^j is 0 so nothing is added
         }
         result[i] = field_elem;
     }
@@ -42,18 +73,22 @@ pub fn to_bits<const N: usize, const K: usize, const NK: usize>(
 }
 
 
-// funktion brugt af prove og verify
+// Implements the ZKHash function from Section 4.2.4 of the FAEST spec (Figure 4.4).
+// Takes a seed sd, a vector of F_{2^lambda} constraint values x0, and a masking value x1,
+// and compresses them into a single F_{2^lambda} element.
+// ZKHash is used in AESProve and AESVerify to compress the big_C QuickSilver constraint
+// values (A_0, A_1 or B) together with the masking value (u*, v*, or q*) into a single
+// field element, saving communication compared to sending all big_C values individually.
 pub fn zk_hash(sd: &[u8], x0: &[[u8; lambda_bytes]], x1: &[u8; lambda_bytes]) -> [u8; lambda_bytes] {
     // sd = r0 || r1 || s || t = 16 + 16 + 16 + 8 = 56 bytes
+    // Division of the sd
     let r0: [u8; lambda_bytes] = sd[0..lambda_bytes].try_into().unwrap();
     let r1: [u8; lambda_bytes] = sd[lambda_bytes..lambda_bytes_times_two].try_into().unwrap();
     let s:  [u8; lambda_bytes] = sd[lambda_bytes_times_two..lambda_bytes_times_three].try_into().unwrap();
     let t:  [u8;  8] = sd[lambda_bytes_times_three..lambda_bytes_times_three+8].try_into().unwrap();
-
-    // init
+    // initialize h0 and h1
     let mut h0 = [0u8; lambda_bytes];
     let mut h1 = [0u8; lambda_bytes];
-
     // update for each constraint value (incremental Horner)
     for v in x0 {
         // h0 = h0 * s + v  (in F_{2^128})
@@ -61,34 +96,13 @@ pub fn zk_hash(sd: &[u8], x0: &[[u8; lambda_bytes]], x1: &[u8; lambda_bytes]) ->
         // h1 = h1 * t + v  (bf128_mul_64: 128-bit * 64-bit)
         h1 = xor_arrays(&gf_lambda_mul_64(&h1, &t), v);
     }
-    
-
     // finalize: h = r0*h0 + r1*h1 + x1
     let term0 = gf_lambda_mul(&r0, &h0);
     let term1 = gf_lambda_mul(&r1, &h1);
+    // instead of using tobits, we just simply return as bytes
     xor_arrays(&xor_arrays(&term0, &term1), x1)
 }
 
-// Helper: compute base^exp in GF(2^128)
-fn field_pow(base: &[u8; lambda_bytes], exp: usize) -> [u8; lambda_bytes] {
-    if exp == 0 {
-        let mut one = [0u8; lambda_bytes];
-        one[0] = 1;
-        return one;
-    }
-    let mut result = [0u8; lambda_bytes];
-    result[0] = 1; // start at 1
-    let mut b = *base;
-    let mut e = exp;
-    while e > 0 {
-        if e & 1 == 1 {
-            result = gf_lambda_mul(&result, &b);
-        }
-        b = gf_lambda_mul(&b, &b);
-        e >>= 1;
-    }
-    result
-}
 pub fn gf_lambda_mul_64(a: &[u8; lambda_bytes], b: &[u8; 8]) -> [u8; lambda_bytes] {
     let mut lhs = *a;
     let mut result = [0u8; lambda_bytes];

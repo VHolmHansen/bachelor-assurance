@@ -7,15 +7,14 @@ use crate::utils::constants::lambda_bytes;
 use crate::utils::libcrux_proxy::DigestProxy;
 use crate::utils::types::Pk;
 
-// takes a k and the iv
-// and returns a sd of size 128 bits and a commitment of size 256 bits
-// this should be okay since we are supposed to use shake128 specified by the paper
+// a hash used to generate seeds and commitments, based on a value and the iv
 pub fn h_0(k: [u8; lambda_bytes], iv: [u8; iv_bytes]) -> ([u8; lambda_bytes], [u8; lambda_bytes_times_two]) {
     let mut input : [u8; lambda_bytes+iv_bytes+1] = [0u8; lambda_bytes+iv_bytes+1];
     input[..lambda_bytes].copy_from_slice(&k);
     input[lambda_bytes..lambda_bytes+iv_bytes].copy_from_slice(&iv);
+    // adding 0 to the end of input
     input[lambda_bytes+iv_bytes] = 0;
-
+    // a if statement to use the correct hash function based on lambda
     let output = if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_three>(&input)
     }
@@ -28,7 +27,7 @@ pub fn h_0(k: [u8; lambda_bytes], iv: [u8; iv_bytes]) -> ([u8; lambda_bytes], [u
     // return sd and commitment
     (sd, com)
 }
-
+// a hash used to generate a commitment, based on all commitments used in vector_commit.rs
 pub fn h_1_k0(coms: &[[u8; lambda_bytes_times_two]; k_0_pow]) -> [u8; lambda_bytes_times_two] {
     const SIZE: usize = k_0_pow * 2 * lambda_bytes + 1;
     let mut input = [0u8; SIZE];
@@ -47,7 +46,9 @@ pub fn h_1_k0(coms: &[[u8; lambda_bytes_times_two]; k_0_pow]) -> [u8; lambda_byt
             i += 1;
         }
     }
+    // adding at the end of the input
     input[SIZE - 1] = 0x01;
+    // a if statement to use the correct hash function based on lambda
     if LAMBDA == 128 {
         DigestProxy::shake128::<lambda_bytes_times_two>(&input)
     } else {

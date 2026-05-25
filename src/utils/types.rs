@@ -142,7 +142,7 @@ impl Log2Number {
         }
     }
 
-    #[hax_lib::requires(self.value() == 0 || self.value() == 1 || self.value() == 2 || self.value() == 4 || self.value() == 8
+    #[hax_lib::requires(self.value() == 1 || self.value() == 2 || self.value() == 4 || self.value() == 8
     || self.value() == 16 || self.value() == 32 || self.value() == 64 || self.value() == 128
     || self.value() == 256 || self.value() == 512 || self.value() == 1024 || self.value() == 2048 || self.value() == 4096)]
     #[hax_lib::ensures(|result| result == Log2Number::zero || result == Log2Number::one || result == Log2Number::two || result == Log2Number::four || result == Log2Number::eight
@@ -292,7 +292,6 @@ impl XorHelper for [u8; 16] {
         xor_arrays::<16>(x, y)
     }
 
-    #[hax_lib::opaque]
     #[hax_lib::requires(x.len() >= 8 && y.len() >= 8)]
     fn xor_two_array(x : &[[u8; 16]], y : &[[u8; 16]]) -> [[u8; 16]; 8] {
         let mut res: [[u8;16]; 8] = [[0u8; 16]; 8];
@@ -559,7 +558,7 @@ impl ByteOrBytesElem {
             _ => panic!("type mismatch for xor_array")
         }
     }
-    #[hax_lib::ensures(|result| matches!(x, y) && x.is_byte() == y.is_byte())]
+    #[hax_lib::ensures(|result| result == (x.is_byte() == y.is_byte()))]
     pub fn same_variant(x: &Self, y: &Self) -> bool {
         matches!(
             (x, y),

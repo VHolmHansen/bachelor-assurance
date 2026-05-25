@@ -10,8 +10,13 @@ use crate::utils::helper_methods_for_sign::{chall3_to_bits, vole_hash, vole_to_r
 use crate::utils::preliminary_helper_methods::flatten;
 use subtle::ConstantTimeEq;
 
-#[hax_lib::fstar::options("--z3rlimit 500")]
-#[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
+#[hax_lib::fstar::options("--z3rlimit 250")]
+#[hax_lib::requires(hax_lib::Prop::from(msg.len() < usize::MAX - 16 * 2 - 1)
+    .and(hax_lib::forall(|i: usize|
+        i >= sig.4.len()
+        || (i < tau_0 && matches!(sig.4[i].0, sized_array_for_cop::sized_array_1(_)))
+        || (i >= tau_0 && matches!(sig.4[i].0, sized_array_for_cop::sized_array_2(_)))))
+)]
 pub fn faest_verify(
     msg : &[u8],
     pk : &([u8;lambda], [u8;lambda]),
@@ -32,8 +37,10 @@ pub fn faest_verify(
     #[cfg(not(hax))]
     let _rec_start = std::time::Instant::now();
 
+
     let (h_com, q_mark) : ([u8; 32], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
     // println!("reconstruct took: {:?}", rec_start.elapsed());
+
     hax_lib::assert_prop!(hax_lib::forall(|k: usize|
                 k >= q_mark.len()
                 || (k < tau_0 && q_mark[k].len() == k_0)

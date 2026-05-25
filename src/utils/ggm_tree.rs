@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 use crate::utils::prg::prg;
 use crate::utils::types::{sized_array_16, sized_option_array, Log2Number};
-#[hax_lib::fstar::options("--z3rlimit 50")]
-#[hax_lib::requires(size_pow > 0 && d <= 12 && ((d == 0 && size_pow == 1) || (d > 0 && size_pow == 2 << (d-1))))]
+#[hax_lib::fstar::options("--z3rlimit 150")]
+#[hax_lib::requires(size_pow > 0 && d <= 12 && size_pow == 1 << d)]
 pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 16], d: usize) -> sized_array_16<size_pow>{
     let mut leaves: [[u8; 16]; size_pow] = [[0u8;16]; size_pow];
     leaves[0] = *r;
@@ -42,7 +42,6 @@ pub fn get_leaves_node_from_root<const size_pow: usize>(r: &[u8; 16], iv: [u8; 1
     // returns correct size
     leaves
 }
-
 #[hax_lib::requires(size > 0)]
 pub fn get_cop<const size: usize>(r: [u8;16], iv: [u8;16], b: u64) -> sized_array_16<size> {
     let mut cop = [[0u8; 16]; size];
@@ -70,7 +69,6 @@ pub fn get_cop<const size: usize>(r: [u8;16], iv: [u8;16], b: u64) -> sized_arra
     cop
 }
 
-
 // ensure level < tree size
 pub fn get_if_left(level : u64, index : u64) -> bool{
     let mut index = index;
@@ -92,7 +90,7 @@ pub fn get_if_left(level : u64, index : u64) -> bool{
     }
 }
 
-#[hax_lib::fstar::options("--z3rlimit 50")]
+#[hax_lib::fstar::options("--z3rlimit 150")]
 #[hax_lib::requires(size > 0 && size <= 12 && size_pow <= 4096 && 1 << size == size_pow &&
                     (size_pow >> 1 == 1 || size_pow >> 1 == 2 || size_pow >> 1 == 4 || size_pow >> 1 == 8
                         || size_pow >> 1 == 16 || size_pow >> 1 == 32 || size_pow >> 1 == 64 || size_pow >> 1 == 128
@@ -101,23 +99,27 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
     let mut leaves: sized_option_array<size_pow> = [None; size_pow];
     let mut current_start = 0;
     let mut current_end = size_pow;
-    let mut match_value = Log2Number::wrap(size_pow >> 1);
+    let mut match_value = Log2Number::wrap(size_pow);
 
 
     //TODO: needs a serious revisit
-    for c in 0..cop.len() {
+    for c in 0..size {
         hax_lib::loop_invariant!(|c: usize| {
-            c <= size &&
-            1 << size == size_pow &&
-            current_end <= size_pow &&
-            match_value.value() == size_pow >> (c + 1) &&
-            current_end >= match_value.value() << 1 &&
-            current_start == current_end - (match_value.value() << 1)
+            c <= size
+            //&& 1 << size == size_pow
+            && current_end <= size_pow
+            && match_value.value() > 0
+            && match_value.value() == size_pow >> ( c )
+            //&& current_end >= match_value.value() << 1
+            && current_end >= 1 << (size - c)
+            //&& (current_start == current_end - (match_value.value() << 1))
+            && current_start == current_end - (1 << (size - c))
 
             //current_end >= size_pow >> c &&
             //current_start == current_end - (size_pow >> c) &&
 
         });
+        match_value = match_value.log_reduce();
         hax_lib::assert!(c < cop.len());
         hax_lib::assert!(size_pow > 0);
         hax_lib::assert!(size_pow <= 4096);
@@ -125,8 +127,13 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
         //hax_lib::assert!(current_end >= size_pow >> ( c + 1));
         //hax_lib::assert!(match_value.value() <= usize::MAX / 2);
         //hax_lib::assert!(current_start <= current_end - 2 * match_value.value());
-        hax_lib::assert!(current_end >= 2 * match_value.value());
-        hax_lib::assert!(current_start >= current_end - 2 * match_value.value());
+        //hax_lib::assert!(current_end >= match_value.value() << 1);
+        hax_lib::assert!(current_start == current_end - (1 << (size - c)));
+
+        //hax_lib::assert!(current_start == current_end - (match_value.value() << 1 ));
+        if match_value.value() > 0 {hax_lib::assert!(
+            current_end >= 2 * match_value.value()
+            && current_start == current_end - 2 * match_value.value())}
         (current_start, current_end) = match match_value {
             Log2Number::twothousandsandfortyeight => {
                 cop_helper::<2048, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}
@@ -152,11 +159,19 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
                 cop_helper::<512, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}
             Log2Number::onethousandandtwentyfour => {
                 cop_helper::<1024, size_pow>(&cop[c], &mut leaves, iv, b, current_start, current_end)}
-            Log2Number::zero => {(current_start, current_end)}
+            Log2Number::zero => {println!("am I zero"); (current_start, current_end)}
             Log2Number::fourthousandsandninetysix => panic!("unreachable, should never be 4096 at this point")
 
         };
-        if match_value.value() > 0 { match_value = match_value.log_reduce() }
+        hax_lib::assert!(current_start == current_end - (match_value.value()));
+        //match_value = match_value.log_reduce();
+        hax_lib::assert!(current_end <= size_pow);
+        //hax_lib::assert!(match_value.value() == size_pow >> (c + 2));
+        //hax_lib::assert!(current_end >= match_value.value() << 1);
+        //println!("current start is{:?} for current end {:?} and match value {:?}", current_start, current_end, match_value);
+        //hax_lib::assert!(current_end >= (1 << (size - (c + 1))));
+        //hax_lib::assert!(current_start == current_end - (1 << (size - (c + 1))));
+
     }
     leaves
 }
@@ -170,30 +185,12 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
                     && end <= size_pow)]
 #[hax_lib::ensures(|(current_start, current_end)| current_end >= N && current_end - N == current_start && current_end <= size_pow)]
 fn cop_helper<const N: usize, const size_pow: usize>(c: &[u8; 16], leaves: &mut [Option<[u8; 16]>; size_pow], iv: [u8; 16], b: u64, start: usize, end: usize) -> (usize, usize){
-    let d = N.ilog2() as usize;
     let mut current_start = start;
     let mut current_end = end;
-    /*let mut d: usize = 0;
-    let mut found = false;
-    for i in 0..12_usize {
-        hax_lib::loop_invariant!(|i: usize| {
-            hax_lib::Prop::from(i <= 12)
-            .and(hax_lib::Prop::from(d <= 12))
-            .and(hax_lib::implies(i >= 11, found))
-                .and(hax_lib::implies(!found, d == 0)
-                    .and(hax_lib::implies(found, ((d == 0 && N == 1) || (d > 0 && N == 2 << (d-1))))))
-
-        });
-        if !found && N >> i == 1 {d = i; found = true; hax_lib::assert!(d <= 12);};
-    }
-    hax_lib::assert!(found);
-    //let d = if d == 0 { d } else { d - 1};
-
-     */
-    //TODO revisit these assumptions
-    hax_lib::assert_prop!(hax_lib::implies(N <= 4096, d <= 12));
-    hax_lib::assert!(d <= 12);
-    hax_lib::assert!(N > 0 && d <= 12 && ((d == 0 && N == 1) || (d > 0 && N == 2 << (d-1))));
+    let d = N.ilog2() as usize;
+    hax_lib::assume!(hax_lib::implies(N <= 4096, d <= 12));
+    hax_lib::assume!(d <= 12 && N == 1 << d);
+    hax_lib::assert!(N > 0 && d <= 12 && N == 1 << d);
     let leaves_to_add = get_leaves_node_from_root::<N>(c, iv, d);
     hax_lib::assert!(leaves_to_add.len() == N);
     if get_if_left(d as u64, b) {

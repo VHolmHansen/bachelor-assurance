@@ -47,9 +47,9 @@ pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], _d: i128) -> ([u8; 32], ([u8;16]
 // for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
 // there must be a smarter way to this that to get the bits
-#[hax_lib::opaque]
 #[hax_lib::requires(hax_lib::Prop::from(matches!(decom.2, sized_array_for_coms::sized_array_1(_)))
                     .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
+#[hax_lib::ensures(|result| matches!(result.0, sized_array_for_cop::sized_array_1(_)))]
 pub fn vec_open_k0(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 12]) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
@@ -64,12 +64,13 @@ pub fn vec_open_k0(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 12
     };
 
     let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);
+    hax_lib::assert!(matches!(pdecom.0, sized_array_for_cop::sized_array_1(_)));
     pdecom
 }
 
-#[hax_lib::opaque]
 #[hax_lib::requires(hax_lib::Prop::from(matches!(decom.2, sized_array_for_coms::sized_array_2(_)))
                     .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
+#[hax_lib::ensures(|result| matches!(result.0, sized_array_for_cop::sized_array_2(_)))]
 pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 11]) -> (sized_array_for_cop, [u8; 32]){
     let r = decom.0;
     let iv = decom.1;
@@ -83,6 +84,7 @@ pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 11
     };
 
     let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);
+    hax_lib::assert!(matches!(pdecom.0, sized_array_for_cop::sized_array_2(_)));
     pdecom
 }
 

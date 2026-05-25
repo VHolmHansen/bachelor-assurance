@@ -23,6 +23,7 @@ pub fn encrypt(state: State, key: &[Word]) -> State {
     res_state
 }
 
+#[hax_lib::fstar::options("--z3rlimit 50")]
 pub fn key_expansion(key: [u8; 16]) -> [Word; (R + 1) * 4] {      // nst * (R+1) = (R+1) << 2
     // let rcon = setup_rcon_table();
     let mut result_key: [Word; 44] = [[0u8, 0u8, 0u8, 0u8]; 44];

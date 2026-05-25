@@ -4,12 +4,13 @@ use crate::protocols::aes;
 
 // should have an extra parameter based on size, but we know size is 2 \lambda, which for us is 256
 // this is also a placeholder, there need to be some implementation that uses AES in counter mode
+#[hax_lib::fstar::options("--z3rlimit 150")]
 #[hax_lib::requires(N > 0 && N <= usize::MAX - 16)]
 pub fn prg<const N: usize>(k: [u8; 16], iv: [u8; 16], output: &mut [u8; N]) {
     let num_blocks = (output.len() + 15) >> 4; // ceiling division
 
     let iv_int = u128::from_be_bytes(iv);
-    hax_lib::assume!(iv_int <= u128::MAX - num_blocks as u128); //TODO: replace assume with assert if possible, might need helper func
+    hax_lib::assume!(iv_int <= u128::MAX - num_blocks as u128); // cosmically unlikely to not hold, would use refinement type on iv if it worked
 
     let key_ex = aes::key_expansion(k);
 

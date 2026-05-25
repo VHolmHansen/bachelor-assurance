@@ -27,7 +27,6 @@ pub fn gf28_multiply(mut a: u8, mut b: u8) -> u8 {
 
 
 
-#[hax_lib::opaque]
 #[hax_lib::requires(a <= u8::MAX
 && a >= 0)]
 #[hax_lib::ensures(|result| gf28_multiply(result, a) == 1)]

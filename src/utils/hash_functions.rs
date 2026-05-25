@@ -6,7 +6,6 @@ use crate::utils::libcrux_proxy::DigestProxy;
 // takes a k and the iv
 // and returns a sd of size 128 bits and a commitment of size 256 bits
 // this should be okay since we are supposed to use shake128 specified by the paper
-#[hax_lib::opaque]
 pub fn h_0(k: [u8; 16], iv: [u8; 16]) -> ([u8; 16], [u8; 32]) {
     let mut input : [u8; 33] = [0u8; 33];
     input[..16].copy_from_slice(&k);
@@ -21,7 +20,6 @@ pub fn h_0(k: [u8; 16], iv: [u8; 16]) -> ([u8; 16], [u8; 32]) {
     (sd, com)
 }
 
-#[hax_lib::opaque]
 pub fn h_1_k0(coms: &[[u8; 32]; 4096]) -> [u8; 32] {
     const SIZE: usize = (4096 << 5) + 1;
     let mut input = [0u8; SIZE];
@@ -44,7 +42,6 @@ pub fn h_1_k0(coms: &[[u8; 32]; 4096]) -> [u8; 32] {
     DigestProxy::shake128::<32>(&input)
 }
 
-#[hax_lib::opaque]
 pub fn h_1_k1(coms: &[[u8; 32]; 2048]) -> [u8; 32] {
     const SIZE: usize = (2048 << 5) + 1;
     let mut input = [0u8; SIZE];
@@ -67,7 +64,6 @@ pub fn h_1_k1(coms: &[[u8; 32]; 2048]) -> [u8; 32] {
     DigestProxy::shake128::<32>(&input)
 }
 
-#[hax_lib::opaque]
 pub fn h_1_for_352(coms: &[u8; 352]) -> [u8; 32] {
     let mut input = [0u8; 353];
     input[..352].copy_from_slice(coms);
@@ -75,7 +71,6 @@ pub fn h_1_for_352(coms: &[u8; 352]) -> [u8; 32] {
     DigestProxy::shake128::<32>(&input)
 }
 
-#[hax_lib::opaque]
 pub fn h_1_for_2304(coms: &[u8; 2304]) -> [u8; 32] {
     let mut input = [0u8; 2305];
     input[..2304].copy_from_slice(coms);
@@ -83,7 +78,6 @@ pub fn h_1_for_2304(coms: &[u8; 2304]) -> [u8; 32] {
     DigestProxy::shake128::<32>(&input)
 }
 
-#[hax_lib::opaque]
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
 pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;32]{
     // Concatenate plaintext, ciphertext, and message
@@ -107,7 +101,6 @@ pub fn h_1_for_sign(pk : ([u8;128],[u8;128]), msg : &[u8]) -> [u8;32]{
     DigestProxy::shake128::<32>(&input)
 }
 
-#[hax_lib::opaque]
 pub fn h_3(sk : [u8;16], my : [u8;32], rho : [u8;16]) -> ([u8;16], [u8;16]){
     const size_of_input : usize = 16+32+16+1;
 
@@ -128,7 +121,6 @@ pub fn h_3(sk : [u8;16], my : [u8;32], rho : [u8;16]) -> ([u8;16], [u8;16]){
     (r, iv)
 }
 
-#[hax_lib::opaque]
 pub fn h_2_1(my : [u8;32], hcom : [u8;32], cs : &[[u8;234]; 10], iv : [u8;16]) -> [u8;88]{
     const size_of_input : usize = 32+32+10*234+16+1;
     let mut input: [u8;size_of_input] = [0;size_of_input];
@@ -153,7 +145,6 @@ pub fn h_2_1(my : [u8;32], hcom : [u8;32], cs : &[[u8;234]; 10], iv : [u8;16]) -
     DigestProxy::shake128::<88>(&input)
 }
 
-#[hax_lib::opaque]
 pub fn h_2_2(chall_1 : [u8;88], u_tilde : [u8; 18], h_v : [u8;32], d : [u8; 200]) -> [u8;56]{ // need lambda in bytes
     const size_of_input : usize = 88+18+32+200+1;
 
@@ -172,7 +163,6 @@ pub fn h_2_2(chall_1 : [u8;88], u_tilde : [u8; 18], h_v : [u8;32], d : [u8; 200]
     DigestProxy::shake128::<56>(&input)
 }
 
-#[hax_lib::opaque]
 pub fn h_2_3(chall_2 : [u8;56], a_tilde : [u8;16], b_tilde : [u8;16]) -> [u8;16]{
     const size_of_input : usize = 56+16+16+1;
     let mut input: [u8;size_of_input] = [0;size_of_input];
@@ -188,7 +178,6 @@ pub fn h_2_3(chall_2 : [u8;56], a_tilde : [u8;16], b_tilde : [u8;16]) -> [u8;16]
     DigestProxy::shake128::<16>(&input)
 }
 
-#[hax_lib::opaque]
 pub fn bits_to_bytes_for_d(bits: &[u8; 1600]) -> [u8; 200] {
     let mut bytes = [0u8; 200];
     for i in 0..200 {

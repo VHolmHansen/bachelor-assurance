@@ -11,6 +11,10 @@ use crate::utils::libcrux_proxy::RandGenProxy;
 
 #[hax_lib::fstar::options("--z3rlimit 1000")]
 #[hax_lib::requires(msg.len() < usize::MAX - 16 * 2 - 1)]
+#[hax_lib::ensures(|result| hax_lib::forall(|i: usize|
+i >= result.4.len()
+|| (i < tau_0 && matches!(result.4[i].0, sized_array_for_cop::sized_array_1(_)))
+|| (i >= tau_0 && matches!(result.4[i].0, sized_array_for_cop::sized_array_2(_)))))]
 pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) -> ([[u8; 234]; tau_minus_one], [u8; 18], [u8; 1600], [u8; 16], [(sized_array_for_cop, [u8; 32]); 11], [u8; 16], [u8; 16]) {
     let mut rng = RandGenProxy::get_rand_gen_sha256();
 
@@ -19,9 +23,8 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let mut rho: [u8; 16] = [0x42; 16];
     if not_deterministic_test {rng.fill_bytes(&mut rho);}
 
-    let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho); // mention to bas, it is hard to check to their test vectors, because differences in random algorithm
+    let (r, iv) : ([u8;16], [u8;16])= h_3(*sk, my, rho);
 
-    //#[hax_lib::opaque]
     let (h_com, decoms, c_bytes, u_bytes, v_bytes) :
         ([u8; 32], [([u8;16], [u8;16], sized_array_for_coms); tau], [[u8;234]; tau_minus_one], [u8; 234], [sized_array_for_q_v;tau])
         = FAEST_VOLE_commit(r, iv);
@@ -144,6 +147,13 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     // pdecoms
     let mut pdecoms : [(sized_array_for_cop, [u8; 32]);tau] = [(sized_array_for_cop::sized_array_1([[0u8;16];k_0]),[0u8;32]);tau];
     for i in 0..tau {
+        hax_lib::loop_invariant!(|i: usize| {
+            hax_lib::Prop::from(i <= tau)
+            .and(hax_lib::forall(|j: usize|
+                j >= i
+                || (j < tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_1(_)))
+                || (j >= tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_2(_)))))
+            });
         let pdecom = if i < tau_0 {
             let s_i : [u8;12] = chall_dec_k0(chall_3, i);
             hax_lib::assert_prop!(hax_lib::Prop::from(matches!(decoms[i].2, sized_array_for_coms::sized_array_1(_)))
@@ -151,14 +161,24 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
             vec_open_k0(&decoms[i], &s_i)
         } else {
             let s_i : [u8;11] = chall_dec_k1(chall_3, i);
-            hax_lib::assert_prop!(hax_lib::Prop::from(matches!(decoms[i].2, sized_array_for_coms::sized_array_2(_)))
+            hax_lib::assert_prop!(hax_lib::Prop::from(matches!(
+                    decoms[i].2, sized_array_for_coms::sized_array_2(_)))
                     .and(hax_lib::forall(|j: usize| j >= s_i.len() || s_i[j] <= 1)));
             vec_open_k1(&decoms[i], &s_i)
         };
-
         pdecoms[i] = pdecom;
+        hax_lib::assert!((i < tau_0 && matches!(pdecoms[i].0, sized_array_for_cop::sized_array_1(_)))
+        || (i >= tau_0 && matches!(pdecoms[i].0, sized_array_for_cop::sized_array_2(_))));
+        hax_lib::assert_prop!(hax_lib::forall(|j: usize|
+                j > i
+                || (j < tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_1(_)))
+                || (j >= tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_2(_)))))
     }
     // println!("open took: {:?}", open_start.elapsed());
+    hax_lib::assert_prop!(hax_lib::forall(|j: usize|
+                j >= pdecoms.len()
+                || (j < tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_1(_)))
+                || (j >= tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_2(_)))));
     let signature = (c_bytes, u_tilde, d, a_tilde, pdecoms, chall_3, iv);
     signature
 

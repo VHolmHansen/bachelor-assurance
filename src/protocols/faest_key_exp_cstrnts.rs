@@ -141,7 +141,8 @@ pub fn faest_aes_key_exp_fwd<const SIZE: usize>(_m : usize, x: ByteOrBytesArray<
 // x_k is 1408
 #[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(matches!(x, x_k) && !(mtag && mkey) && N >= S_ke << 3 && M >= 1312
-//&& ByteOrBytesElem::same_variant(Delta, &x[0])
+&& ByteOrBytesArray::same_variant(&x, &x_k)
+&& ByteOrBytesElem::same_variant(&Delta, &ByteOrBytesArray::get_at_index(&x, 0))
 )]
 #[hax_lib::ensures(|result| result.is_byte() == x.is_byte())]
 pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
@@ -170,7 +171,9 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
 
     // return value
     let mut y : ByteOrBytesArray<ret_size_exp_bwd> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
-
+    hax_lib::assert!(ByteOrBytesArray::same_variant(&y, &x));
+    hax_lib::assert!(ByteOrBytesArray::same_variant(&x_k, &x));
+    hax_lib::assert!(Delta.is_byte() == x.is_byte());
     for j in 0..S_ke{
         hax_lib::loop_invariant!(|j: usize| {
             j <= S_ke &&
@@ -189,10 +192,15 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
         // first value in minues operation
         let parameter_a: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x, j << 3, (j << 3) + 8);
         let parameter_b: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x_k, i_wd + (c << 3), i_wd + (c << 3) + 8);
+        hax_lib::assert!(ByteOrBytesArray::same_variant(&x, &x_k));
+        hax_lib::assert_prop!(hax_lib::implies(ByteOrBytesArray::same_variant(&x, &x_k), ByteOrBytesArray::same_variant(&parameter_a, &parameter_b)));
+        hax_lib::assert!(ByteOrBytesArray::same_variant(&parameter_a, &parameter_b));
 
         //let mut x_tilde : [ByteOrBytesElem; 8] = array::from_fn(|i: usize| {assert!(i < 8); ByteOrBytesElem::xor_array(&parameter_a[i], &parameter_b[i])});
         let mut x_tilde : ByteOrBytesArray<8> = ByteOrBytesArray::dummy(&ByteOrBytesArray::get_at_index(&x, 0));
         hax_lib::assert!(ByteOrBytesArray::same_variant(&x_tilde, &x));
+        hax_lib::assert!(ByteOrBytesArray::same_variant(&x_tilde, &parameter_a));
+        hax_lib::assert!(ByteOrBytesArray::same_variant(&x_tilde, &parameter_b));
 
         for i in 0..8 {
             hax_lib::loop_invariant!(|i: usize| {
@@ -262,12 +270,10 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
         }
         if !mtag {
             let delta_or_1 = if mkey {&Delta} else {&ByteOrBytesElem::ones(&ByteOrBytesArray::get_at_index(&x, 0))};
-            hax_lib::assert_prop!(hax_lib::implies(delta_or_1.is_byte() == x.is_byte() && x.is_byte() == y_tilde.is_byte(), delta_or_1.is_byte() == y_tilde.is_byte()));
-            hax_lib::assert_prop!(hax_lib::implies(delta_or_1.is_byte() == y_tilde.is_byte(), ByteOrBytesElem::same_variant(&delta_or_1, &ByteOrBytesArray::get_at_index(&y_tilde, 0))));
-            //hax_lib::assert!(ByteOrBytesElem::same_variant(&ByteOrBytesArray::get_at_index(&y_tilde, 0), delta_or_1));
+            hax_lib::assert!(ByteOrBytesElem::same_variant(&ByteOrBytesArray::get_at_index(&y_tilde, 0), delta_or_1));
             let val0 = ByteOrBytesElem::xor_array(&ByteOrBytesArray::get_at_index(&y_tilde, 0), delta_or_1);
             y_tilde = ByteOrBytesArray::set_at_index(y_tilde, 0, val0);
-            //hax_lib::assume!(ByteOrBytesElem::same_variant(&y_tilde[2], delta_or_1));
+            hax_lib::assert!(ByteOrBytesElem::same_variant(&ByteOrBytesArray::get_at_index(&y_tilde, 2), delta_or_1));
             let val2 = ByteOrBytesElem::xor_array(&ByteOrBytesArray::get_at_index(&y_tilde, 2), delta_or_1);
             y_tilde = ByteOrBytesArray::set_at_index(y_tilde, 2, val2);
         }

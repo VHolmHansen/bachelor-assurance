@@ -20,7 +20,6 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
     hax_lib::assert!(sds.len() == 2048 || sds.len() == 4096);
     // the r structure:
     let mut r: Vec<Vec<[u8; ell]>> = vec![vec![[0u8; ell]; sds.len()]; d + 1];    // keeping as vec, annoying rewrite, plus sugar for report
-    //hax_lib::assert_prop!(hax_lib::forall(|i: usize| i >= r.len() || r[i].len() == sds.len()));
     // if we are verifier
     if sds[0] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {
         r[0][0] = [0u8;ell];
@@ -45,7 +44,6 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
         hax_lib::assert_prop!(hax_lib::implies(hax_lib::forall(|j: usize| {j >= r.len() || r[j].len() == sds.len()}).and(i < sds.len()), i < r[0].len()));
         hax_lib::assert!(i < r[0].len());
         r[0][i] = prg_convert_to_vole(sds[i], iv);
-        //hax_lib::assert!(r[0][i].is_some());
         hax_lib::assert!(r[0].len() == sds.len());
         hax_lib::assert!(r.len() == d + 1);
 
@@ -58,7 +56,6 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
             hax_lib::Prop::from(j <= d)
             .and(hax_lib::Prop::from(r.len() == d + 1))
             .and(hax_lib::forall(|k: usize| {k >= r.len() || r[k].len() == sds.len()}))
-            //.and(hax_lib::forall(|l: usize| {l >= j || r[l][0].is_some()}))
         });
         let i_range : usize = sds.len() >> (j + 1); // prev: sds.len() / 2_i32.pow(j + 1)
         hax_lib::assert!(i_range < sds.len());
@@ -77,7 +74,6 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
 
                 let new_r: [u8; ell] = xor_arrays(&r1, &r2);
                 r[j+1][i] = new_r;
-                //hax_lib::assert!(r[j+1][i].is_some());
             }
             hax_lib::assert!(r.len() == d + 1);
             hax_lib::assert_prop!(hax_lib::forall(|k: usize| {k >= r.len() || r[k].len() == sds.len()}));
@@ -86,16 +82,12 @@ pub fn convert_to_VOLE<const d : usize>(sds: &sized_array_for_sds, iv: [u8; 16])
         }
         hax_lib::assert_prop!(hax_lib::forall(|k: usize| {k >= r.len() || r[k].len() == sds.len()}));
         hax_lib::assert!(r.len() == d + 1);
-        //hax_lib::assert_prop!(hax_lib::forall(|i: usize| {i > j || r[i][0].is_some()}));
-        //hax_lib::assert_prop!(hax_lib::implies(j == d - 1, hax_lib::forall(|i: usize| {i >= r.len() || r[i][0].is_some()})))
+        
     }
-    //hax_lib::assert_prop!(hax_lib::forall(|i: usize| {i >= r.len() || r[i][0].is_some()}));
     hax_lib::assert!(r.len() == d + 1);
     hax_lib::assert_prop!(hax_lib::implies(r.len() == d + 1, hax_lib::forall(|i: usize| {i >= r.len() || r[i].len() == sds.len()})));
     hax_lib::assert!(r[d].len() == sds.len());
     let u = r[d][0];
-    //hax_lib::assert!(u.is_some());
-    //(u.expect("Should be some"), v)
     (u, v)
 }
 
@@ -166,9 +158,7 @@ pub fn FAEST_VOLE_commit(r: [u8; 16], iv: [u8; 16]) -> ([u8; 32], [([u8;16], [u8
         hax_lib::assert_prop!(hax_lib::forall(|i: usize| i >= all_decoms.len() || (matches!(all_decoms[i].2, sized_array_for_coms::sized_array_1(_)))));
     }
     hax_lib::assert_prop!(hax_lib::forall(|i: usize| i >= all_decoms.len() || (matches!(all_decoms[i].2, sized_array_for_coms::sized_array_1(_)))));
-
-    //hax_lib::assert_prop!(hax_lib::forall(|j: usize| hax_lib::Prop::from(j >= all_decoms.len())
-    //                .or((hax_lib::Prop::from(j < tau_0).and(hax_lib::implies(j < tau_0, matches!(all_decoms[j].2, sized_array_for_coms::sized_array_1(_))))))));
+    
 
     for i in tau_0..tau {
         hax_lib::loop_invariant!(|i: usize| {
@@ -334,8 +324,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
         });
         #[cfg(not(hax))]
         let _loop_start = std::time::Instant::now();
-        //hax_lib::Prop::from(matches!(pdecom.0, sized_array_for_cop::sized_array_1(_)))
-        //                     .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
+        
         if i < tau_0 {
             let b = chall_dec_k0(chall, i);
             hax_lib::assert!(matches!(pdecoms[i].0, sized_array_for_cop::sized_array_1(_)));
@@ -406,8 +395,7 @@ pub fn FAEST_VOLE_reconstruct(chall: [u8;16], pdecoms: &[(sized_array_for_cop, [
             |j: usize| j > i
             || (j < tau_0 && big_q[j].len() == k_0)
             || (j >= tau_0 && big_q[j].len() == k_1)));
-
-        // println!("end of loop_reconstruct took: {:?}", loop_start.elapsed());
+        
     }
     hax_lib::assert_prop!(hax_lib::forall(|i: usize|
         hax_lib::Prop::from(i >= big_q.len())

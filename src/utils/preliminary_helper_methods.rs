@@ -2,7 +2,7 @@ use crate::utils::math::xor_arrays;
 use crate::utils::constants::{k_0, k_1};
 use crate::utils::types::Log2Number;
 
-//TODO
+
 #[hax_lib::fstar::options("--z3rlimit 50")]
 #[hax_lib::requires(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1))]
 #[hax_lib::ensures(|result| result < 4096)]
@@ -14,7 +14,7 @@ pub fn num_rec_k0(b: &[u8; k_0]) -> u64 {
             j_star < 1 << i &&
             j_star < 1 << k_0
         });
-        let i_shift = 1u64 << i;    //TODO redundant?
+        let i_shift = 1u64 << i;    
         hax_lib::assert!(i_shift <= 2048 >> (k_0 - i - 1));
 
         hax_lib::assert!(i_shift > 0 && i_shift <= (1u64 << k_0));
@@ -34,7 +34,7 @@ pub fn num_rec_k0(b: &[u8; k_0]) -> u64 {
     j_star
 }
 
-//TODO
+
 #[hax_lib::fstar::options("--z3rlimit 50")]
 #[hax_lib::requires(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1))]
 #[hax_lib::ensures(|result| result < 2048)]
@@ -46,7 +46,7 @@ pub fn num_rec_k1(b: &[u8; k_1]) -> u64 {
             j_star < 1 << i &&
             j_star < 1 << k_0
         });
-        let i_shift = 1u64 << i;    //TODO redundant?
+        let i_shift = 1u64 << i;    
         hax_lib::assert!(i_shift <= 1024 >> (k_1 - i - 1));
 
         hax_lib::assert!(i_shift > 0 && i_shift <= (1u64 << k_1));
@@ -96,7 +96,7 @@ pub fn xor_u8(x: &u8, y: &u8) -> u8 {
 #[hax_lib::requires(x < bound.value() && y < bound.value())]
 #[hax_lib::ensures(|result| result < bound.value())]
 pub fn xor_with_bound(x: usize, y: usize, bound: Log2Number) -> usize {
-    hax_lib::assume!( x ^ y < bound.value()); //TODO lemma
+    hax_lib::assume!( x ^ y < bound.value()); 
     x ^ y
 }
 

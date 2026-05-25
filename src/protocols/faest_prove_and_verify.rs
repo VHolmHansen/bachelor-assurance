@@ -33,7 +33,7 @@ pub fn faest_aes_prove(
     let (a_tilde_0_exp, a_tilde_1_exp, k, v_k) : ([[u8;16];S_ke], [[u8;16];S_ke], [u8;1408],[[u8;16];1408]) = faest_aes_exp_cstrnts_wv(w_tilde_exp, v_tilde_exp, false);
 
     let w_tilde_enc : [u8; 1152] = w[l_ke..(l_ke+l_enc)].try_into().unwrap();
-    // forsøger at gøre den her til den specifikke størrelse, det er noget vi skla kigge på senere
+    
     let v_tilde_enc: [[u8;16]; l_enc] = v[l_ke..(l_ke+l_enc)]
         .try_into()
         .unwrap();

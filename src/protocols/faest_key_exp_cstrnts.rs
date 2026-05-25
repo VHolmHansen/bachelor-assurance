@@ -7,7 +7,6 @@ use crate::utils::{helper_methods_cstrnts::byte_combine, math};
 use crate::utils::constants::{ret_size_exp_bwd, ret_size_exp_fwd, S_ke, nk, lambda, R, l_ke};
 
 
-// pk, is a tuple with a in message and out that is 128 * (\lambda / 128)
 
 // m = 1 for mtag=0 and mkey=0
 // m = lambda for mtag=1 and mkey=0
@@ -316,13 +315,6 @@ pub fn faest_aes_key_exp_bkwd<const N: usize, const M: usize>(
 #[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(mkey == false)]
 pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : bool) -> ([[u8;16]; S_ke], [[u8;16]; S_ke], [u8; 1408], [[u8;16]; 1408] ) {
-    /*
-    if mkey {
-        panic!("invalid tags")
-    }
-     */
-    //let bobe_w: [ByteOrBytesElem; l_ke] = ByteOrBytesElem::from_byte_array(&w);
-    //let bobe_v: [ByteOrBytesElem; l_ke] = ByteOrBytesElem::from_bytes_array(&v);
     let boba_w: ByteArray<l_ke> = ByteArray(w);
     let boba_v: BytesArray<l_ke> = BytesArray(v);
 
@@ -353,8 +345,7 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
         let mut v_w_hat : [[u8;16];4] = [[0;16];4];
         hax_lib::assert!(i_wd == ((nk - 1) << 5) + j * lambda);
         hax_lib::assert!((j << 5) + (3 << 3) + 8 <= ret_size_exp_bwd);
-
-        //TODO this loop fails, probably the i_wd calc that's wrong
+        
         for r in 0..4 {
             hax_lib::loop_invariant!(|r: usize| {
                 r <= 4 &&
@@ -419,11 +410,6 @@ pub fn faest_aes_exp_cstrnts_wv(w : [u8; l_ke], v : [[u8; 16]; l_ke], mkey : boo
 #[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(mkey == true)]
 pub fn faest_aes_exp_cstrnts_qDelta(Delta : [u8;16], q : [[u8;16]; l_ke], mkey : bool) -> ([[u8;16];S_ke], [[u8;16];1408]){
-    /*
-    if !mkey {
-        panic!("invalid tags")
-    }
-     */
 
     let q_k = faest_aes_key_exp_fwd::<l_ke>(128, ByteOrBytesArray::Bytes(BytesArray(q)), false, true, Delta);
     let q_slice : &ByteOrBytesArray<320> = &ByteOrBytesArray::Bytes(BytesArray(q[lambda..].try_into().unwrap()));

@@ -90,7 +90,6 @@ pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 11
 
 // we want to know using the pdecom, to reconstruct all the committed seeds, except the j* one
 // we should still be able to check if we have the right values, using the commitments, and the saved commitment for jstar
-// i have no idea if this works
 #[hax_lib::requires(hax_lib::Prop::from(matches!(pdecom.0, sized_array_for_cop::sized_array_1(_)))
                     .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
 pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0], iv: [u8; 16]) -> ([u8; 32], sized_array_for_sds) {
@@ -155,17 +154,4 @@ fn regen_tree_from_pdecom<const size: usize>(leaves: &sized_option_array<size>, 
 }
 
 
-// vec_verify should help us do some testing, basically it takes the hash of the commitments from
-// commit, then it reconstruct using the pdecom, from vec_open to the commitments, and checks that those
-// two hashes are teh same
-/*
-pub fn vec_verify<const size : usize>(h: [u8; 56], pdecom: (sized_array_for_cop, [u8; 32]), b: [u8;size], iv: [u8; 16], d : i128) -> bool{
-    let (rec_com, _rec_sd) = if size == k_0 {vec_reconstruct_k0(&pdecom, b, iv, d)} else {vec_reconstruct_k1(&pdecom, b, iv, d)};
-    if rec_com == h {
-        true
-    } else {
-        false
-    }
-}
 
- */

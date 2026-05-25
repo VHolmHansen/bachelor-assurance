@@ -102,7 +102,7 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
     let mut match_value = Log2Number::wrap(size_pow);
 
 
-    //TODO: needs a serious revisit
+    
     for c in 0..size {
         hax_lib::loop_invariant!(|c: usize| {
             c <= size
@@ -124,13 +124,8 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
         hax_lib::assert!(size_pow > 0);
         hax_lib::assert!(size_pow <= 4096);
         hax_lib::assert!(current_end <= size_pow);
-        //hax_lib::assert!(current_end >= size_pow >> ( c + 1));
-        //hax_lib::assert!(match_value.value() <= usize::MAX / 2);
-        //hax_lib::assert!(current_start <= current_end - 2 * match_value.value());
-        //hax_lib::assert!(current_end >= match_value.value() << 1);
         hax_lib::assert!(current_start == current_end - (1 << (size - c)));
-
-        //hax_lib::assert!(current_start == current_end - (match_value.value() << 1 ));
+        
         if match_value.value() > 0 {hax_lib::assert!(
             current_end >= 2 * match_value.value()
             && current_start == current_end - 2 * match_value.value())}
@@ -164,18 +159,11 @@ pub fn get_leaves_from_cop_and_b<const size : usize, const size_pow : usize>(cop
 
         };
         hax_lib::assert!(current_start == current_end - (match_value.value()));
-        //match_value = match_value.log_reduce();
         hax_lib::assert!(current_end <= size_pow);
-        //hax_lib::assert!(match_value.value() == size_pow >> (c + 2));
-        //hax_lib::assert!(current_end >= match_value.value() << 1);
-        //println!("current start is{:?} for current end {:?} and match value {:?}", current_start, current_end, match_value);
-        //hax_lib::assert!(current_end >= (1 << (size - (c + 1))));
-        //hax_lib::assert!(current_start == current_end - (1 << (size - (c + 1))));
 
     }
     leaves
 }
-//*current_start <= 2048 && *current_end >= 0 && *current_end < size_pow
 #[hax_lib::fstar::options("--z3rlimit 50")]
 #[hax_lib::requires(N >= 1 && N <= 2048 && (N >> 1 == 0 || N >> 1 == 1 || N >> 1 == 2 || N >> 1 == 4 || N >> 1 == 8
                     || N >> 1 == 16 || N >> 1 == 32 || N >> 1 == 64 || N >> 1 == 128

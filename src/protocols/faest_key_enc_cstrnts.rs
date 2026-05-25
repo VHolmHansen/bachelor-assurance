@@ -102,10 +102,7 @@ pub fn faest_aes_enc_fwd(
                 hax_lib::loop_invariant!(|r: usize| {
                     r <= 4
                 });
-                //hax_lib::assert!(r <= usize::MAX / 8);
-                //hax_lib::assert!(i_x <= usize::MAX - ((r << 3) + 8));
                 hax_lib::assert!(i_x + (r << 3) + 8 <= x.len());
-                //hax_lib::assert!(i_k <= usize::MAX - ((r << 3) + 8));
                 hax_lib::assert!(i_k + (r << 3) + 8 <= x_k.len());
                 // let get_slice_of_x = <T as ret_value>::turn_array_to_T(x.get_slice(i_x+8*r, i_x+8*r+8));
                 let get_slice_of_x: ByteOrBytesArray<8> = ByteOrBytesArray::get_slice(&x, i_x+(r << 3), i_x+(r << 3)+8);
@@ -115,7 +112,6 @@ pub fn faest_aes_enc_fwd(
 
                 x_hat_k[r] = byte_combine(get_slice_of_x_k);
             }
-            //hax_lib::assert!(i_y + 3 <= y.len());
             let mut one: BytesArray<8> = BytesArray([[0u8; 16]; 8]);
             let mut two: BytesArray<8> = BytesArray([[0u8; 16]; 8]);
             let mut three: BytesArray<8> = BytesArray([[0u8; 16]; 8]);
@@ -160,7 +156,7 @@ pub fn faest_aes_enc_fwd(
     }
     y
 }
-// delta is here a T value, that is only for simplifiuying implementation, delta should always be a [u8;16], and when this function is called with T = u8
+// delta is here a T value, that is only for simplifiying implementation, delta should always be a [u8;16], and when this function is called with T = u8
 // then, it should also have mkey == 0, and therefore will never be set equal to delta
 #[hax_lib::fstar::options("--z3rlimit 500")]
 #[hax_lib::requires(ByteOrBytesArray::same_variant(&x, &x_k) && x.is_byte() == Delta.is_byte())]

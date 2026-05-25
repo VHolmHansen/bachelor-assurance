@@ -51,7 +51,7 @@ pub fn byte_combine(x: ByteOrBytesArray<8>) -> [u8; 16] {
     res
 }
 
-//TODO: make i32 > u32
+
 pub fn alpha_pow(i : i32) -> [u8;16] {
     if i == 0 {
         [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]

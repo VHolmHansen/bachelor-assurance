@@ -39,7 +39,6 @@ pub fn faest_verify(
 
 
     let (h_com, q_mark) : ([u8; 32], [sized_array_for_q_v; 11])= FAEST_VOLE_reconstruct(*chall_3, pdcoms, *iv);
-    // println!("reconstruct took: {:?}", rec_start.elapsed());
 
     hax_lib::assert_prop!(hax_lib::forall(|k: usize|
                 k >= q_mark.len()
@@ -166,7 +165,6 @@ pub fn faest_verify(
             }
         }
     }
-    // println!("challenge took: {:?}", challenge_start.elapsed());
 
     let mut q_e_columns: [[u8;18];tau_0*k_0+tau_1*k_1] = [[0;18];tau_0*k_0+tau_1*k_1];
     let mut index : usize = 0;
@@ -237,11 +235,11 @@ pub fn faest_verify(
     // chall 2
     let chall_2 : [u8;56] = h_2_2(chall_1, u_tilde.clone(), h_v, d_bytes);
 
-    // et lille fix til hvordan q den hænger sammen, samme check som til prove
+    
     let q_rows : [[u8; 128]; 1728] = vole_to_row_major(q_corrected);
     let q_arr: [[u8; lambda]; ell_bit_size + lambda] = q_rows.try_into().unwrap();
 
-    //let _verify_start = std::time::Instant::now();
+    
     let b_tilde : [u8;16] = faest_aes_verify(
         d.clone().try_into().unwrap(),
         q_arr,
@@ -250,7 +248,7 @@ pub fn faest_verify(
         *a_tilde,
         (pk.0.try_into().unwrap(), pk.1.try_into().unwrap())
     );
-    // println!("verify took: {:?}", verify_start.elapsed());
+    
 
     let chall_3_mark : [u8;16] = h_2_3(chall_2, *a_tilde, b_tilde);
 

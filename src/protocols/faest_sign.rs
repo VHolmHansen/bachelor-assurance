@@ -33,13 +33,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
         || (i < tau_0 && matches!(decoms[i].2, sized_array_for_coms::sized_array_1(_)))
         || (i >= tau_0 && matches!(decoms[i].2, sized_array_for_coms::sized_array_2(_)))));
 
-    /*hax_lib::assert_prop!(hax_lib::forall(|i: usize|
-        hax_lib::Prop::from(i >= decoms.len())
-        .or(hax_lib::Prop::from(i < tau_0).and(hax_lib::implies(
-            i < tau_0 && decoms[i].2.len() == k_0, matches!(decoms[i].2, sized_array_for_coms::sized_array_1(_))))
-    )));
-
-     */
+    
     let chall_1 : [u8;88] = h_2_1(my, h_com, &c_bytes, iv);
 
 
@@ -73,7 +67,6 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
                 && ((i < tau_0 && index == i * k_0 + j) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0 + j))
                 && v_bytes[i].len() == k_b
             });
-            //hax_lib::assert!((i < tau_0 && index == i * k_0) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0));
             hax_lib::assert!(j < v_bytes[i].len());
             let col : &[u8;234] = v_bytes[i].get(j); // [u8; 234]
             let x0_col : &[u8;216] = &col[0..216].try_into().unwrap();
@@ -83,10 +76,9 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
             v_tilde[index] = col_hash_arr;
             index += 1;
         }
-        //hax_lib::assert!((i < tau_0 && index == i * k_0) || (i >= tau_0 && index == (i - tau_0) * k_1 + tau_0 * k_0));
     }
 
-    // man skla have hashed h_V
+    
 
     let mut h_v_val : [u8;2304] = [0u8; 18 * (tau_0*k_0+tau_1*k_1)];
     for i in 0..(tau_0*k_0+tau_1*k_1) {
@@ -119,9 +111,7 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     #[cfg(not(hax))]
     let _extend_start = std::time::Instant::now();
 
-    // extended_witness, de siger i pseudo koden, at den kun skal have in, men det kan altså ikke passe
     let extended_witness : [u8;1600] = faest_aes_extend_witness(*sk, (pt_state, ct_state));
-    // println!("extend_witness took: {:?}", extend_start.elapsed());
 
 
     let mut d: [u8;ell_bit_size] = [0; ell_bit_size];
@@ -138,7 +128,6 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
     let _prove_start = std::time::Instant::now();
 
     let (a_tilde , b_tilde) : ([u8;16],[u8;16]) = faest_aes_prove(extended_witness.try_into().unwrap(), u_bits, v_rows, (pk.0.try_into().unwrap(),pk.1.try_into().unwrap()), chall_2);
-    // println!("prove took: {:?}", prove_start.elapsed());
     let chall_3 : [u8;16] = h_2_3(chall_2, a_tilde, b_tilde);
 
     #[cfg(not(hax))]
@@ -174,7 +163,6 @@ pub fn faest_sign(msg : &[u8], sk : &[u8;16], pk : &([u8;lambda], [u8;lambda])) 
                 || (j < tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_1(_)))
                 || (j >= tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_2(_)))))
     }
-    // println!("open took: {:?}", open_start.elapsed());
     hax_lib::assert_prop!(hax_lib::forall(|j: usize|
                 j >= pdecoms.len()
                 || (j < tau_0 && matches!(pdecoms[j].0, sized_array_for_cop::sized_array_1(_)))

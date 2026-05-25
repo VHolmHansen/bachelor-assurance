@@ -59,7 +59,6 @@ impl sized_array_for_q_v {
     }
 
     #[hax_lib::requires(index < self.len())]
-    //#[hax_lib::ensures(|result| hax_lib::forall(|i: usize|))]
     pub fn set(self, index: usize, value: [u8; ell]) -> Self {
         match self {
             sized_array_for_q_v::sized_array_1(mut arr) => {arr[index] = value; sized_array_for_q_v::sized_array_1(arr)},
@@ -152,32 +151,6 @@ impl Log2Number {
         Self::wrap(self.value() >> 1)
     }
 
-    /*
-    #[hax_lib::requires(n == 1 || n == 2 || n == 4 || n == 8
-                        || n == 16 || n == 32 || n == 64 || n == 128
-                        || n == 256 || n == 512 || n == 1024 || n == 2048)]
-    #[hax_lib::ensures(|result| n == 1 || n == 2 || n == 4 || n == 8
-                        || n == 16 || n == 32 || n == 64 || n == 128
-                        || n == 256 || n == 512 || n == 1024 || n == 2048)]
-    pub fn is_log2_number(n: usize) -> bool{
-        match n {
-            1 => true,
-            2 => true,
-            4 => true,
-            8 => true,
-            16 => true,
-            32 => true,
-            64 => true,
-            128 => true,
-            256 => true,
-            512 => true,
-            1024 => true,
-            2048 => true,
-            _ => false
-        }
-    }
-     */
-
 
 }
 
@@ -254,13 +227,6 @@ impl<const N: usize> ret_value for [u8; N] {
     }
 
 }
-/*
-pub trait RetElem:  {}
-
-impl RetElem for u8 {}
-impl RetElem for [u8; 16] {}
-
- */
 
 pub trait XorHelper: Sized {
     fn xor_array(x : &Self, y : &Self) -> Self;
@@ -329,15 +295,6 @@ impl AlphaMul for [u8; 16] {
     }
 }
 
-
-/*
-#[hax_lib::requires()]
-pub fn bytes_array_wrap<const SIZE: usize>(arr: ByteOrBytesArray<SIZE>) -> BytesArray<SIZE> {
-    let mut res: BytesArray<SIZE> = [BytesElem([0; 16]); SIZE];
-    array::from_fn(|i: usize| res[i] = arr[i]);
-    res
-}
- */
 
 
 #[derive(Clone, Copy)]
@@ -567,25 +524,6 @@ impl ByteOrBytesElem {
         )
     }
 
-    /*
-    pub fn turn_array_to_T(x: &Self) -> Self {
-        match x {
-            ByteOrBytesElem::Byte(y) => y.try_into().unwrap(),
-            ByteOrBytesElem::Bytes(y) => ByteOrBytesElem::Bytes(BytesElem([1u8; 16]))
-        }
-    }
-
-     */
-
-    /*
-    pub fn get_slice(self, from: usize, to: usize) -> ByteOrBytesElem {
-        match self {
-            ByteOrBytesElem::Byte(x) => ByteOrBytesElem::Byte(x[from..to]),
-            ByteOrBytesElem::Bytes(x) => ByteOrBytesElem::Bytes(x),
-        }
-    }
-
-     */
     pub fn multiply_with_alpha(self, alpha: [u8;16]) -> [u8;16] {
         match self {
             ByteOrBytesElem::Byte(x) => <u8 as AlphaMul>::mul_with_alpha(x.0, alpha),
@@ -628,25 +566,7 @@ impl ByteOrBytesElem {
         arr[index] = elem
     }
 
-    /*
-    #[hax_lib::requires(N > 0)]
-    #[hax_lib::ensures(|result| hax_lib::forall(|i: usize| i >= N || matches!(x[i], elem)))]
-    pub fn same_for_all<const N: usize>(x: [ByteOrBytesElem; N]) -> bool {
-        for i in 0..N {
-            hax_lib::loop_invariant!(|i: usize| {
-                hax_lib::Prop::from(i <= N)
-                .and(hax_lib::forall(|j: usize| {
-                    j >= i || ByteOrBytesElem::same_variant(&x[j], &x[0])
-                }))
-            });
-            if !ByteOrBytesElem::same_variant(&x[i], &x[0]) {
-                return false
-            }
-        }
-        true
-    }
 
-     */
     pub fn is_byte(&self) -> bool {
         matches!(self, ByteOrBytesElem::Byte(_))
     }

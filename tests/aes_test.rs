@@ -1,11 +1,11 @@
 
 #[cfg(test)]
 mod tests {
-    use Bachelor_Assurance::protocols::aes::{add_round_key, gf2_affine_transform, mix_columns, shift_rows, sub_bytes};
-    use Bachelor_Assurance::protocols::aes;
-    use Bachelor_Assurance::utils::types::*;
-    use Bachelor_Assurance::utils::galois_field::*;
-    use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, transform_state_to_array};
+    use std::time::Instant;
+    use bachelor_assurance::protocols::aes::{add_round_key, gf2_affine_transform, mix_columns, shift_rows, sub_bytes};
+    use bachelor_assurance::protocols::aes;
+    use bachelor_assurance::utils::types::*;
+    use bachelor_assurance::utils::math::{transform_byte_array_to_state, transform_state_to_array};
 
     #[test]
     fn test_encrypt() {
@@ -24,9 +24,13 @@ mod tests {
             [0xd8, 0xcd, 0xb7, 0x80], [0x70, 0xb4, 0xc5, 0x5a],
         ];
 
+        let timer = Instant::now();
         let key_mark = aes::key_expansion(key);
 
-        assert_eq!(aes::encrypt(plaintext, &key_mark), expected);
+        let res = aes::encrypt(plaintext, &key_mark);
+        println!("{:?}", timer.elapsed());
+
+        assert_eq!(res, expected);
     }
 
     #[test]
@@ -177,14 +181,14 @@ mod tests {
         let mut plaintext2: State = [[50, 67, 246, 168], [136, 90, 48, 141],
             [49, 49, 152, 162], [224, 55, 7, 52]];
 
-        let key: Vec<Word> = vec![[43, 126, 21, 22], [40, 174, 210, 166],
+        let key: [Word;4] =[[43, 126, 21, 22], [40, 174, 210, 166],
                                        [171, 247, 21, 136], [9, 207, 79, 60]];
 
         aes::add_round_key(&mut plaintext2, key.clone());
         aes::add_round_key(&mut plaintext2, key);
         assert_eq!(plaintext2, plaintext1);
 
-        let zero_key: Vec<Word> = vec![[0u8; 4]; 4];
+        let zero_key: [Word; 4] = [[0u8; 4]; 4];
         aes::add_round_key(&mut plaintext2, zero_key);
         assert_eq!(plaintext2, plaintext1);
 
@@ -277,7 +281,7 @@ mod tests {
         let mut state = plaintext;
 
         // initial add round key
-        add_round_key(&mut state, key_mark[0..4].to_vec());
+        add_round_key(&mut state, key_mark[0..4].try_into().unwrap());
         println!("After initial AddRoundKey: {:02x?}", state);
         // FIPS-197 expected:
         // col 0: [19, 3d, e3, be]
@@ -300,7 +304,7 @@ mod tests {
         mix_columns(&mut state);
         println!("After MixColumns: {:02x?}", state);
 
-        add_round_key(&mut state, key_mark[4..8].to_vec());
+        add_round_key(&mut state, key_mark[4..8].try_into().unwrap());
         println!("After AddRoundKey: {:02x?}", state);
         // FIPS-197 expected end of round 1:
         // col 0: [54, 73, 31, 36]...

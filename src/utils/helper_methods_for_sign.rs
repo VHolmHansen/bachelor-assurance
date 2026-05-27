@@ -1,26 +1,44 @@
-use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau, tau_0};
+use hax_lib::loop_invariant;
+use crate::utils::types::sized_array_for_q_v;
+use crate::utils::constants::{ell_bit_size, k_0, k_1, lambda, tau_0};
 use crate::utils::galois_field::{gf128_mul, gf64_add, gf64_mul};
 use crate::utils::helper_methods_cstrnts::bits_to_byte;
 use crate::utils::math::xor_arrays;
 use crate::utils::types::State;
 
 // funktioner der bruges til at omdanne vores V og u, i sign til bits, skal nok slettes senere efte refactor
-pub fn vole_to_row_major(big_v: &Vec<Vec<[u8; 234]>>) -> Vec<[u8; lambda]> {
-    let l_hat = ell_bit_size + lambda; // 1728 rows
-    let mut v_rows: Vec<[u8; lambda]> = vec![[0u8; lambda]; l_hat];
-
+#[hax_lib::opaque] // opaque when verifying sign
+#[hax_lib::requires(hax_lib::forall(|i: usize| i >= big_v.len()
+    || (i < tau_0 && big_v[i].len() == k_0)
+    || (i >= tau_0 && big_v[i].len() == k_1)))]
+pub fn vole_to_row_major(big_v: [sized_array_for_q_v;11]) -> [[u8; lambda];ell_bit_size+lambda] {
+    let mut v_rows: [[u8; lambda];ell_bit_size+lambda] = [[0u8; lambda]; ell_bit_size + lambda];
     // flatten all columns across tau instances
     // big_v[0] has k_0 columns, big_v[1..tau_0] have k_0 columns
     // big_v[tau_0..tau] have k_1 columns
     let mut col = 0;
-    for i in 0..tau {
+    //TODO: 11 used to be tau ?
+    for i in 0..11 {
+        loop_invariant!(|i: usize| {
+            i <= 11 &&
+            ((i < tau_0 && col == i * k_0) || (i >= tau_0 && col == tau_0 * k_0 + (i - tau_0) * k_1)) &&
+            i <= big_v.len()
+        });
         let k_b = if i < tau_0 { k_0 } else { k_1 };
         for j in 0..k_b {
+            loop_invariant!(|j: usize| {
+                j <= k_b &&
+                ((i < tau_0 && col == i * k_0 + j) || (i >= tau_0 && col == tau_0 * k_0 + (i - tau_0) * k_1 + j))
+            });
             // big_v[i][j] is one column of l_hat bits packed into 234 bytes
-            for row in 0..l_hat {
-                let byte_idx = row / 8;
+            for row in 0..(ell_bit_size+lambda) {
+                loop_invariant!(|row: usize| {
+                    row <= (1600+128)
+                });
+                let byte_idx = row >> 3;
                 let bit_idx  = row % 8;
-                v_rows[row][col] = (big_v[i][j][byte_idx] >> bit_idx) & 1;
+                let val = (big_v[i].get(j)[byte_idx] >> bit_idx) & 1;
+                v_rows[row][col] = val; // [j][byte_idx]
             }
             col += 1;
         }
@@ -30,109 +48,151 @@ pub fn vole_to_row_major(big_v: &Vec<Vec<[u8; 234]>>) -> Vec<[u8; lambda]> {
     v_rows
 }
 
-
-pub fn u_to_bits(u: &[u8; 234]) -> Vec<u8> {
-    let mut bits = vec![];
-    for &byte in u.iter() {
-        for i in 0..8 {
-            bits.push((byte >> i) & 1);
+pub fn u_to_1728_bits(u: &[u8; 234]) -> [u8; 1728] {
+    let mut bits = [0u8; 1872];
+    let mut idx = 0;
+    for b in 0..u.len() {
+        loop_invariant!(|b: usize| {
+            b <= u.len() &&
+            idx == b * 8
+        });
+        let byte = u[b];
+        for i in 0..8usize {
+            loop_invariant!(|i: usize| {
+                i <= 8 &&
+                idx == b * 8 + i
+            });
+            bits[idx] = (byte >> i) & 1;
+            idx += 1;
         }
     }
-    bits
-    // returns 1872 bits, take first ell_bit_size + lambda = 1728
+    bits[0..1728].try_into().unwrap()
 }
-
 
 pub fn expand_bits_56(input: [u8; 56]) -> [u8; 448] {
     let mut output = [0u8; 448];
-    for (i, byte) in input.iter().enumerate() {
-        for bit in 0..8 {
+    let mut idx = 0;
+    for i in 0..input.len() {
+        loop_invariant!(|i: usize| {
+            i <= input.len() &&
+            idx == i * 8
+        });
+        for bit in 0..8usize {
+            loop_invariant!(|bit: usize| {
+                bit <= 8 &&
+                idx == i * 8 + bit
+            });
             // extract each bit, MSB first
-            output[i * 8 + bit] = (byte >> (7 - bit)) & 1;
+            output[idx] = (input[i] >> (7 - bit)) & 1;
+            idx += 1;
         }
     }
     output
 }
 
-pub fn bytes_to_bits(bytes: &[u8]) -> Vec<u8> {
-    let mut bits = vec![];
-    for &byte in bytes {
-        for i in 0..8 {
-            bits.push((byte >> i) & 1);
+
+pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
+    let mut bits = [0u8; 128];
+    let mut idx = 0;
+    for byte in 0..chall_3.len() {
+        loop_invariant!(|byte: usize| {
+            byte <= chall_3.len() &&
+            idx == byte * 8
+        });
+        for i in 0..8usize {
+            loop_invariant!(|i: usize| {
+                i <= 8 &&
+                idx == byte * 8 + i
+            });
+            bits[idx] = (chall_3[byte] >> i) & 1;
+            idx += 1;
         }
     }
     bits
 }
 
-pub fn chall3_to_bits(chall_3: &[u8;16]) -> [u8;128] {
-    let bits = bytes_to_bits(chall_3);
-    bits.try_into().unwrap()
-}
-
 // turn pk and sk into states:
-pub fn bits_to_state(text: Vec<u8>) -> State {
-    let mut state = [[0u8; 4]; 4];
-    for (i, chunk) in text.chunks(8).enumerate() {
+pub fn bits_to_state(text: &[u8; 128]) -> State {
+    let mut state: State = [[0u8; 4]; 4];
+    for i in 0..(text.len() / 8) {
+        loop_invariant!(|i: usize| {
+            i <= text.len() / 8
+        });
+        let chunk: &[u8; 8] = text[i * 8..(i + 1) * 8].try_into().unwrap();
         let byte = bits_to_byte(chunk);
-        let col = i / 4;
+        let col = i >> 2;
         let row = i % 4;
-        state[col][row] = byte;  // ← swap col and row here
+        state[col][row] = byte;  // swap col and row
     }
     state
 }
 
-// vole hash function:
-pub fn vole_hash(sd: &[u8], x0: &[u8], x1: &[u8]) -> Vec<u8> {
-    // sd is 5*lambda + 64 bits = 5*16 + 8 = 88 bytes
-    // parse sd into r0,r1,r2,r3 (lambda bits each) and s (lambda bits) and t (64 bits)
-    let r0: [u8;16] = sd[0..16].try_into().unwrap();
-    let r1: [u8;16] = sd[16..32].try_into().unwrap();
-    let r2: [u8;16] = sd[32..48].try_into().unwrap();
-    let r3: [u8;16] = sd[48..64].try_into().unwrap();
-    let s:  [u8;16] = sd[64..80].try_into().unwrap();
-    let t:  [u8; 8] = sd[80..88].try_into().unwrap();
+#[hax_lib::opaque] // opaque when verifying sign
+#[allow(non_upper_case_globals)]
+// vole hash function: den bruger som udgangspunkt tobits og tofield, men i specificationen forklarer de at man godt kan skip det, på baggrund af ens repræsentation af binary fields
+pub fn vole_hash(sd: &[u8;88], x0: &[u8;216], x1: &[u8;18]) -> [u8; 18] {
+    // parse sd into r0,r1,r2,r3,s (16 bytes each) and t (8 bytes)
+    let r0: [u8; 16] = sd[0..16].try_into().unwrap();
+    let r1: [u8; 16] = sd[16..32].try_into().unwrap();
+    let r2: [u8; 16] = sd[32..48].try_into().unwrap();
+    let r3: [u8; 16] = sd[48..64].try_into().unwrap();
+    let s:  [u8; 16] = sd[64..80].try_into().unwrap();
+    let t:  [u8;  8] = sd[80..88].try_into().unwrap();
 
-    // pad x0 to multiple of lambda bits
-    let l_prime = lambda * ((x0.len() + lambda - 1) / lambda);
-    let mut x0_padded = x0.to_vec();
-    x0_padded.resize(l_prime / 8, 0u8);
 
-    // compute h0 as polynomial hash in F2^lambda
-    // parse x0_padded as lambda-bit field elements
-    let num_chunks_lambda = l_prime / lambda;
+    const lambda_bytes : usize = 16usize; // 128 bits / 8
+    const chunk_64 : usize = 8usize;      // 64 bits / 8
+
+    // number of lambda-sized chunks (ceiling division)
+    const num_chunks_lambda : usize = (216 + lambda_bytes - 1) / lambda_bytes; // 14, 216 is len of x_0
+
+    // number of 64-bit chunks (ceiling division)
+    const num_chunks_64 : usize = (216 + chunk_64 - 1) / chunk_64; // 27
+
+    // pad x0 to multiple of lambda_bytes
+    let mut x0_padded_lambda = [0u8; num_chunks_lambda * lambda_bytes]; // 224 bytes
+    x0_padded_lambda[..x0.len()].copy_from_slice(x0);
+
+    // pad x0 to multiple of 8 bytes
+    let mut x0_padded_64 = [0u8; num_chunks_64 * chunk_64]; // 216 bytes
+    x0_padded_64[..x0.len()].copy_from_slice(x0);
+
+    // h0: polynomial hash over F_{2^128} using Horner's method
     let mut h0 = [0u8; 16];
     for i in 0..num_chunks_lambda {
-        let chunk: [u8;16] = x0_padded[i*16..(i+1)*16].try_into().unwrap();
-        // h0 = h0 * s + chunk
+        let chunk: [u8; 16] = x0_padded_lambda[i << 4..(i + 1) << 4].try_into().unwrap();
         h0 = xor_arrays(&gf128_mul(&h0, &s), &chunk);
     }
 
-    // compute h1 as polynomial hash in F2^64
-    let num_chunks_64 = l_prime / 64;
+
+    // h1: polynomial hash over F_{2^64} using Horner's method
     let mut h1 = [0u8; 8];
-    for i in 0..num_chunks_64 {
-        let chunk: [u8;8] = x0_padded[i*8..(i+1)*8].try_into().unwrap();
-        // h1 = h1 * t + chunk  (in F2^64)
+    let total_64_chunks = num_chunks_lambda * lambda_bytes / 8; // 28
+    for i in 0..total_64_chunks {
+        let chunk: [u8; 8] = x0_padded_lambda[i << 3..(i + 1) << 3].try_into().unwrap();
         h1 = gf64_add(&gf64_mul(&h1, &t), &chunk);
     }
 
-    // pad h1 to lambda bits
+
+    // zero-pad h1 to lambda bytes
     let mut h1_prime = [0u8; 16];
     h1_prime[0..8].copy_from_slice(&h1);
 
+    // matrix multiply:
     // h2 = r0*h0 + r1*h1'
     // h3 = r2*h0 + r3*h1'
     let h2 = xor_arrays(&gf128_mul(&r0, &h0), &gf128_mul(&r1, &h1_prime));
     let h3 = xor_arrays(&gf128_mul(&r2, &h0), &gf128_mul(&r3, &h1_prime));
 
-    // take first lambda + B bits of (h2 | h3) and XOR with x1
-    let b = 16usize; // B = 16
-    let mut h = vec![0u8; (lambda + b) / 8]; // (128 + 16) / 8 = 18 bytes
+
+    // take first lambda+B = 128+16 = 144 bits = 18 bytes
+    // = all 16 bytes of h2 + first 2 bytes of h3
+    let mut h = [0u8; 18];
     h[0..16].copy_from_slice(&h2);
-    h[16..18].copy_from_slice(&h3[0..2]); // first B=16 bits of h3
+    h[16..18].copy_from_slice(&h3[0..2]);
 
     // XOR with x1
-    for i in 0..h.len() {
+    for i in 0..18 {
         h[i] ^= x1[i];
     }
 

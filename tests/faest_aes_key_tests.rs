@@ -1,14 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
-    use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
-    use Bachelor_Assurance::protocols::faest_key_exp_cstrnts::{faest_aes_key_exp_bkwd, faest_aes_key_exp_fwd};
-    use Bachelor_Assurance::protocols::fs_vole::{chall_dec, FAEST_VOLE_commit, FAEST_VOLE_reconstruct};
-    use Bachelor_Assurance::utils::galois_field::{gf128_mul, gf28_inverse, gf28_multiply};
-    use Bachelor_Assurance::utils::helper_methods_cstrnts::bits_to_byte;
-    use Bachelor_Assurance::utils::math::{transform_byte_array_to_state, xor_arrays};
-    use Bachelor_Assurance::utils::constants::{nk, ell, k_0, k_1, lambda, tau, tau_0, S_ke};
-    use Bachelor_Assurance::utils::vector_commit::vec_open;
+    use bachelor_assurance::protocols::aes::{encrypt, key_expansion};
+    use bachelor_assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
+    use bachelor_assurance::protocols::faest_key_exp_cstrnts::{faest_aes_key_exp_bkwd, faest_aes_key_exp_fwd};
+    use bachelor_assurance::utils::galois_field::{gf28_multiply};
+    use bachelor_assurance::utils::helper_methods_cstrnts::bits_to_byte;
+    use bachelor_assurance::utils::math::{transform_byte_array_to_state};
+    use bachelor_assurance::utils::constants::{nk, ell, k_0, k_1, lambda, tau, tau_0, S_ke, ret_size_exp_bwd};
+    use bachelor_assurance::utils::types::{ByteArray, ByteElem, ByteOrBytesArray, ByteOrBytesElem};
 
     #[test]
     fn test_extend_witness(){
@@ -93,8 +92,9 @@ mod tests {
 
         let w = faest_aes_extend_witness(key, (plaintext_state, ciphertext_state));
 
-        let fwd = faest_aes_key_exp_fwd(1, w.clone(), false, false, [0;16]);
-        let bwd = faest_aes_key_exp_bkwd(1, w[lambda..].to_vec(), fwd.to_vec(), false, false, 0);
+        let fwd = faest_aes_key_exp_fwd(1, ByteOrBytesArray::Byte(ByteArray(w)), false, false, [0;16]).get_byte();
+        let w_lambda : [u8; 1472] = w[lambda..].try_into().unwrap(); // 1600-128 = 1472
+        let bwd: [u8; ret_size_exp_bwd] = faest_aes_key_exp_bkwd(1, ByteOrBytesArray::Byte(ByteArray(w_lambda)), ByteOrBytesArray::Byte(ByteArray(fwd)), false, false, ByteOrBytesElem::Byte(ByteElem(0))).get_byte();
 
         let word4_byte0 = bits_to_byte(&fwd[4*32..4*32+8]);
 

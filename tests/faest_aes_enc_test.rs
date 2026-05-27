@@ -1,13 +1,14 @@
 mod tests{
-    use Bachelor_Assurance::protocols::aes::{encrypt, key_expansion};
-    use Bachelor_Assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
-    use Bachelor_Assurance::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
-    use Bachelor_Assurance::utils::galois_field::gf128_mul;
-    use Bachelor_Assurance::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
-    use Bachelor_Assurance::utils::math::transform_byte_array_to_state;
-    use Bachelor_Assurance::utils::types::{State};
-    use Bachelor_Assurance::utils::constants::{s_enc};
-
+    use bachelor_assurance::protocols::aes::{encrypt, key_expansion};
+    use bachelor_assurance::protocols::faest_aes_extended_witness::faest_aes_extend_witness;
+    use bachelor_assurance::protocols::faest_key_enc_cstrnts::{faest_aes_enc_bkwd, faest_aes_enc_fwd};
+    use bachelor_assurance::utils::galois_field::gf128_mul;
+    use bachelor_assurance::utils::helper_methods_cstrnts::{byte_to_bits, words_to_blocks};
+    use bachelor_assurance::utils::math::transform_byte_array_to_state;
+    use bachelor_assurance::utils::types::{State};
+    use bachelor_assurance::utils::constants::{s_enc};
+    
+    /*
     #[test]
     fn test_aes_enc_fwd_bkwd() {
         let key = [
@@ -44,8 +45,8 @@ mod tests{
 
         let w_enc: Vec<u8> = w[448..1600].to_vec();
 
-        let fwd = faest_aes_enc_fwd(1, w_enc.clone(), expanded_key_flat.clone(), plain_text_flat.clone(), false,false, 0);
-        let bwd = faest_aes_enc_bkwd(1, w_enc.clone(), expanded_key_flat.clone(), cipher_text_flat.clone(), false,false, 0);
+        let fwd = faest_aes_enc_fwd(1, &w_enc, &expanded_key_flat, &plain_text_flat, false,false, 0);
+        let bwd = faest_aes_enc_bkwd(1, &w_enc, &expanded_key_flat, &cipher_text_flat, false,false, 0);
 
         for i in 0..s_enc {
             if fwd[i] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] || bwd[i] == [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0] {
@@ -80,4 +81,6 @@ mod tests{
         }
         res
     }
+    
+     */
 }

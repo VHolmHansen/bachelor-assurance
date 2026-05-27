@@ -1,9 +1,4 @@
-pub mod finite_field;
 pub mod math;
-mod challenge;
-mod linear_code;
-mod circuit;
-mod faest_zk;
 pub mod galois_field;
 pub mod types;
 pub mod constants;
@@ -13,5 +8,6 @@ pub mod prg;
 pub mod preliminary_helper_methods;
 pub mod helper_methods_cstrnts;
 pub mod helper_methods_prove_verify;
-mod libcrux_proxy;
+pub mod libcrux_proxy;
 pub mod helper_methods_for_sign;
+pub mod ggm_tree;

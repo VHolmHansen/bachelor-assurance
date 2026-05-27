@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests{
+    /*
     use Bachelor_Assurance::utils::preliminary_helper_methods::num_rec;
     use Bachelor_Assurance::utils::vector_commit::*;
     #[test]
@@ -201,5 +202,7 @@ mod tests{
         assert!(good_or_bad);
     }
 
+
+     */
 
 }

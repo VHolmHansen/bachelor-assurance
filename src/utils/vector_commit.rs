@@ -1,160 +1,157 @@
-use crate::utils::hash_functions::{h_0, h_1};
-use crate::utils::preliminary_helper_methods::{num_rec};
-use crate::utils::types::{Tree};
+#![allow(non_upper_case_globals)]
+
+use crate::utils::constants::{k_0, k_1, k_0_pow, k_1_pow};
+use crate::utils::ggm_tree::{get_cop, get_leaves_from_cop_and_b, get_leaves_node_from_root};
+use crate::utils::hash_functions::{h_0, h_1_k1,h_1_k0};
+use crate::utils::preliminary_helper_methods::{num_rec_k0, num_rec_k1};
+use crate::utils::types::{sized_array_for_cop, sized_array_for_coms, sized_array_for_sds, sized_option_array};
 
 // n_d should be 128
 // don't know if it is a little fucked, lot of mutability and stuff
-pub fn vec_commit(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], (Tree, Vec<[u8; 32]>), Vec<[u8; 16]>){
-    let k_tree = Tree::construct_tree(r, iv, d);
-    let leaves = Tree::get_all_leaf_nodes(&k_tree);
-    let mut sds: Vec<[u8; 16]> = vec![];
-    let mut coms: Vec<[u8; 32]> = vec![];
-    for ks in leaves{
-        let (sd, com) = h_0(ks, iv);
-        sds.push(sd);
-        coms.push(com);
+pub fn vec_commit_k0(r: [u8; 16], iv: [u8; 16], _d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+    let leaves = get_leaves_node_from_root::<k_0_pow>(&r, iv, k_0);
+    let mut sds: [[u8; 16];k_0_pow] = [[0;16];k_0_pow];
+    let mut coms: [[u8; 32];k_0_pow] = [[0;32];k_0_pow];
+    for i in 0..k_0_pow{        // leaves.len
+        let (sd, com) = h_0(leaves[i], iv);
+        sds[i] = sd;
+        coms[i] = com;
     }
+
+    let h = h_1_k0(&coms);
+
+    let coms_to_return = sized_array_for_coms::sized_array_1(coms);
+    let sds_to_return = sized_array_for_sds::sized_array_1(sds);
+    let decom = (r, iv, coms_to_return);
+
+    (h, decom, sds_to_return)
+}
+pub fn vec_commit_k1(r: [u8; 16], iv: [u8; 16], _d: i128) -> ([u8; 32], ([u8;16], [u8;16], sized_array_for_coms), sized_array_for_sds){
+    let leaves = get_leaves_node_from_root::<k_1_pow>(&r, iv, k_1);
+    let mut sds: [[u8; 16];k_1_pow] = [[0;16];k_1_pow];
+    let mut coms: [[u8; 32];k_1_pow] = [[0;32];k_1_pow];
+    for i in 0..k_1_pow{        // leaves.len
+        let (sd, com) = h_0(leaves[i], iv);
+        sds[i] = sd;
+        coms[i] = com;
+    }
+    let h = h_1_k1(&coms);
+    let coms_to_return = sized_array_for_coms::sized_array_2(coms);
+    let sds_to_return = sized_array_for_sds::sized_array_2(sds);
+    let decom = (r, iv, coms_to_return);
     
-    let h = h_1(&coms);
-    let decom = (k_tree, coms);
-
-    (h, decom, sds)
+    (h, decom, sds_to_return)
 }
-/*
-fn array_vec_commit<const dummy_n: usize, const dummy_m: usize>(r: [u8; 16], iv: [u8; 16], d: i128) -> ([u8; 56], (Tree, [[u8; 32]; dummy_n]), [[u8; 16]; dummy_m]) {
-    let k_tree = Tree::construct_tree(r, iv, d);
-    let leaves = Tree::get_all_leaf_nodes(&k_tree).as_array().unwrap(); //TODO: function needs to be converted to return array
-    let mut sds: [[u8; 16]; dummy_m] = [[0u8; 16]; dummy_m];
-    let mut coms: [[u8; 32]; dummy_n] = [[0u8; 32]; dummy_n];
-
-    let mut i = 0;
-    for ks in leaves{
-        let (sd, com) = h_0(*ks, iv);
-        sds[acc] = sd;
-        coms[acc] = com;
-        i += 1;
-    }
-
-    let h = h_1(&coms.to_vec());    // TODO: NO VEC when integrating
-    let decom = (k_tree, coms);
-
-    (h, decom, sds)
-}
-
- */
 
 // the indexing structure, needs to be some kind of bytes, im very confusing of what it should be
 // for a start im just going to use a vector of booleans, where index 0, means bit representing 2^0
 // the decom, is what is returned by the vec_commit function
 // there must be a smarter way to this that to get the bits
-pub fn vec_open(decom: (Tree, Vec<[u8; 32]>), b: Vec<u8>, d: i128) -> (Vec<[u8; 16]>,[u8; 32]){
-    let k = decom.0;
-    let coms = decom.1;
-    let cop = Tree::get_cop(b.clone(), k, d);
-    let pdecom:(Vec<[u8; 16]>,[u8; 32]) = (cop, coms[num_rec(b, d as u64) as usize]);
-    pdecom
-}
-/*
-fn array_vec_open<const dummy_n: usize, const dummy_m: usize, const dummy_o: usize>(decom: (Tree, [[u8; 32]; dummy_n]), b: [u8; dummy_m], d: i128) -> ([[u8; 16]; dummy_o],[u8; 32]){
-    let k = decom.0;
-    let coms = decom.1;
-    let cop = Tree::get_cop(b.clone().to_vec(), k, d).as_array().unwrap();      //TODO: NO VEC PLEASE
-    let pdecom:([[u8; 16]; dummy_o],[u8; 32]) = (*cop, coms[num_rec(b.to_vec(), d as u64) as usize]);     //TODO VEC VEC VEC
+#[hax_lib::requires(hax_lib::Prop::from(matches!(decom.2, sized_array_for_coms::sized_array_1(_)))
+                    .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
+#[hax_lib::ensures(|result| matches!(result.0, sized_array_for_cop::sized_array_1(_)))]
+pub fn vec_open_k0(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 12]) -> (sized_array_for_cop, [u8; 32]){
+    let r = decom.0;
+    let iv = decom.1;
+    let coms = &decom.2;
+    hax_lib::assert!(matches!(coms, sized_array_for_coms::sized_array_1(_)));
+    let cop = get_cop::<k_0>(r, iv, num_rec_k0(b));
+    let cop_to_return = sized_array_for_cop::sized_array_1(cop);
+    hax_lib::assert_prop!(hax_lib::forall(|i: usize| i>= b.len() || b[i] <= 1));
+    let com_value: [u8; 32] = match &coms {
+        sized_array_for_coms::sized_array_1(inner) => inner[num_rec_k0(b) as usize],
+        _ => panic!("should never happen")
+    };
+
+    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);
+    hax_lib::assert!(matches!(pdecom.0, sized_array_for_cop::sized_array_1(_)));
     pdecom
 }
 
- */
+#[hax_lib::requires(hax_lib::Prop::from(matches!(decom.2, sized_array_for_coms::sized_array_2(_)))
+                    .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
+#[hax_lib::ensures(|result| matches!(result.0, sized_array_for_cop::sized_array_2(_)))]
+pub fn vec_open_k1(decom: &([u8;16], [u8;16], sized_array_for_coms), b: &[u8; 11]) -> (sized_array_for_cop, [u8; 32]){
+    let r = decom.0;
+    let iv = decom.1;
+    let coms = &decom.2;
+    let cop = get_cop::<k_1>(r, iv, num_rec_k1(b));
+    let cop_to_return = sized_array_for_cop::sized_array_2(cop);
+    hax_lib::assert_prop!(hax_lib::forall(|i: usize| i>= b.len() || b[i] <= 1));
+    let com_value: [u8; 32] = match &coms {
+        sized_array_for_coms::sized_array_2(inner) => inner[num_rec_k1(b) as usize],
+        _ => panic!("should never happen")
+    };
+
+    let pdecom:(sized_array_for_cop, [u8; 32]) = (cop_to_return, com_value);
+    hax_lib::assert!(matches!(pdecom.0, sized_array_for_cop::sized_array_2(_)));
+    pdecom
+}
 
 // we want to know using the pdecom, to reconstruct all the committed seeds, except the j* one
 // we should still be able to check if we have the right values, using the commitments, and the saved commitment for jstar
-// i have no idea if this works
-pub fn vec_reconstruct(pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<u8>, iv: [u8; 16], d : i128) -> ([u8;56],Vec<[u8;16]>)
-{
-    let mut sds: Vec<[u8; 16]> = vec![];
-    let mut coms: Vec<[u8; 32]> = vec![];
+#[hax_lib::requires(hax_lib::Prop::from(matches!(pdecom.0, sized_array_for_cop::sized_array_1(_)))
+                    .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
+pub fn vec_reconstruct_k0(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_0], iv: [u8; 16]) -> ([u8; 32], sized_array_for_sds) {
+    let cop = match pdecom.0 {
+        sized_array_for_cop::sized_array_1(arr) => arr,
+        _ => panic!("expected k0 array")
+    };
 
-    let cop = pdecom.0;
-    let com_star = pdecom.1;
-    // get b
-    let value_of_b = num_rec(b, d as u64);
-    // it just works
-    let leaves = Tree::get_leaves_from_cop_and_b(value_of_b, cop, iv);
-    for l in leaves {
-        match l {
+    let mut sds: [[u8; 16]; k_0_pow] = [[0u8; 16]; k_0_pow];
+    let mut coms: [[u8; 32]; k_0_pow] = [[0u8; 32]; k_0_pow];
+    let value_of_b = num_rec_k0(&b);
+
+    let leaves : sized_option_array<k_0_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);
+    regen_tree_from_pdecom::<k_0_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
+
+    let h = h_1_k0(&coms);
+
+    let seeds_to_return = sized_array_for_sds::sized_array_1(sds);
+
+    (h, seeds_to_return)
+}
+
+#[hax_lib::requires(hax_lib::Prop::from(matches!(pdecom.0, sized_array_for_cop::sized_array_2(_)))
+                    .and(hax_lib::forall(|i: usize| i >= b.len() || b[i] <= 1)))]
+pub fn vec_reconstruct_k1(pdecom: &(sized_array_for_cop, [u8; 32]), b: [u8;k_1], iv: [u8; 16]) -> ([u8; 32], sized_array_for_sds) {
+    let cop = match pdecom.0 {
+        sized_array_for_cop::sized_array_2(arr) => arr,
+        _ => panic!("expected k1 array")
+    };
+    let mut sds: [[u8; 16]; k_1_pow] = [[0u8; 16]; k_1_pow];
+    let mut coms: [[u8; 32]; k_1_pow] = [[0u8; 32]; k_1_pow];
+    let value_of_b = num_rec_k1(&b);
+
+    let leaves : sized_option_array<k_1_pow> = get_leaves_from_cop_and_b(&cop, iv, value_of_b);
+    regen_tree_from_pdecom::<k_1_pow>(&leaves, &mut sds, &mut coms, &iv, &pdecom.1);
+
+    let h = h_1_k1(&coms);
+
+    let seeds_to_return = sized_array_for_sds::sized_array_2(sds);
+
+    (h, seeds_to_return)
+}
+
+
+fn regen_tree_from_pdecom<const size: usize>(leaves: &sized_option_array<size>, sds: &mut [[u8; 16]; size], coms: &mut [[u8; 32]; size], iv: &[u8; 16], pdecom1: &[u8; 32]) {
+    for i in 0..size {
+        hax_lib::loop_invariant!(|i: usize| {
+           i <= size
+        });
+        match leaves[i] {
             Some(leaf) => {
-                let (sd, com) = h_0(leaf, iv);
-                sds.push(sd);
-                coms.push(com);
+                let (sd, com) = h_0(leaf, *iv);
+                sds[i] = sd;
+                coms[i] = com;
             },
             None => {
-                coms.push(com_star);
-                sds.push([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+                coms[i] = *pdecom1;
+                sds[i] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
             },
         }
     }
-
-
-    let h = h_1(&coms);
-    (h, sds)
 }
 
-/*
-fn array_vec_reconstruct<const dummy_n: usize, const dummy_m: usize, const dummy_o: usize>(pdecom: ([[u8; 16]; dummy_n], [u8; 32]), b: [u8; dummy_m], iv: [u8; 16], d : i128) -> ([u8;56],[[u8;16]; dummy_o])
-{
-    let mut sds: [[u8; 16]; dummy_o] = [[0u8; 16]; dummy_o];
-    let mut coms: [[u8; 32]; dummy_m] = [[0u8; 32]; dummy_m];
-
-    let cop = pdecom.0;
-    let com_star = pdecom.1;
-    // get b
-    let value_of_b = num_rec(b.to_vec(), d as u64);     // TODO: Get dat vec outta here
-    // it just works
-    let leaves = Tree::get_leaves_from_cop_and_b(value_of_b, cop.to_vec(), iv);     // TODO: Vec
-    let mut i = 0;
-    for l in leaves {
-        match l {
-            Some(leaf) => {
-                let (sd, com) = h_0(leaf, iv);
-                sds[i] = (sd);
-                coms[i] = (com);
-                i += 1;
-            },
-            None => {
-                coms[i] = (com_star);
-                sds[i] = ([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
-                i += 1;
-            },
-        }
-    }
 
 
-    let h = h_1(&coms.to_vec());        // TODO: Vec
-    (h, sds)
-}
-
- */
-
-
-
-// vec_verify should help us do some testing, basically it takes the hash of the commitments from
-// commit, then it reconstruct using the pdecom, from vec_open to the commitments, and checks that those
-// two hashes are teh same
-pub fn vec_verify(h: [u8; 56], pdecom: (Vec<[u8; 16]>,[u8; 32]), b: Vec<u8>, iv: [u8; 16], d : i128) -> bool{
-    let (rec_com, _rec_sd) = vec_reconstruct(pdecom, b, iv, d);
-    if rec_com == h {
-        true
-    } else {
-        false
-    }
-}
-
-/*
-fn array_vec_verify<const dummy_n: usize, const dummy_m: usize>(h: [u8; 56], pdecom: ([[u8; 16]; dummy_n],[u8; 32]), b: [u8; dummy_m], iv: [u8; 16], d : i128) -> bool{
-    let (rec_com, _rec_sd) = vec_reconstruct((pdecom.0.to_vec(), pdecom.1), b.to_vec(), iv, d);     // TODO: Vec
-    if rec_com == h {
-        true
-    } else {
-        false
-    }
-}
- */

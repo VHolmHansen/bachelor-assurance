@@ -1,18 +1,26 @@
 #![allow(non_snake_case, non_upper_case_globals, non_camel_case_types)]
-use crate::utils::galois_field::gf128_mul;
+
+use crate::utils::{galois_field::gf128_mul, math};
 use crate::utils::math::xor_arrays;
+
 
 // x er her en liste af u8, men det skal være bits
 // k er størrelsen på det field F_{2^k} vi gerne vil have det til
-pub fn to_field(x: &[u8], k: usize) -> Vec<[u8; 16]> {
-    assert!(x.len() % k == 0, "input length must be multiple of k");
-    let n = x.len() / k;
-    let mut result = vec![[0u8; 16]; n];
+#[hax_lib::requires(K != 0 && x_len % K == 0 && K <= 128 && N > 0 && N <= usize::MAX / K && x_len == N * K)]
+pub fn to_field<const x_len : usize, const K: usize, const N: usize>(x: &[u8;x_len]) -> [[u8; 16]; N] { // N should always be equal to X_len / K
+    assert!(x.len() % K == 0, "input length must be multiple of k");
 
-    for i in 0..n {
+    let mut result = [[0u8; 16]; N];
+    for i in 0..N {
+        hax_lib::loop_invariant!(|i: usize| {
+            i <= N
+        });
         let mut field_elem = [0u8; 16];
-        for j in 0..k {
-            let bit = x[i * k + j];
+        for j in 0..K {
+            hax_lib::loop_invariant!(|j: usize| {
+                j <= K
+            });
+            let bit = x[i * K + j];
             if bit == 1 {
                 // Set the j-th bit in the field element (little-endian)
                 let byte_idx = j / 8;
@@ -25,94 +33,63 @@ pub fn to_field(x: &[u8], k: usize) -> Vec<[u8; 16]> {
     result
 }
 
-// burde være omvendt af den ovenstående funktion
-pub fn to_bits(x: &[[u8; 16]], k: usize) -> Vec<u8> {
-    let mut result = Vec::new();
 
-    for field_elem in x {
-        for j in 0..k {
-            let byte_idx = j / 8;
-            let bit_idx = j % 8;
-            let bit = (field_elem[byte_idx] >> bit_idx) & 1;
-            result.push(bit);
+#[hax_lib::requires(K > 0 && N <= usize::MAX / K && N * K == NK && K <= 128)]
+pub fn to_bits<const N: usize, const K: usize, const NK: usize>(
+    x: &[[u8; 16]; N],
+    result: &mut [u8; NK],
+) {
+    debug_assert_eq!(N * K, NK);
+    let mut idx = 0;
+    for field_elem in 0..N {
+        hax_lib::loop_invariant!(|field_elem: usize| {
+            field_elem <= N &&
+            idx == field_elem * K
+        });
+        for j in 0..K {
+            hax_lib::loop_invariant!(|j: usize| {
+                j <= K &&
+                idx == field_elem * K + j &&
+                j >> 3 <= 16
+            });
+            result[idx] = (x[field_elem][j >> 3] >> (math::bitand_mod(j as u8, 7))) & 1;
+            idx += 1;
         }
     }
-
-    result
 }
+
+
 
 // funktion brugt af prove og verify
+#[hax_lib::requires(sd.len() >= 56)]
 pub fn zk_hash(sd: &[u8], x0: &[[u8; 16]], x1: &[u8; 16]) -> [u8; 16] {
-    let lambda = 128;
+    // sd = r0 || r1 || s || t = 16 + 16 + 16 + 8 = 56 bytes
+    let r0: [u8; 16] = sd[0..16].try_into().unwrap();
+    let r1: [u8; 16] = sd[16..32].try_into().unwrap();
+    let s:  [u8; 16] = sd[32..48].try_into().unwrap();
+    let t:  [u8;  8] = sd[48..56].try_into().unwrap();
 
-    // Step 2: Parse sd into r0, r1, s (lambda bits each) and t (64 bits)
-    // sd is given as bits, each u8 is 0 or 1
-    let r0_bits = &sd[0..lambda];
-    let r1_bits = &sd[lambda..2*lambda];
-    let s_bits  = &sd[2*lambda..3*lambda];
-    let t_bits  = &sd[3*lambda..3*lambda+64];
-
-    // Convert to field elements
-    let r0 = to_field(r0_bits, lambda)[0];
-    let r1 = to_field(r1_bits, lambda)[0];
-    let s  = to_field(s_bits,  lambda)[0];
-
-    // t is 64 bits zero-padded to lambda
-    let mut t_padded = vec![0u8; lambda];
-    t_padded[..64].copy_from_slice(t_bits);
-    let t = to_field(&t_padded, lambda)[0];
-
-    let l = x0.len();
-
-    // Step 6: h0 = sum_{i=0}^{l-1} s^{l-1-i} * x0[i]  in F_{2^lambda}
+    // init
     let mut h0 = [0u8; 16];
-    let mut s_pow = field_pow(&s, l - 1); // s^{l-1}
-    for i in 0..l {
-        let term = gf128_mul(&s_pow, &x0[i]);
-        h0 = xor_arrays(&h0, &term);
-        if i < l - 1 {
-            // divide by s (multiply by s^{-1}) to get next power
-            // equivalently recompute: s_pow = s^{l-2-i}
-            s_pow = field_pow(&s, l - 2 - i);
-        }
-    }
-
-    // Step 7: h1 = sum_{i=0}^{l-1} t^{l-1-i} * x0[i]  in F_{2^lambda}
     let mut h1 = [0u8; 16];
-    let mut t_pow = field_pow(&t, l - 1);
-    for i in 0..l {
-        let term = gf128_mul(&t_pow, &x0[i]);
-        h1 = xor_arrays(&h1, &term);
-        if i < l - 1 {
-            t_pow = field_pow(&t, l - 2 - i);
-        }
+
+    // update for each constraint value (incremental Horner)
+    for v in x0 {
+        // h0 = h0 * s + v  (in F_{2^128})
+        h0 = xor_arrays(&gf128_mul(&h0, &s), v);
+        // h1 = h1 * t + v  (bf128_mul_64: 128-bit * 64-bit)
+        h1 = xor_arrays(&gf128_mul_64(&h1, &t), v);
     }
 
-    // Step 8: h = ToBits(r0*h0 + r1*h1 + x1)
-    let r0_h0 = gf128_mul(&r0, &h0);
-    let r1_h1 = gf128_mul(&r1, &h1);
-    let sum   = xor_arrays(&xor_arrays(&r0_h0, &r1_h1), x1);
-
-    sum
+    // finalize: h = r0*h0 + r1*h1 + x1
+    let term0 = gf128_mul(&r0, &h0);
+    let term1 = gf128_mul(&r1, &h1);
+    xor_arrays(&xor_arrays(&term0, &term1), x1)
 }
 
-// Helper: compute base^exp in GF(2^128)
-fn field_pow(base: &[u8; 16], exp: usize) -> [u8; 16] {
-    if exp == 0 {
-        let mut one = [0u8; 16];
-        one[0] = 1;
-        return one;
-    }
-    let mut result = [0u8; 16];
-    result[0] = 1; // start at 1
-    let mut b = *base;
-    let mut e = exp;
-    while e > 0 {
-        if e & 1 == 1 {
-            result = gf128_mul(&result, &b);
-        }
-        b = gf128_mul(&b, &b);
-        e >>= 1;
-    }
-    result
+pub fn gf128_mul_64(a: &[u8; 16], b: &[u8; 8]) -> [u8; 16] {
+    // zero-pad b to 16 bytes and use regular gf128_mul
+    let mut b_padded = [0u8; 16];
+    b_padded[..8].copy_from_slice(b);
+    gf128_mul(a, &b_padded)
 }

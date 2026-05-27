@@ -1,16 +1,9 @@
-use hax_lib::ToInt;
-use crate::utils::{finite_field};
-use crate::protocols::aes;
-mod utils;
-mod protocols;
-mod verifier;
-mod prover;
+use bachelor_assurance::run_faest;
 
-#[hax_lib::exclude]
+pub mod utils;
+pub mod protocols;
+
+#[hax_lib::include]
 fn main() {
-    //mpc::main();
-    //lpzk::main();
-    let field = finite_field::new(257.to_int());
-    aes::main(field);
+    run_faest::run();
 }
-
